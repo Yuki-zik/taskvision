@@ -1670,6 +1670,14 @@ function activate(context) {
         context.subscriptions.push(vscode.commands.registerCommand('todo-tree.scanCurrentFileOnly', scanCurrentFileOnly));
         context.subscriptions.push(vscode.commands.registerCommand('todo-tree.scanWorkspaceOnly', scanWorkspaceOnly));
 
+        context.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(function (editors) {
+            editors.forEach(function (editor) {
+                if (editor.document && config.isValidScheme(editor.document.uri)) {
+                    highlights.triggerHighlight(editor);
+                }
+            });
+        }));
+
         context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(function (e) {
             if (e && e.document) {
                 openDocuments[e.document.uri.toString()] = e.document;
@@ -1767,7 +1775,11 @@ function activate(context) {
                     highlights.clearCache();
                     validateColours();
                     validateIcons();
-                    documentChanged();
+                    // triggerHighlightAll
+                    vscode.window.visibleTextEditors.forEach(function (editor) {
+                        highlights.triggerHighlight(editor);
+                    });
+                    documentChanged(); // Keeps updating the active one, though loop covers it too. Checking if documentChanged does more.
                 }
                 else if (e.affectsConfiguration("todo-tree.tree.labelFormat")) {
                     validatePlaceholders();

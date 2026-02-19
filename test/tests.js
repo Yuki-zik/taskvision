@@ -186,7 +186,7 @@ QUnit.test( "utils.extractTag returns entire text if regex is empty", function( 
     utils.init( testConfig );
 
     result = utils.extractTag( "                before = text; // TODO stuff  ", 1 );
-    assert.equal( result.withoutTag, "                before = text; // TODO stuff  " );
+    assert.equal( result.withoutTag, "                before = text; // TODO stuff  " ); 
     assert.equal( result.before, "                before = text; // TODO stuff  " );
     assert.equal( result.after, "                before = text; // TODO stuff  " );
 } );

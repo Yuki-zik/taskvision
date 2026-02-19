@@ -381,7 +381,13 @@ function highlight(editor) {
                         else if (type === 'tag-and-comment') {
                             addDecoration(editor.document.positionAt(match.index), endPos);
                         }
-                        else if (type === 'line' || type === 'whole-line') {
+                        // For 'whole-line', VS Code's isWholeLine property handles the background extension.
+                        // We restrict the range to the match to prevent foreground color from bleeding into code before the comment.
+                        // For 'line', we keep the original behavior (0 to end) as it might be intended to color the whole text line,
+                        // although 'whole-line' is the preferred way for full-width backgrounds.
+                        if (type === 'whole-line') {
+                            addDecoration(startPos, endPos, match[0]); // Pass match text to help with edge cases if needed
+                        } else {
                             addDecoration(
                                 new vscode.Position(fullEndPos.line, editor.document.lineAt(fullEndPos.line).range.end.character),
                                 new vscode.Position(startPos.line, 0));
