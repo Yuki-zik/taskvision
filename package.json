@@ -12,7 +12,7 @@
     "version": "1.0.0",
     "license": "MIT",
     "icon": "resources/todo-tree.png",
-    "publisher": "Yuki-zik",
+    "publisher": "A-Znk",
     "engines": {
         "vscode": "^1.72.0"
     },
