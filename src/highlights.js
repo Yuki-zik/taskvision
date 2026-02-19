@@ -4,7 +4,9 @@ var execWithIndices = require("regexp-match-indices").shim();
 var config = require('./config.js');
 var utils = require('./utils.js');
 var attributes = require('./attributes.js');
+var attributes = require('./attributes.js');
 var icons = require('./icons.js');
+var schemes = require('./schemes.js');
 
 var captureGroupArgument = "capture-groups";
 
@@ -112,12 +114,13 @@ function getDecoration(tag) {
     if (isNaN(parseInt(lane))) {
         lane = lanes[lane.toLowerCase()];
     }
+    var fontWeight = getFontWeight(tag);
+    var fontStyle = getFontStyle(tag);
+    var textDecoration = getTextDecoration(tag);
+
     var decorationOptions = {
         borderRadius: getBorderRadius(tag),
         isWholeLine: getType(tag) === 'whole-line',
-        fontWeight: getFontWeight(tag),
-        fontStyle: getFontStyle(tag),
-        textDecoration: getTextDecoration(tag),
         gutterIconPath: showInGutter(tag) ? icons.getIcon(context, tag, debug).dark : undefined
     };
 
@@ -136,11 +139,62 @@ function getDecoration(tag) {
         decorationOptions.overviewRulerLane = lane;
     }
 
-    decorationOptions.light = { backgroundColor: lightBackgroundColour, color: lightForegroundColour };
-    decorationOptions.dark = { backgroundColor: darkBackgroundColour, color: darkForegroundColour };
+    decorationOptions.light = { backgroundColor: lightBackgroundColour, color: lightForegroundColour, fontWeight: fontWeight, fontStyle: fontStyle, textDecoration: textDecoration };
+    decorationOptions.dark = { backgroundColor: darkBackgroundColour, color: darkForegroundColour, fontWeight: fontWeight, fontStyle: fontStyle, textDecoration: textDecoration };
 
-    decorationCache[tag] = vscode.window.createTextEditorDecorationType(decorationOptions);
-    return decorationCache[tag];
+    var scheme = attributes.getScheme(tag);
+    if (scheme) {
+        // Resolve the best base color for scheme effects.
+        // Priority: iconColour > background (strip alpha) > foreground
+        // This fixes the "all white" Glass bug where foreground is #FFFFFF.
+        var resolveSchemeBaseColor = function (fgColor, bgColor) {
+            // 1. Try iconColour first (most distinctive)
+            var iconCol = attributes.getIconColour(tag);
+            if (iconCol && typeof iconCol === 'string' && iconCol.startsWith('#')) {
+                // Strip alpha if present (e.g. #42A5F566 -> #42A5F5)
+                if (iconCol.length === 9) return iconCol.substring(0, 7);
+                if (iconCol.length === 5) return iconCol.substring(0, 4);
+                return iconCol;
+            }
+            // 2. Try background color (strip alpha)
+            if (bgColor && typeof bgColor === 'string' && bgColor.startsWith('#')) {
+                if (bgColor.length === 9) return bgColor.substring(0, 7);
+                if (bgColor.length === 5) return bgColor.substring(0, 4);
+                return bgColor;
+            }
+            // 3. Fallback to foreground if it's a hex and NOT pure white/black
+            if (fgColor && typeof fgColor === 'string' && fgColor.startsWith('#')) {
+                var upper = fgColor.toUpperCase();
+                if (upper !== '#FFFFFF' && upper !== '#FFF' && upper !== '#000000' && upper !== '#000') {
+                    return fgColor;
+                }
+            }
+            return undefined; // Let scheme.js pick a default
+        };
+
+        var rawFg = attributes.getForeground(tag);
+        var rawBg = attributes.getBackground(tag);
+        var baseColor = resolveSchemeBaseColor(rawFg, rawBg);
+
+        var type = getType(tag);
+        var secondaryOptions = schemes.applyScheme(decorationOptions, scheme, baseColor, baseColor, type);
+    }
+
+    console.log('[TaskVision] getDecoration options for "' + tag + '":', JSON.stringify(decorationOptions, null, 2));
+
+    var result = {
+        primary: vscode.window.createTextEditorDecorationType(decorationOptions)
+    };
+    decorationCache[tag] = result.primary;
+
+    if (secondaryOptions) {
+        // Create secondary decoration type (e.g. for Neon text effect on top of Glass background)
+        console.log('[TaskVision] Secondary options for "' + tag + '":', JSON.stringify(secondaryOptions, null, 2));
+        result.secondary = vscode.window.createTextEditorDecorationType(secondaryOptions);
+        decorationCache[tag + '_secondary'] = result.secondary;
+    }
+
+    return result;
 }
 
 function getRulerColour(tag, defaultColour) {
@@ -215,6 +269,7 @@ function editorId(editor) {
 }
 
 function highlight(editor) {
+    console.log('[TaskVision] highlight() called, editor:', editor ? editor.document.fileName : 'null');
     try {
         function addDecoration(startPos, endPos) {
             var decoration = { range: new vscode.Range(startPos, endPos) };
@@ -244,8 +299,16 @@ function highlight(editor) {
                 var regex = utils.getRegexForEditorSearch(true);
                 var subTagRegex = new RegExp(config.subTagRegex());
 
+                console.log('[TaskVision] Highlighting file:', editor.document.fileName);
+                console.log('[TaskVision] Regex:', regex.toString());
+                console.log('[TaskVision] Highlights enabled: true');
+                console.log('[TaskVision] customHighlight:', JSON.stringify(config.customHighlight()));
+                console.log('[TaskVision] defaultHighlight:', JSON.stringify(config.defaultHighlight()));
+
+                var matchCount = 0;
                 var match;
                 while ((match = regex.exec(text)) !== null) {
+                    matchCount++;
                     var tag = match[0];
                     var offsetStart = match.index;
                     var offsetEnd = offsetStart + match[0].length;
@@ -264,6 +327,7 @@ function highlight(editor) {
                         offsetStart += match[0].search(/\S|$/);
                     }
                     var type = getType(tag);
+                    console.log('[TaskVision] Match #' + matchCount + ': raw="' + match[0].substring(0, 50) + '" tag="' + tag + '" type="' + type + '"');
                     if (type !== 'none') {
                         var startPos = editor.document.positionAt(offsetStart);
                         var endPos = editor.document.positionAt(offsetEnd);
@@ -325,10 +389,36 @@ function highlight(editor) {
                     }
                 }
 
+                console.log('[TaskVision] Total matches: ' + matchCount);
+                console.log('[TaskVision] Tags with decorations: ' + Object.keys(documentHighlights).join(', '));
+
                 Object.keys(documentHighlights).forEach(function (tag) {
-                    var decoration = getDecoration(tag);
-                    decorations[id].push(decoration);
-                    editor.setDecorations(decoration, documentHighlights[tag]);
+                    try {
+                        var decorationResult = getDecoration(tag);
+                        var locations = documentHighlights[tag];
+
+                        if (decorationResult.primary) {
+                            decorations[id].push(decorationResult.primary);
+                            editor.setDecorations(decorationResult.primary, locations);
+                        } else if (decorationResult && !decorationResult.primary && !decorationResult.secondary) {
+                            // Compatibility: if getDecoration returned a single object directly (shouldn't happen with new code but safe fallback)
+                            // However, we know getDecoration returns {primary: ...} now.
+                            // If it somehow returned a raw object, handle it:
+                            if (decorationResult.key) { // check for verify existence of VSCode decoration object property or similar? 
+                                // Actually, checking if it has .dispose is safer, but simpler:
+                                decorations[id].push(decorationResult);
+                                editor.setDecorations(decorationResult, locations);
+                            }
+                        }
+
+                        if (decorationResult.secondary) {
+                            decorations[id].push(decorationResult.secondary);
+                            editor.setDecorations(decorationResult.secondary, locations);
+                        }
+                        console.log('[TaskVision] Applied ' + locations.length + ' decorations for tag "' + tag + '"');
+                    } catch (tagError) {
+                        console.error('[TaskVision] getDecoration FAILED for tag "' + tag + '":', tagError.message, tagError.stack);
+                    }
                 });
 
                 Object.keys(subTagHighlights).forEach(function (subTag) {
@@ -340,6 +430,7 @@ function highlight(editor) {
         }
     }
     catch (e) {
+        console.error('[TaskVision] highlighting FAILED:', e.message, e.stack);
         if (debug) {
             debug("highlighting failed: " + e);
         }
@@ -347,6 +438,7 @@ function highlight(editor) {
 }
 
 function triggerHighlight(editor) {
+    console.log('[TaskVision] triggerHighlight() called, editor:', editor ? editor.document.fileName : 'null');
     if (editor) {
         var id = editorId(editor);
 

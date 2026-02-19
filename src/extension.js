@@ -986,6 +986,10 @@ function activate(context) {
 
         function documentChanged(document) {
             if (document) {
+                console.log('[TaskVision] documentChanged:', document.fileName,
+                    'scheme:', document.uri.scheme,
+                    'validScheme:', config.isValidScheme(document.uri),
+                    'included:', isIncluded(document.uri));
                 vscode.window.visibleTextEditors.map(editor => {
                     if (document === editor.document && config.isValidScheme(document.uri)) {
                         if (isIncluded(document.uri)) {
@@ -1256,6 +1260,260 @@ function activate(context) {
             rebuild();
             dumpFolderFilter();
             clearTreeFilter();
+        }));
+
+        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.setScheme', function (node) {
+            if (node && node.tag) {
+                var currentConfig = vscode.workspace.getConfiguration('todo-tree.highlights');
+                var customHighlight = currentConfig.get('customHighlight', {});
+                var currentScheme = (customHighlight[node.tag] && customHighlight[node.tag].scheme) || '';
+
+                var items = [
+                    {
+                        label: '$(zap) Neon Night',
+                        description: currentScheme === 'neon' ? '$(check) 当前' : '',
+                        detail: 'OLED 霓虹辉光 — 关键词发光效果',
+                        value: 'neon'
+                    },
+                    {
+                        label: '$(browser) Glassmorphism',
+                        description: currentScheme === 'glass' ? '$(check) 当前' : '',
+                        detail: '磨砂玻璃 — 半透明整行覆盖效果',
+                        value: 'glass'
+                    },
+                    {
+                        label: '$(sparkle) Neon + Glass',
+                        description: currentScheme === 'neon+glass' ? '$(check) 当前' : '',
+                        detail: '整行玻璃背景 + 关键词霓虹辉光 — 双重效果叠加',
+                        value: 'neon+glass'
+                    },
+                    {
+                        label: '$(circle-slash) None',
+                        description: (!currentScheme || currentScheme === '') ? '$(check) 当前' : '',
+                        detail: '恢复默认高亮样式',
+                        value: 'none'
+                    }
+                ];
+
+                vscode.window.showQuickPick(items, {
+                    placeHolder: '为 ' + node.tag + ' 选择高亮方案 (Highlight Scheme)',
+                    matchOnDetail: true
+                }).then(function (selection) {
+                    if (selection) {
+                        var updated = JSON.parse(JSON.stringify(currentConfig.get('customHighlight', {})));
+                        if (updated[node.tag] === undefined) {
+                            updated[node.tag] = {};
+                        }
+                        if (selection.value === 'none') {
+                            delete updated[node.tag].scheme;
+                        } else {
+                            updated[node.tag].scheme = selection.value;
+                        }
+                        currentConfig.update('customHighlight', updated, vscode.ConfigurationTarget.Global);
+                    }
+                });
+            }
+        }));
+
+        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.customizeAppearance', function (node) {
+            if (node && node.tag) {
+                var currentConfig = vscode.workspace.getConfiguration('todo-tree.highlights');
+                var customHighlight = currentConfig.get('customHighlight', {});
+                var tagConfig = customHighlight[node.tag] || {};
+                var currentScheme = tagConfig.scheme || '';
+
+                // Parse current state: is neon on? is glass on?
+                var neonOn = (currentScheme === 'neon' || currentScheme === 'neon+glass');
+                var glassOn = (currentScheme === 'glass' || currentScheme === 'neon+glass');
+
+                // Build status indicators
+                var glowStatus = neonOn ? '$(check) ON' : '$(circle-slash) OFF';
+                var glassStatus = glassOn ? '$(check) ON' : '$(circle-slash) OFF';
+
+                var mainItems = [
+                    {
+                        label: '$(zap) Toggle Glow Effect',
+                        description: glowStatus,
+                        detail: '霓虹辉光 — 关键词发光效果 (仅作用于关键字)',
+                        value: 'toggle-neon'
+                    },
+                    {
+                        label: '$(browser) Toggle Glass Effect',
+                        description: glassStatus,
+                        detail: '磨砂玻璃 — 半透明整行覆盖效果',
+                        value: 'toggle-glass'
+                    },
+                    {
+                        label: '$(screen-full) Set Effect Scope',
+                        detail: '控制高亮作用范围：仅关键词 / 整行 / 标签到行尾',
+                        value: 'scope'
+                    },
+                    {
+                        label: '$(symbol-color) Set Foreground Color',
+                        detail: '设置标签文字颜色 (当前: ' + (tagConfig.foreground || '默认') + ')',
+                        value: 'foreground'
+                    },
+                    {
+                        label: '$(symbol-misc) Set Icon',
+                        detail: '更换标签图标 (当前: ' + (tagConfig.icon || '默认') + ')',
+                        value: 'icon'
+                    },
+                    {
+                        label: '$(bold) Set Font Style',
+                        detail: '设置字体样式: 加粗 / 斜体 / 加粗斜体',
+                        value: 'font'
+                    }
+                ];
+
+                vscode.window.showQuickPick(mainItems, {
+                    placeHolder: '自定义 ' + node.tag + ' 外观 (Customize Appearance)',
+                    matchOnDetail: true
+                }).then(function (selection) {
+                    if (!selection) return;
+
+                    var updateConfig = function (key, val) {
+                        var cfg = vscode.workspace.getConfiguration('todo-tree.highlights');
+                        var updated = JSON.parse(JSON.stringify(cfg.get('customHighlight', {})));
+                        if (!updated[node.tag]) updated[node.tag] = {};
+                        if (val === undefined) {
+                            delete updated[node.tag][key];
+                        } else {
+                            updated[node.tag][key] = val;
+                        }
+                        cfg.update('customHighlight', updated, vscode.ConfigurationTarget.Global);
+                    };
+
+                    // Helper to compute new scheme from independent neon/glass toggles
+                    var computeScheme = function (wantNeon, wantGlass) {
+                        if (wantNeon && wantGlass) return 'neon+glass';
+                        if (wantNeon) return 'neon';
+                        if (wantGlass) return 'glass';
+                        return undefined; // No scheme
+                    };
+
+                    if (selection.value === 'toggle-neon') {
+                        var newNeon = !neonOn;
+                        var newScheme = computeScheme(newNeon, glassOn);
+                        updateConfig('scheme', newScheme);
+                        var msg = newNeon ? 'Glow ON' : 'Glow OFF';
+                        if (newNeon && glassOn) msg += ' + Glass ON';
+                        vscode.window.showInformationMessage(node.tag + ': ' + msg);
+                    } else if (selection.value === 'toggle-glass') {
+                        var newGlass = !glassOn;
+                        var newScheme = computeScheme(neonOn, newGlass);
+                        updateConfig('scheme', newScheme);
+                        var msg = newGlass ? 'Glass ON' : 'Glass OFF';
+                        if (newGlass && neonOn) msg += ' + Glow ON';
+                        vscode.window.showInformationMessage(node.tag + ': ' + msg);
+                    } else if (selection.value === 'scope') {
+                        var scopeItems = [
+                            {
+                                label: '$(symbol-key) Tag Only',
+                                detail: '仅高亮标签关键词 (如 TODO)',
+                                value: 'tag'
+                            },
+                            {
+                                label: '$(symbol-text) Tag + Content',
+                                detail: '高亮标签到行尾内容',
+                                value: 'text'
+                            },
+                            {
+                                label: '$(symbol-file) Whole Line',
+                                detail: '整行高亮',
+                                value: 'whole-line'
+                            }
+                        ];
+                        vscode.window.showQuickPick(scopeItems, {
+                            placeHolder: '为 ' + node.tag + ' 选择高亮范围'
+                        }).then(function (scope) {
+                            if (scope) {
+                                updateConfig('type', scope.value);
+                            }
+                        });
+                    } else if (selection.value === 'foreground') {
+                        vscode.window.showInputBox({
+                            prompt: '输入 ' + node.tag + ' 的前景色 (Hex 格式)',
+                            placeHolder: '#FF0044',
+                            value: tagConfig.foreground || '',
+                            validateInput: function (value) {
+                                if (!value.match(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/)) {
+                                    return '请输入有效的 Hex 颜色值 (例如 #FF0044)';
+                                }
+                                return null;
+                            }
+                        }).then(function (color) {
+                            if (color) {
+                                updateConfig('foreground', color);
+                            }
+                        });
+                    } else if (selection.value === 'icon') {
+                        var iconItems = [
+                            { label: '$(flame) flame', value: 'flame' },
+                            { label: '$(bug) bug', value: 'bug' },
+                            { label: '$(check) check', value: 'check' },
+                            { label: '$(alert) alert', value: 'alert' },
+                            { label: '$(bookmark) bookmark', value: 'bookmark' },
+                            { label: '$(star) star', value: 'star' },
+                            { label: '$(tools) tools', value: 'tools' },
+                            { label: '$(info) info', value: 'info' },
+                            { label: '$(tasklist) tasklist', value: 'tasklist' },
+                            { label: '$(eye) eye', value: 'eye' },
+                            { label: '$(heart) heart', value: 'heart' },
+                            { label: '$(x-circle) x-circle', value: 'x-circle' },
+                            { label: '$(issue-opened) issue-opened', value: 'issue-opened' },
+                            { label: '$(issue-closed) issue-closed', value: 'issue-closed' },
+                            { label: '$(rocket) rocket', value: 'rocket' },
+                            { label: '$(zap) zap', value: 'zap' }
+                        ];
+                        vscode.window.showQuickPick(iconItems, {
+                            placeHolder: '为 ' + node.tag + ' 选择图标'
+                        }).then(function (icon) {
+                            if (icon) {
+                                updateConfig('icon', icon.value);
+                            }
+                        });
+                    } else if (selection.value === 'font') {
+                        var fontItems = [
+                            {
+                                label: '$(bold) Bold',
+                                detail: '加粗',
+                                fontWeight: 'bold',
+                                fontStyle: 'normal'
+                            },
+                            {
+                                label: '$(italic) Italic',
+                                detail: '斜体',
+                                fontWeight: 'normal',
+                                fontStyle: 'italic'
+                            },
+                            {
+                                label: '$(bold) Bold + Italic',
+                                detail: '加粗斜体',
+                                fontWeight: 'bold',
+                                fontStyle: 'italic'
+                            },
+                            {
+                                label: '$(symbol-text) Normal',
+                                detail: '默认',
+                                fontWeight: 'normal',
+                                fontStyle: 'normal'
+                            }
+                        ];
+                        vscode.window.showQuickPick(fontItems, {
+                            placeHolder: '为 ' + node.tag + ' 选择字体样式'
+                        }).then(function (font) {
+                            if (font) {
+                                var cfg = vscode.workspace.getConfiguration('todo-tree.highlights');
+                                var updated = JSON.parse(JSON.stringify(cfg.get('customHighlight', {})));
+                                if (!updated[node.tag]) updated[node.tag] = {};
+                                updated[node.tag].fontWeight = font.fontWeight;
+                                updated[node.tag].fontStyle = font.fontStyle;
+                                cfg.update('customHighlight', updated, vscode.ConfigurationTarget.Global);
+                            }
+                        });
+                    }
+                });
+            }
         }));
 
         context.subscriptions.push(vscode.commands.registerCommand('todo-tree.reveal', function () {

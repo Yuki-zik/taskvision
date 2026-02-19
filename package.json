@@ -1,30 +1,30 @@
 {
-    "name": "todo-tree",
-    "displayName": "Todo Tree",
-    "description": "Show TODO, FIXME, etc. comment tags in a tree view",
+    "name": "taskvision",
+    "displayName": "TaskVision",
+    "description": "Enhanced Todo Tree fork — task tracking with rich highlighting and custom tag support",
     "keywords": [
         "todo",
         "task",
         "tasklist",
+        "taskvision",
         "multi-root ready"
     ],
-    "version": "0.0.224",
+    "version": "1.0.0",
     "license": "MIT",
     "icon": "resources/todo-tree.png",
-    "publisher": "Gruntfuggly",
+    "publisher": "Yuki-zik",
     "engines": {
         "vscode": "^1.72.0"
     },
-    "repository": "https://github.com/Gruntfuggly/todo-tree",
+    "repository": "https://github.com/Yuki-zik/taskvision",
     "bugs": {
-        "url": "https://github.com/Gruntfuggly/todo-tree/issues",
-        "email": "gruntfuggly@googlemail.com"
+        "url": "https://github.com/Yuki-zik/taskvision/issues"
     },
     "scripts": {
         "test": "qunit",
-        "vscode:prepublish": "node ./buildCodiconNames.js && webpack --mode production",
-        "webpack": "webpack --mode development",
-        "webpack-dev": "webpack --mode development --watch"
+        "vscode:prepublish": "node ./buildCodiconNames.js && node --openssl-legacy-provider node_modules/webpack/bin/webpack.js --mode production",
+        "webpack": "node --openssl-legacy-provider node_modules/webpack/bin/webpack.js --mode development",
+        "webpack-dev": "node --openssl-legacy-provider node_modules/webpack/bin/webpack.js --mode development --watch"
     },
     "categories": [
         "Other"
@@ -195,6 +195,16 @@
                     "command": "todo-tree.toggleBadges",
                     "when": "view =~ /todo-tree/",
                     "group": "2-toggles"
+                },
+                {
+                    "command": "todo-tree.customizeAppearance",
+                    "when": "view =~ /todo-tree/ && viewItem =~ /^(tag|todo)$/",
+                    "group": "3-scheme@1"
+                },
+                {
+                    "command": "todo-tree.setScheme",
+                    "when": "view =~ /todo-tree/ && viewItem =~ /^(tag|todo)$/",
+                    "group": "3-scheme@2"
                 },
                 {
                     "command": "todo-tree.toggleCompactFolders",
@@ -493,6 +503,16 @@
                 "command": "todo-tree.revealInFile",
                 "title": "%todo-tree.command.revealInFile.title%",
                 "category": "%todo-tree.command.category%"
+            },
+            {
+                "command": "todo-tree.setScheme",
+                "title": "Set Highlight Scheme",
+                "category": "%todo-tree.command.category%"
+            },
+            {
+                "command": "todo-tree.customizeAppearance",
+                "title": "Customize Tag Appearance",
+                "category": "%todo-tree.command.category%"
             }
         ],
         "configuration": [
@@ -507,12 +527,12 @@
                         "type": "boolean"
                     },
                     "todo-tree.general.automaticGitRefreshInterval": {
-                        "default": 0,
+                        "default": 10,
                         "markdownDescription": "%todo-tree.configuration.general.automaticGitRefreshInterval.markdownDescription%",
                         "type": "integer"
                     },
                     "todo-tree.general.periodicRefreshInterval": {
-                        "default": 0,
+                        "default": 5,
                         "markdownDescription": "%todo-tree.configuration.general.periodicRefreshInterval.markdownDescription%",
                         "type": "integer"
                     },
@@ -606,13 +626,15 @@
                     },
                     "todo-tree.general.tags": {
                         "default": [
+                            "BLOCKER",
                             "BUG",
-                            "HACK",
                             "FIXME",
+                            "HACK",
                             "TODO",
-                            "XXX",
                             "[ ]",
-                            "[x]"
+                            "[x]",
+                            "NOTE",
+                            "XXX"
                         ],
                         "items": {
                             "type": "string"
@@ -634,23 +656,107 @@
                 "properties": {
                     "todo-tree.highlights.customHighlight": {
                         "default": {
-                            "BUG": {
-                                "icon": "bug"
-                            },
-                            "HACK": {
-                                "icon": "tools"
+                            "BLOCKER": {
+                                "type": "whole-line",
+                                "background": "#FF174466",
+                                "foreground": "#FFFFFF",
+                                "gutterIcon": true,
+                                "icon": "issue-opened",
+                                "iconColour": "#FF1744",
+                                "rulerColour": "#FF1744",
+                                "fontWeight": "bold"
                             },
                             "FIXME": {
-                                "icon": "flame"
+                                "type": "tag",
+                                "background": "#9C27B066",
+                                "foreground": "#FFFFFF",
+                                "gutterIcon": true,
+                                "icon": "flame",
+                                "iconColour": "#9C27B0",
+                                "rulerColour": "#9C27B0",
+                                "fontStyle": "italic",
+                                "fontWeight": "bold",
+                                "scheme": "neon"
+                            },
+                            "BUG": {
+                                "type": "tag",
+                                "background": "#FF704366",
+                                "foreground": "#FFFFFF",
+                                "gutterIcon": true,
+                                "icon": "bug",
+                                "iconColour": "#FF7043",
+                                "rulerColour": "#FF7043",
+                                "fontWeight": "bold",
+                                "scheme": "neon"
                             },
                             "XXX": {
-                                "icon": "x"
+                                "type": "tag",
+                                "background": "#E040FB66",
+                                "foreground": "#FFFFFF",
+                                "gutterIcon": true,
+                                "icon": "x-circle",
+                                "iconColour": "#E040FB",
+                                "rulerColour": "#E040FB",
+                                "fontStyle": "italic",
+                                "fontWeight": "bold",
+                                "scheme": "neon"
+                            },
+                            "HACK": {
+                                "type": "whole-line",
+                                "background": "#FFD74066",
+                                "foreground": "#000000",
+                                "gutterIcon": true,
+                                "icon": "tools",
+                                "iconColour": "#FFD740",
+                                "rulerColour": "#FFD740",
+                                "fontWeight": "bold",
+                                "scheme": "glass"
+                            },
+                            "TODO": {
+                                "type": "whole-line",
+                                "background": "#42A5F566",
+                                "foreground": "#FFFFFF",
+                                "gutterIcon": true,
+                                "icon": "tasklist",
+                                "iconColour": "#42A5F5",
+                                "rulerColour": "#42A5F5",
+                                "fontWeight": "bold",
+                                "scheme": "glass"
                             },
                             "[ ]": {
-                                "icon": "issue-draft"
+                                "type": "whole-line",
+                                "background": "#26C6DA66",
+                                "foreground": "#FFFFFF",
+                                "gutterIcon": true,
+                                "icon": "issue-opened",
+                                "iconColour": "#26C6DA",
+                                "rulerColour": "#26C6DA",
+                                "fontStyle": "italic",
+                                "fontWeight": "bold",
+                                "scheme": "glass"
                             },
                             "[x]": {
-                                "icon": "issue-closed"
+                                "type": "whole-line",
+                                "background": "#2E7D3266",
+                                "foreground": "#FFFFFF",
+                                "gutterIcon": true,
+                                "icon": "issue-closed",
+                                "iconColour": "#2E7D32",
+                                "rulerColour": "#2E7D32",
+                                "fontWeight": "bold",
+                                "scheme": "glass"
+                            },
+                            "NOTE": {
+                                "type": "whole-line",
+                                "background": "#546E7A66",
+                                "foreground": "#FFEE58",
+                                "gutterIcon": true,
+                                "icon": "note",
+                                "iconColour": "#FFEE58",
+                                "rulerColour": "#546E7A",
+                                "fontStyle": "italic",
+                                "fontWeight": "bold",
+                                "scheme": "glass"
                             }
                         },
                         "markdownDescription": "%todo-tree.configuration.highlights.customHighlight.markdownDescription%",
@@ -729,12 +835,29 @@
                                 },
                                 "hideFromActivityBar": {
                                     "type": "boolean"
+                                },
+                                "scheme": {
+                                    "type": "string",
+                                    "enum": [
+                                        "neon",
+                                        "glass"
+                                    ],
+                                    "description": "Pre-configured highlight scheme."
                                 }
                             }
                         }
                     },
                     "todo-tree.highlights.defaultHighlight": {
-                        "default": {},
+                        "default": {
+                            "type": "whole-line",
+                            "background": "#5C6BC066",
+                            "foreground": "#FFFFFF",
+                            "gutterIcon": true,
+                            "icon": "tag",
+                            "iconColour": "#5C6BC0",
+                            "rulerColour": "#5C6BC0",
+                            "rulerLane": "center"
+                        },
                         "markdownDescription": "%todo-tree.configuration.highlights.defaultHighlight.markdownDescription%",
                         "type": "object",
                         "properties": {
@@ -809,6 +932,14 @@
                             },
                             "hideFromActivityBar": {
                                 "type": "boolean"
+                            },
+                            "scheme": {
+                                "type": "string",
+                                "enum": [
+                                    "neon",
+                                    "glass"
+                                ],
+                                "description": "Pre-configured highlight scheme."
                             }
                         }
                     },
@@ -832,10 +963,10 @@
                             "white",
                             "black",
                             "black",
+                            "black",
                             "white",
                             "white",
-                            "white",
-                            "black"
+                            "white"
                         ],
                         "items": {
                             "type": "string"
@@ -885,7 +1016,7 @@
                         "type": "array"
                     },
                     "todo-tree.filtering.ignoreGitSubmodules": {
-                        "default": false,
+                        "default": true,
                         "markdownDescription": "%todo-tree.configuration.filtering.ignoreGitSubmodules.markdownDescription%",
                         "type": "boolean"
                     },
@@ -950,7 +1081,7 @@
                         "type": "boolean"
                     },
                     "todo-tree.tree.disableCompactFolders": {
-                        "default": false,
+                        "default": true,
                         "markdownDescription": "%todo-tree.configuration.tree.disableCompactFolders.markdownDescription%",
                         "type": "boolean"
                     },
@@ -1022,7 +1153,7 @@
                         "type": "boolean"
                     },
                     "todo-tree.tree.showCountsInTree": {
-                        "default": false,
+                        "default": true,
                         "markdownDescription": "%todo-tree.configuration.tree.showCountsInTree.markdownDescription%",
                         "type": "boolean"
                     },
@@ -1062,17 +1193,17 @@
                         "type": "boolean"
                     },
                     "todo-tree.tree.tagsOnly": {
-                        "default": false,
+                        "default": true,
                         "markdownDescription": "%todo-tree.configuration.tree.tagsOnly.markdownDescription%",
                         "type": "boolean"
                     },
                     "todo-tree.tree.tooltipFormat": {
-                        "default": "${filepath}, line ${line}",
+                        "default": "${tag}: ${afterOrBefore}  — ${filepath}, line ${line}",
                         "markdownDescription": "%todo-tree.configuration.tree.tooltipFormat.markdownDescription%",
                         "type": "string"
                     },
                     "todo-tree.tree.trackFile": {
-                        "default": true,
+                        "default": false,
                         "markdownDescription": "%todo-tree.configuration.tree.trackFile.markdownDescription%",
                         "type": "boolean"
                     }
@@ -1089,7 +1220,7 @@
                         "type": "boolean"
                     },
                     "todo-tree.tree.buttons.scanMode": {
-                        "default": false,
+                        "default": true,
                         "markdownDescription": "%todo-tree.configuration.tree.buttons.scanMode.markdownDescription%",
                         "type": "boolean"
                     },
@@ -1104,7 +1235,7 @@
                         "type": "boolean"
                     },
                     "todo-tree.tree.buttons.groupBySubTag": {
-                        "default": false,
+                        "default": true,
                         "markdownDescription": "%todo-tree.configuration.tree.buttons.groupBySubTag.markdownDescription%",
                         "type": "boolean"
                     },
@@ -1189,9 +1320,9 @@
         ]
     },
     "__metadata": {
-        "id": "261cac81-cd7b-4555-bb41-0c2d2bcd3e70",
-        "publisherId": "d4906d2e-f2ee-492d-9c7c-02b6160599ec",
-        "publisherDisplayName": "Gruntfuggly"
+        "id": "taskvision",
+        "publisherId": "Yuki-zik",
+        "publisherDisplayName": "Yuki-zik"
     },
     "dependencies": {
         "@primer/octicons": "^17.0.0",
