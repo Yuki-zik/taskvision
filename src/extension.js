@@ -1410,16 +1410,19 @@ function activate(context) {
                             {
                                 label: '$(symbol-key) Tag Only',
                                 detail: '仅高亮标签关键词 (如 TODO)',
+                                description: (!tagConfig.type || tagConfig.type === 'tag') ? '$(check)' : '',
                                 value: 'tag'
                             },
                             {
                                 label: '$(symbol-text) Tag + Content',
                                 detail: '高亮标签到行尾内容',
+                                description: (tagConfig.type === 'text') ? '$(check)' : '',
                                 value: 'text'
                             },
                             {
                                 label: '$(symbol-file) Whole Line',
                                 detail: '整行高亮',
+                                description: (tagConfig.type === 'whole-line') ? '$(check)' : '',
                                 value: 'whole-line'
                             }
                         ];
@@ -1465,6 +1468,12 @@ function activate(context) {
                             { label: '$(rocket) rocket', value: 'rocket' },
                             { label: '$(zap) zap', value: 'zap' }
                         ];
+
+                        iconItems.forEach(item => {
+                            if (item.value === tagConfig.icon) {
+                                item.description = '$(check)';
+                            }
+                        });
                         vscode.window.showQuickPick(iconItems, {
                             placeHolder: '为 ' + node.tag + ' 选择图标'
                         }).then(function (icon) {
@@ -1477,24 +1486,28 @@ function activate(context) {
                             {
                                 label: '$(bold) Bold',
                                 detail: '加粗',
+                                description: (tagConfig.fontWeight === 'bold' && tagConfig.fontStyle !== 'italic') ? '$(check)' : '',
                                 fontWeight: 'bold',
                                 fontStyle: 'normal'
                             },
                             {
                                 label: '$(italic) Italic',
                                 detail: '斜体',
+                                description: (tagConfig.fontWeight !== 'bold' && tagConfig.fontStyle === 'italic') ? '$(check)' : '',
                                 fontWeight: 'normal',
                                 fontStyle: 'italic'
                             },
                             {
                                 label: '$(bold) Bold + Italic',
                                 detail: '加粗斜体',
+                                description: (tagConfig.fontWeight === 'bold' && tagConfig.fontStyle === 'italic') ? '$(check)' : '',
                                 fontWeight: 'bold',
                                 fontStyle: 'italic'
                             },
                             {
                                 label: '$(symbol-text) Normal',
                                 detail: '默认',
+                                description: (!tagConfig.fontWeight && !tagConfig.fontStyle) ? '$(check)' : '',
                                 fontWeight: 'normal',
                                 fontStyle: 'normal'
                             }

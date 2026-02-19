@@ -1,0 +1,33 @@
+--- Testing getDecoration("TODO") ---
+[TaskVision] getDecoration options for "TODO":
+[Mock] created decoration type with:
+{
+  "borderRadius": "6px",
+  "isWholeLine": true,
+  "light": {
+    "backgroundColor": "rgba(#42A5F5,15)",
+    "fontWeight": "bold",
+    "border": "1px solid rgba(#42A5F5,40)"
+  },
+  "dark": {
+    "backgroundColor": "rgba(#42A5F5,15)",
+    "fontWeight": "bold",
+    "border": "1px solid rgba(#42A5F5,40)"
+  }
+}
+[TaskVision] Secondary options for "TODO":
+[Mock] created decoration type with:
+{
+  "light": {
+    "color": "#42A5F5",
+    "textDecoration": "none; text-shadow: 0 0 5px #42A5F5, 0 0 10px #42A5F5, 0 0 15px #42A5F5; font-weight: bold;"
+  },
+  "dark": {
+    "color": "#42A5F5",
+    "textDecoration": "none; text-shadow: 0 0 5px #42A5F5, 0 0 10px #42A5F5, 0 0 15px #42A5F5; font-weight: bold;"
+  },
+  "isWholeLine": false,
+  "rangeBehavior": 1
+}
+Primary created.
+Secondary created.

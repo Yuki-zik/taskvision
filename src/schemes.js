@@ -54,16 +54,16 @@ function applyScheme(options, schemeName, lightBaseColor, darkBaseColor, type) {
         }
         secondaryOptions.isWholeLine = false;
 
-        // Primary: Glass Background + Text Color (Fixes Issue 2: Gray Text)
-        // We ensure the text color matches the base color (or specific theme color if available)
-        // explicitly, so it doesn't fall back to editor default.
+        // Primary: Glass Background ONLY (Fixes Issue 2: Gray Text / Bleed)
+        // We REMOVE the text color from here so it doesn't bleed to the whole line.
+        // The text color will be handled by the secondary decoration.
         if (options.light) {
             delete options.light.fontWeight;
-            if (lightBaseColor) options.light.color = lightBaseColor;
+            if (options.light.color) delete options.light.color;
         }
         if (options.dark) {
             delete options.dark.fontWeight;
-            if (darkBaseColor) options.dark.color = darkBaseColor;
+            if (options.dark.color) delete options.dark.color;
         }
 
         // Secondary: Neon Text only, NO background (Fixes Issue 1: Clean Separation)
@@ -79,7 +79,7 @@ function applyScheme(options, schemeName, lightBaseColor, darkBaseColor, type) {
 
         // Apply Glass to Primary
         if (hasGlass) {
-            var glassOpacity = 15;
+            var glassOpacity = 20; // Increased visibility for whole-line background
             var glassBorderOpacity = 40;
             if (lightBaseColor) {
                 options.light.backgroundColor = utils.hexToRgba(lightBaseColor, glassOpacity);
@@ -125,6 +125,7 @@ function applyScheme(options, schemeName, lightBaseColor, darkBaseColor, type) {
     }
 
     // ... (Neon effect logic)
+    // ... (Neon effect logic)
     if (hasNeon) {
         var neonOpacity = hasGlass ? 0 : 10;
         var neonBorderOpacity = hasGlass ? 0 : 50;
@@ -134,27 +135,59 @@ function applyScheme(options, schemeName, lightBaseColor, darkBaseColor, type) {
                 options.light.backgroundColor = utils.hexToRgba(lightBaseColor, neonOpacity);
                 options.light.border = "1px solid " + utils.hexToRgba(lightBaseColor, neonBorderOpacity);
             }
-            options.light.color = lightBaseColor;
-            options.light.textDecoration = `none; text-shadow: 0 0 5px ${lightBaseColor}, 0 0 10px ${lightBaseColor}, 0 0 15px ${lightBaseColor}; font-weight: bold;`;
+            // For whole-line, DO NOT apply color to primary (options)
+            if (!options.isWholeLine) {
+                options.light.color = lightBaseColor;
+                options.light.textDecoration = `none; text-shadow: 0 0 5px ${lightBaseColor}, 0 0 10px ${lightBaseColor}, 0 0 15px ${lightBaseColor}; font-weight: bold;`;
+            } else {
+                // But we DO need to return a secondary options with the color/effect?
+                // Wait, highlights.js creates simpleSecondary for whole-line.
+                // If we return undefined here, simpleSecondary is used.
+                // But applyScheme is void? No, it returns secondaryOptions (undefined by default).
+                // If we want Scheme Effects on whole-line, we need to return them as secondary.
+                if (!secondaryOptions) secondaryOptions = { light: {}, dark: {}, isWholeLine: false, rangeBehavior: 1 };
+                secondaryOptions.light.color = lightBaseColor;
+                secondaryOptions.light.textDecoration = `none; text-shadow: 0 0 5px ${lightBaseColor}, 0 0 10px ${lightBaseColor}, 0 0 15px ${lightBaseColor}; font-weight: bold;`;
+            }
         }
         if (darkBaseColor) {
             if (!hasGlass) {
                 options.dark.backgroundColor = utils.hexToRgba(darkBaseColor, neonOpacity);
                 options.dark.border = "1px solid " + utils.hexToRgba(darkBaseColor, neonBorderOpacity);
             }
-            options.dark.color = darkBaseColor;
-            options.dark.textDecoration = `none; text-shadow: 0 0 5px ${darkBaseColor}, 0 0 10px ${darkBaseColor}, 0 0 15px ${darkBaseColor}; font-weight: bold;`;
+            if (!options.isWholeLine) {
+                options.dark.color = darkBaseColor;
+                options.dark.textDecoration = `none; text-shadow: 0 0 5px ${darkBaseColor}, 0 0 10px ${darkBaseColor}, 0 0 15px ${darkBaseColor}; font-weight: bold;`;
+            } else {
+                if (!secondaryOptions) secondaryOptions = { light: {}, dark: {}, isWholeLine: false, rangeBehavior: 1 }; // Ensure exists
+                secondaryOptions.dark.color = darkBaseColor;
+                secondaryOptions.dark.textDecoration = `none; text-shadow: 0 0 5px ${darkBaseColor}, 0 0 10px ${darkBaseColor}, 0 0 15px ${darkBaseColor}; font-weight: bold;`;
+            }
         }
     } else if (hasGlass) {
         if (lightBaseColor) {
-            options.light.color = lightBaseColor;
-            options.light.textDecoration = "none; font-weight: bold;";
+            if (!options.isWholeLine) {
+                options.light.color = lightBaseColor;
+                options.light.textDecoration = "none; font-weight: bold;";
+            } else {
+                if (!secondaryOptions) secondaryOptions = { light: {}, dark: {}, isWholeLine: false, rangeBehavior: 1 };
+                secondaryOptions.light.color = lightBaseColor;
+                secondaryOptions.light.textDecoration = "none; font-weight: bold;";
+            }
         }
         if (darkBaseColor) {
-            options.dark.color = darkBaseColor;
-            options.dark.textDecoration = "none; font-weight: bold;";
+            if (!options.isWholeLine) {
+                options.dark.color = darkBaseColor;
+                options.dark.textDecoration = "none; font-weight: bold;";
+            } else {
+                if (!secondaryOptions) secondaryOptions = { light: {}, dark: {}, isWholeLine: false, rangeBehavior: 1 };
+                secondaryOptions.dark.color = darkBaseColor;
+                secondaryOptions.dark.textDecoration = "none; font-weight: bold;";
+            }
         }
     }
+
+    return secondaryOptions;
 }
 
 module.exports.applyScheme = applyScheme;

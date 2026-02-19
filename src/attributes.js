@@ -18,7 +18,7 @@ function getAttribute(tag, attribute, defaultValue, ignoreDefaultHighlight) {
             var regex = new RegExp(t, flags);
 
             if (tag.match(regex)) {
-                result = customHighlight[tag];
+                result = customHighlight[t];
             }
         });
         return result;
