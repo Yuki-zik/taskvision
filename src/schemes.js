@@ -45,28 +45,37 @@ function applyScheme(options, schemeName, lightBaseColor, darkBaseColor, type) {
         options.isWholeLine = true;
 
         // Create secondary options for the text effect (keeps isWholeLine=false)
-        secondaryOptions = JSON.parse(JSON.stringify(options));
+        secondaryOptions = Object.assign({}, options);
+        if (options.light) {
+            secondaryOptions.light = Object.assign({}, options.light);
+        }
+        if (options.dark) {
+            secondaryOptions.dark = Object.assign({}, options.dark);
+        }
         secondaryOptions.isWholeLine = false;
 
-        // Primary: Glass Background only, STRICTLY NO text styling
-        // We delete properties so they simply don't effect rendering at all.
-        // No color, no font style, no text decoration. Pure background/border.
+        // Primary: Glass Background + Text Color (Fixes Issue 2: Gray Text)
+        // We ensure the text color matches the base color (or specific theme color if available)
+        // explicitly, so it doesn't fall back to editor default.
         if (options.light) {
             delete options.light.fontWeight;
-            delete options.light.fontStyle;
-            delete options.light.color;
-            delete options.light.textDecoration;
+            if (lightBaseColor) options.light.color = lightBaseColor;
         }
         if (options.dark) {
             delete options.dark.fontWeight;
-            delete options.dark.fontStyle;
-            delete options.dark.color;
-            delete options.dark.textDecoration;
+            if (darkBaseColor) options.dark.color = darkBaseColor;
         }
 
-        // Secondary: Neon Text only, NO background
-        if (secondaryOptions.light) { secondaryOptions.light.backgroundColor = 'transparent'; secondaryOptions.light.border = 'none'; }
-        if (secondaryOptions.dark) { secondaryOptions.dark.backgroundColor = 'transparent'; secondaryOptions.dark.border = 'none'; }
+        // Secondary: Neon Text only, NO background (Fixes Issue 1: Clean Separation)
+        if (secondaryOptions.light) {
+            secondaryOptions.light.backgroundColor = 'transparent';
+            secondaryOptions.light.border = 'none';
+            // Secondary should have the glow (textDecoration) and color
+        }
+        if (secondaryOptions.dark) {
+            secondaryOptions.dark.backgroundColor = 'transparent';
+            secondaryOptions.dark.border = 'none';
+        }
 
         // Apply Glass to Primary
         if (hasGlass) {

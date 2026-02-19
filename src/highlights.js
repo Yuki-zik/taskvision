@@ -55,7 +55,10 @@ function clearCache() {
 
 function getDecoration(tag) {
     if (decorationCache[tag]) {
-        return decorationCache[tag];
+        return {
+            primary: decorationCache[tag],
+            secondary: decorationCache[tag + '_secondary']
+        };
     }
 
     var foregroundColour = attributes.getForeground(tag);
