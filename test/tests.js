@@ -1,4 +1,5 @@
 var os = require('os');
+var path = require('path');
 var strftime = require('fast-strftime');
 var utils = require('../src/utils.js');
 var attributes = require('../src/attributes.js');
@@ -171,11 +172,12 @@ QUnit.test("utils.extractTag returns entire text if regex is empty", function (a
     testConfig.regexSource = "";
     utils.init(testConfig);
 
-    result = utils.extractTag("                before = text;       // XXX  stuff  ", 1);
+    var input = "                before = text;       // XXX  stuff  ";
+    result = utils.extractTag(input, 1);
 
-    assert.equal(result.withoutTag, "                before = text; // TODO stuff  ");
-    assert.equal(result.before, "                before = text; // TODO stuff  ");
-    assert.equal(result.after, "                before = text; // TODO stuff  ");
+    assert.equal(result.withoutTag, input);
+    assert.equal(result.before, input);
+    assert.equal(result.after, input);
 });
 
 QUnit.test("utils.extractTag returns expected result if regex does not contain $TAGS", function (assert) {
@@ -205,6 +207,20 @@ QUnit.test("utils.extractTag works with multiline", function (assert) {
     var result = utils.extractTag("before\nTODO\nafter");
     assert.equal(result.tag, "TODO");
     assert.equal(result.withoutTag, "after");
+});
+
+QUnit.test("utils.extractTag supports markdown checkbox variants with spaces", function (assert) {
+    var testConfig = stubs.getTestConfig();
+    testConfig.tagList = ["[ ]", "[x]"];
+    utils.init(testConfig);
+
+    var checked = utils.extractTag("// [x] done");
+    assert.equal(checked.tag, "[x]");
+    assert.equal(checked.withoutTag, "done");
+
+    var unchecked = utils.extractTag("// [ ] todo");
+    assert.equal(unchecked.tag, "[ ]");
+    assert.equal(unchecked.withoutTag, "todo");
 });
 
 QUnit.test("utils.getRegexSource returns the regex source without expanded tags if they aren't present", function (assert) {
@@ -405,20 +421,23 @@ QUnit.test("utils.isHidden", function (assert) {
 
 QUnit.test("utils.formatExportPath inserts date and time fields", function (assert) {
     var expectedDateTime = strftime("%F-%T", new Date(1307472705067));
-    assert.equal(utils.formatExportPath("todo-tree-%F-%T", new Date(1307472705067)), "todo-tree-" + expectedDateTime);
+    assert.equal(utils.formatExportPath("taskvision-%F-%T", new Date(1307472705067)), "taskvision-" + expectedDateTime);
     expectedDateTime = strftime("%Y%m%d-%H%M", new Date(1307472705067));
-    assert.equal(utils.formatExportPath("todo-tree-%Y%m%d-%H%M-export", new Date(1307472705067)), "todo-tree-" + expectedDateTime + "-export");
+    assert.equal(utils.formatExportPath("taskvision-%Y%m%d-%H%M-export", new Date(1307472705067)), "taskvision-" + expectedDateTime + "-export");
 });
 
 QUnit.test("utils.expandTilde replaces tilde with home folder", function (assert) {
     var homeFolder = os.homedir();
-    assert.equal(utils.expandTilde("~/"), homeFolder + "/");
+    assert.equal(utils.expandTilde("~/"), path.join(homeFolder, "/"));
 });
 
 QUnit.test("utils.formatExportPath expands tilde", function (assert) {
     var homeFolder = os.homedir();
     var expectedDateTime = strftime("%A", new Date(1307472705067));
-    assert.equal(utils.formatExportPath("~/todo-tree-%A", new Date(1307472705067)), homeFolder + "/todo-tree-" + expectedDateTime);
+    assert.equal(
+        utils.formatExportPath("~/taskvision-%A", new Date(1307472705067)),
+        path.join(homeFolder, "/taskvision-" + expectedDateTime)
+    );
 });
 
 QUnit.test("utils.replaceEnvironmentVariables", function (assert) {

@@ -1,0 +1,263 @@
+14: 1   | {
+20: 0   | };
+22: 0   | var decorations = {};
+23: 0   | var highlightTimer = {};
+27: 1   | function init(context_, debug_) {
+31: 0   | }
+33: 1   | function applyOpacity(colour, opacity) {
+34: 2   | if (utils.isHexColour(colour)) {
+36: 1   | }
+37: 2   | else if (utils.isRgbColour(colour)) {
+38: 3   | if (opacity !== 100) {
+40: 2   | }
+41: 1   | }
+44: 0   | }
+46: 0   | var decorationCache = {};
+48: 1   | function clearCache() {
+49: 2   | Object.keys(decorationCache).forEach(function (key) {
+50: 3   | if (decorationCache[key]) {
+52: 2   | }
+53: 1   | });
+54: 1   | decorationCache = {};
+57: 2   | Object.keys(decorations).forEach(function (editorId) {
+58: 3   | if (decorations[editorId]) {
+59: 4   | decorations[editorId].forEach(function (decoration) {
+61: 3   | });
+62: 2   | }
+63: 1   | });
+65: 1   | decorations = {};
+66: 0   | }
+68: 1   | function getDecoration(tag) {
+69: 2   | if (decorationCache[tag]) {
+70: 3   | return {
+73: 2   | };
+74: 1   | }
+86: 2   | if (foregroundColour) {
+87: 3   | if (foregroundColour.match(/(foreground|background)/i)) {
+90: 2   | }
+91: 3   | else if (!utils.isValidColour(foregroundColour)) {
+94: 2   | }
+95: 1   | }
+97: 2   | if (backgroundColour) {
+98: 3   | if (backgroundColour.match(/(foreground|background)/i)) {
+101: 2   | }
+102: 3   | else if (!utils.isValidColour(backgroundColour)) {
+105: 2   | }
+109: 1   | }
+111: 2   | if (lightForegroundColour === undefined && utils.isHexColour(lightBackgroundColour)) {
+113: 1   | }
+114: 2   | if (darkForegroundColour === undefined && utils.isHexColour(darkBackgroundColour)) {
+116: 1   | }
+118: 2   | if (lightBackgroundColour === undefined && lightForegroundColour === undefined) {
+121: 1   | }
+123: 2   | if (darkBackgroundColour === undefined && darkForegroundColour === undefined) {
+126: 1   | }
+129: 2   | if (isNaN(parseInt(lane))) {
+131: 1   | }
+136: 2   | var decorationOptions = {
+140: 1   | };
+142: 2   | if (lane !== undefined) {
+146: 3   | if (utils.isThemeColour(rulerColour)) {
+148: 2   | }
+149: 3   | else {
+151: 2   | }
+155: 1   | }
+158: 2   | if (type === 'whole-line') {
+161: 2   | decorationOptions.light = { backgroundColor: lightBackgroundColour };
+162: 2   | decorationOptions.dark = { backgroundColor: darkBackgroundColour };
+165: 3   | if (lightForegroundColour || darkForegroundColour || fontWeight || fontStyle || textDecoration) {
+166: 4   | var secondaryOptions = {
+169: 4   | light: { color: lightForegroundColour, fontWeight: fontWeight, fontStyle: fontStyle, textDecoration: textDecoration },
+170: 4   | dark: { color: darkForegroundColour, fontWeight: fontWeight, fontStyle: fontStyle, textDecoration: textDecoration }
+171: 3   | };
+175: 2   | }
+176: 2   | } else {
+177: 2   | decorationOptions.light = { backgroundColor: lightBackgroundColour, color: lightForegroundColour, fontWeight: fontWeight, fontStyle: fontStyle, textDecoration: textDecoration };
+178: 2   | decorationOptions.dark = { backgroundColor: darkBackgroundColour, color: darkForegroundColour, fontWeight: fontWeight, fontStyle: fontStyle, textDecoration: textDecoration };
+179: 1   | }
+184: 2   | if (scheme) {
+187: 3   | var resolveSchemeBaseColor = function (fgColor, bgColor) {
+191: 4   | if (iconCol && typeof iconCol === 'string' && iconCol.startsWith('#')) {
+196: 3   | }
+198: 4   | if (bgColor && typeof bgColor === 'string' && bgColor.startsWith('#')) {
+202: 3   | }
+204: 4   | if (fgColor && typeof fgColor === 'string' && fgColor.startsWith('#')) {
+206: 5   | if (upper !== '#FFFFFF' && upper !== '#FFF' && upper !== '#000000' && upper !== '#000') {
+208: 4   | }
+209: 3   | }
+211: 2   | };
+218: 3   | if (schemeSecondary) {
+220: 2   | }
+224: 3   | if (type === 'whole-line') {
+227: 2   | }
+228: 1   | }
+233: 2   | if (type === 'whole-line') {
+235: 1   | }
+237: 2   | var result = {
+239: 1   | };
+242: 2   | if (secondaryOptions) {
+247: 1   | }
+253: 2   | if (type === 'text' || type === 'tag' || type === 'none' || type === undefined) {
+267: 3   | if (commentLightColor || commentDarkColor) {
+268: 4   | var commentOptions = {
+271: 5   | light: {
+277: 4   | },
+278: 5   | dark: {
+284: 4   | }
+285: 3   | };
+292: 2   | }
+293: 1   | }
+296: 0   | }
+298: 1   | function getRulerColour(tag, defaultColour) {
+300: 2   | if (colour === undefined) {
+302: 1   | }
+304: 0   | }
+306: 1   | function getRulerLane(tag) {
+308: 2   | if (lane === undefined) {
+310: 1   | }
+312: 0   | }
+314: 1   | function getOpacity(tag) {
+316: 2   | if (opacity === undefined) {
+318: 1   | }
+320: 0   | }
+322: 1   | function getRulerOpacity(tag) {
+324: 2   | if (opacity === undefined) {
+326: 1   | }
+328: 0   | }
+330: 1   | function getBorderRadius(tag) {
+332: 2   | if (borderRadius === undefined) {
+334: 1   | }
+336: 0   | }
+338: 1   | function getFontStyle(tag) {
+340: 0   | }
+342: 1   | function getFontWeight(tag) {
+344: 0   | }
+346: 1   | function getTextDecoration(tag) {
+348: 0   | }
+350: 1   | function showInGutter(tag) {
+352: 0   | }
+354: 1   | function getType(tag) {
+356: 0   | }
+358: 1   | function editorId(editor) {
+360: 2   | if (editor.document) {
+362: 1   | }
+363: 2   | if (editor.viewColumn) {
+365: 1   | }
+367: 0   | }
+369: 1   | function highlight(editor) {
+371: 2   | try {
+372: 3   | function addDecoration(startPos, endPos) {
+373: 3   | var decoration = { range: new vscode.Range(startPos, endPos) };
+374: 4   | if (documentHighlights[tag] === undefined) {
+376: 3   | }
+380: 4   | if (secondaryHighlights[tag] === undefined) {
+382: 3   | }
+384: 2   | }
+386: 3   | function addTagSpecificDecoration(tagRange, fullRange) {
+387: 4   | if (documentHighlights[tag] === undefined) {
+389: 3   | }
+390: 3   | documentHighlights[tag].push({ range: fullRange });
+392: 4   | if (secondaryHighlights[tag] === undefined) {
+394: 3   | }
+395: 3   | secondaryHighlights[tag].push({ range: tagRange });
+396: 2   | }
+398: 2   | var documentHighlights = {};
+399: 2   | var secondaryHighlights = {}; // New: Track secondary (foreground/glow) highlights separately
+400: 2   | var commentHighlights = {}; // New: Track comment text highlights separately
+401: 2   | var subTagHighlights = {};
+404: 3   | if (editor) {
+407: 4   | if (decorations[id]) {
+408: 5   | decorations[id].forEach(function (decoration) {
+410: 4   | });
+411: 3   | }
+415: 4   | if (vscode.workspace.getConfiguration('todo-tree.highlights').get('enabled', true)) {
+428: 5   | while ((match = regex.exec(text)) !== null) {
+434: 6   | if (extracted.tag) {
+437: 5   | }
+438: 6   | if (extracted.tag && extracted.tag.length > 0) {
+443: 5   | }
+444: 6   | else {
+446: 5   | }
+449: 6   | if (type !== 'none') {
+454: 7   | if (type === 'text-and-comment') {
+458: 6   | }
+459: 7   | else if (type === 'text') {
+463: 6   | }
+464: 7   | else if (type !== undefined && type.indexOf(captureGroupArgument + ":") === 0) {
+465: 8   | type.substring(type.indexOf(':') + 1).split(',').map(function (groupText) {
+467: 9   | if (match.indices && match.indices[group]) {
+471: 8   | }
+472: 7   | });
+473: 6   | }
+474: 7   | else if (type === 'tag-and-subTag' || type === 'tag-and-subtag') {
+480: 8   | if (subTagMatch !== null && subTagMatch.length > 1) {
+482: 9   | if (customHighlight[subTag] !== undefined) {
+484: 10   | if (subTagOffset !== -1) {
+487: 10   | var subTagDecoration = { range: new vscode.Range(subTagStartPos, subTagEndPos) };
+488: 11   | if (subTagHighlights[subTag] === undefined) {
+490: 10   | }
+492: 9   | }
+493: 8   | }
+494: 7   | }
+495: 6   | }
+496: 7   | else if (type === 'whole-line') {
+505: 5   | var blockConnectors = ['*/', '-->', '}}'];
+509: 6   | blockConnectors.forEach(function (term) {
+511: 7   | if (idx !== -1 && (minIndex === -1 || idx < minIndex)) {
+514: 6   | }
+515: 5   | });
+517: 6   | if (minIndex !== -1) {
+519: 5   | }
+526: 4   | }
+527: 5   | else if (type === 'line') {
+532: 4   | }
+533: 5   | else {
+539: 6   | if ((type === 'text' || type === 'tag' || type === 'none' || type === undefined) && extracted.tag) { // Check extracted.tag to ensure we have a valid tag match
+547: 4   | var blockConnectors = ['*/', '-->', '}}'];
+551: 5   | blockConnectors.forEach(function (term) {
+553: 6   | if (idx !== -1 && (minIndex === -1 || idx < minIndex)) {
+563: 5   | }
+564: 4   | });
+566: 5   | if (minIndex !== -1) {
+568: 4   | }
+573: 5   | if (commentEndPos.isAfter(endPos)) {
+574: 5   | var commentDecoration = { range: new vscode.Range(endPos, commentEndPos) };
+575: 6   | if (commentHighlights[tag] === undefined) {
+577: 5   | }
+579: 4   | }
+580: 3   | }
+581: 2   | }
+582: 1   | }
+583: 0   | }
+588: 1   | Object.keys(documentHighlights).forEach(function (tag) {
+589: 2   | try {
+593: 3   | if (decorationResult.primary) {
+596: 3   | } else if (decorationResult && !decorationResult.primary && !decorationResult.secondary) {
+598: 3   | // However, we know getDecoration returns {primary: ...} now.
+600: 4   | if (decorationResult.key) { // check for verify existence of VSCode decoration object property or similar?
+604: 3   | }
+605: 2   | }
+607: 3   | if (decorationResult.secondary) {
+612: 2   | }
+615: 3   | if (decorationResult.comment && commentHighlights[tag]) {
+619: 2   | }
+622: 2   | } catch (tagError) {
+624: 1   | }
+625: 0   | });
+627: 1   | Object.keys(subTagHighlights).forEach(function (subTag) {
+629: 2   | if (decoration.primary) { // Handle object vs property
+632: 2   | } else {
+635: 1   | }
+636: 0   | });
+637: -1   | }
+638: -1   | } catch (e) {
+640: 0   | if (debug) {
+642: -1   | }
+643: -2   | }
+644: -3   | }
+646: -2   | function triggerHighlight(editor) {
+648: -1   | if (editor) {
+651: 0   | if (highlightTimer[id]) {
+653: -1   | }
+655: -2   | }
+656: -3   | }

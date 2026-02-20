@@ -1,7 +1,7 @@
 {
     "name": "taskvision",
     "displayName": "TaskVision",
-    "description": "Enhanced Todo Tree fork — task tracking with rich highlighting and custom tag support",
+    "description": "Enhanced TaskVision fork — task tracking with rich highlighting and custom tag support",
     "keywords": [
         "todo",
         "task",
@@ -9,9 +9,9 @@
         "taskvision",
         "multi-root ready"
     ],
-    "version": "1.0.1",
+    "version": "2.0.0",
     "license": "MIT",
-    "icon": "resources/todo-tree.png",
+    "icon": "resources/taskvision.png",
     "publisher": "A-Znk",
     "engines": {
         "vscode": "^1.72.0"
@@ -37,531 +37,531 @@
         "viewsContainers": {
             "activitybar": [
                 {
-                    "id": "todo-tree-container",
-                    "title": "%todo-tree.activitybar.title%",
-                    "icon": "resources/todo-tree-container.svg"
+                    "id": "taskvision-container",
+                    "title": "%taskvision.activitybar.title%",
+                    "icon": "resources/taskvision-container.svg"
                 }
             ]
         },
         "views": {
-            "todo-tree-container": [
+            "taskvision-container": [
                 {
-                    "id": "todo-tree-view",
-                    "name": "%todo-tree.container.name%",
-                    "when": "!todo-tree-is-empty"
+                    "id": "taskvision-view",
+                    "name": "%taskvision.container.name%",
+                    "when": "!taskvision-is-empty"
                 }
             ]
         },
         "menus": {
             "view/title": [
                 {
-                    "command": "todo-tree.exportTree",
-                    "when": "view =~ /todo-tree/ && todo-tree-show-export-button == true",
+                    "command": "taskvision.exportTree",
+                    "when": "view =~ /taskvision/ && taskvision-show-export-button == true",
                     "group": "navigation@1"
                 },
                 {
-                    "command": "todo-tree.reveal",
-                    "when": "view =~ /todo-tree/ && todo-tree-tags-only == false && todo-tree-show-reveal-button == true",
+                    "command": "taskvision.reveal",
+                    "when": "view =~ /taskvision/ && taskvision-tags-only == false && taskvision-show-reveal-button == true",
                     "group": "navigation@2"
                 },
                 {
-                    "command": "todo-tree.scanOpenFilesOnly",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode == 'workspace only' && todo-tree-show-scan-mode-button == true",
+                    "command": "taskvision.scanOpenFilesOnly",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode == 'workspace only' && taskvision-show-scan-mode-button == true",
                     "group": "navigation@3"
                 },
                 {
-                    "command": "todo-tree.scanCurrentFileOnly",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode == 'open files' && todo-tree-show-scan-mode-button == true",
+                    "command": "taskvision.scanCurrentFileOnly",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode == 'open files' && taskvision-show-scan-mode-button == true",
                     "group": "navigation@3"
                 },
                 {
-                    "command": "todo-tree.scanWorkspaceAndOpenFiles",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode == 'current file' && todo-tree-show-scan-mode-button == true",
+                    "command": "taskvision.scanWorkspaceAndOpenFiles",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode == 'current file' && taskvision-show-scan-mode-button == true",
                     "group": "navigation@3"
                 },
                 {
-                    "command": "todo-tree.scanWorkspaceOnly",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode == 'workspace' && todo-tree-show-scan-mode-button == true",
+                    "command": "taskvision.scanWorkspaceOnly",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode == 'workspace' && taskvision-show-scan-mode-button == true",
                     "group": "navigation@3"
                 },
                 {
-                    "command": "todo-tree.showFlatView",
-                    "when": "view =~ /todo-tree/ && todo-tree-flat == false && todo-tree-tags-only == false && todo-tree-show-view-style-button == true",
+                    "command": "taskvision.showFlatView",
+                    "when": "view =~ /taskvision/ && taskvision-flat == false && taskvision-tags-only == false && taskvision-show-view-style-button == true",
                     "group": "navigation@4"
                 },
                 {
-                    "command": "todo-tree.showTagsOnlyView",
-                    "when": "view =~ /todo-tree/ && todo-tree-flat == true && todo-tree-tags-only == false && todo-tree-show-view-style-button == true",
+                    "command": "taskvision.showTagsOnlyView",
+                    "when": "view =~ /taskvision/ && taskvision-flat == true && taskvision-tags-only == false && taskvision-show-view-style-button == true",
                     "group": "navigation@4"
                 },
                 {
-                    "command": "todo-tree.showTreeView",
-                    "when": "view =~ /todo-tree/ && todo-tree-flat == false && todo-tree-tags-only == true && todo-tree-show-view-style-button == true",
+                    "command": "taskvision.showTreeView",
+                    "when": "view =~ /taskvision/ && taskvision-flat == false && taskvision-tags-only == true && taskvision-show-view-style-button == true",
                     "group": "navigation@4"
                 },
                 {
-                    "command": "todo-tree.groupByTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-tag == false && todo-tree-show-group-by-tag-button == true",
+                    "command": "taskvision.groupByTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-tag == false && taskvision-show-group-by-tag-button == true",
                     "group": "navigation@5"
                 },
                 {
-                    "command": "todo-tree.ungroupByTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-tag == true && todo-tree-show-group-by-tag-button == true",
+                    "command": "taskvision.ungroupByTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-tag == true && taskvision-show-group-by-tag-button == true",
                     "group": "navigation@5"
                 },
                 {
-                    "command": "todo-tree.groupBySubTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-sub-tag == false && todo-tree-show-group-by-sub-tag-button == true && todo-tree-has-sub-tags == true",
+                    "command": "taskvision.groupBySubTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-sub-tag == false && taskvision-show-group-by-sub-tag-button == true && taskvision-has-sub-tags == true",
                     "group": "navigation@6"
                 },
                 {
-                    "command": "todo-tree.ungroupBySubTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-sub-tag == true && todo-tree-show-group-by-sub-tag-button == true && todo-tree-has-sub-tags == true",
+                    "command": "taskvision.ungroupBySubTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-sub-tag == true && taskvision-show-group-by-sub-tag-button == true && taskvision-has-sub-tags == true",
                     "group": "navigation@6"
                 },
                 {
-                    "command": "todo-tree.filter",
-                    "when": "view =~ /todo-tree/ && todo-tree-filtered == false && todo-tree-show-filter-button == true",
+                    "command": "taskvision.filter",
+                    "when": "view =~ /taskvision/ && taskvision-filtered == false && taskvision-show-filter-button == true",
                     "group": "navigation@7"
                 },
                 {
-                    "command": "todo-tree.filterClear",
-                    "when": "view =~ /todo-tree/ && todo-tree-filtered == true && todo-tree-show-filter-button == true",
+                    "command": "taskvision.filterClear",
+                    "when": "view =~ /taskvision/ && taskvision-filtered == true && taskvision-show-filter-button == true",
                     "group": "navigation@7"
                 },
                 {
-                    "command": "todo-tree.refresh",
-                    "when": "view =~ /todo-tree/ && todo-tree-show-refresh-button == true",
+                    "command": "taskvision.refresh",
+                    "when": "view =~ /taskvision/ && taskvision-show-refresh-button == true",
                     "group": "navigation@8"
                 },
                 {
-                    "command": "todo-tree.expand",
-                    "when": "view =~ /todo-tree/ && todo-tree-expanded == false && todo-tree-show-expand-button == true",
+                    "command": "taskvision.expand",
+                    "when": "view =~ /taskvision/ && taskvision-expanded == false && taskvision-show-expand-button == true",
                     "group": "navigation@9"
                 },
                 {
-                    "command": "todo-tree.collapse",
-                    "when": "view =~ /todo-tree/ && todo-tree-expanded == true && todo-tree-show-expand-button == true",
+                    "command": "taskvision.collapse",
+                    "when": "view =~ /taskvision/ && taskvision-expanded == true && taskvision-show-expand-button == true",
                     "group": "navigation@9"
                 }
             ],
             "view/item/context": [
                 {
-                    "command": "todo-tree.filter",
-                    "when": "view =~ /todo-tree/ && todo-tree-filtered == false",
+                    "command": "taskvision.filter",
+                    "when": "view =~ /taskvision/ && taskvision-filtered == false",
                     "group": "1-filters@1"
                 },
                 {
-                    "command": "todo-tree.filterClear",
-                    "when": "view =~ /todo-tree/ && todo-tree-global-filter-active",
+                    "command": "taskvision.filterClear",
+                    "when": "view =~ /taskvision/ && taskvision-global-filter-active",
                     "group": "1-filters@2"
                 },
                 {
-                    "command": "todo-tree.excludeThisFolder",
-                    "when": "view =~ /todo-tree/ && viewItem == folder",
+                    "command": "taskvision.excludeThisFolder",
+                    "when": "view =~ /taskvision/ && viewItem == folder",
                     "group": "1-filters@3"
                 },
                 {
-                    "command": "todo-tree.excludeThisFile",
-                    "when": "view =~ /todo-tree/ && viewItem == file",
+                    "command": "taskvision.excludeThisFile",
+                    "when": "view =~ /taskvision/ && viewItem == file",
                     "group": "1-filters@4"
                 },
                 {
-                    "command": "todo-tree.showOnlyThisFolder",
-                    "when": "view =~ /todo-tree/ && viewItem == folder",
+                    "command": "taskvision.showOnlyThisFolder",
+                    "when": "view =~ /taskvision/ && viewItem == folder",
                     "group": "1-filters@5"
                 },
                 {
-                    "command": "todo-tree.showOnlyThisFolderAndSubfolders",
-                    "when": "view =~ /todo-tree/ && viewItem == folder",
+                    "command": "taskvision.showOnlyThisFolderAndSubfolders",
+                    "when": "view =~ /taskvision/ && viewItem == folder",
                     "group": "1-filters@6"
                 },
                 {
-                    "command": "todo-tree.removeFilter",
-                    "when": "view =~ /todo-tree/ && todo-tree-folder-filter-active",
+                    "command": "taskvision.removeFilter",
+                    "when": "view =~ /taskvision/ && taskvision-folder-filter-active",
                     "group": "1-filters@7"
                 },
                 {
-                    "command": "todo-tree.resetAllFilters",
-                    "when": "view =~ /todo-tree/ && todo-tree-folder-filter-active",
+                    "command": "taskvision.resetAllFilters",
+                    "when": "view =~ /taskvision/ && taskvision-folder-filter-active",
                     "group": "1-filters@8"
                 },
                 {
-                    "command": "todo-tree.toggleItemCounts",
-                    "when": "view =~ /todo-tree/",
+                    "command": "taskvision.toggleItemCounts",
+                    "when": "view =~ /taskvision/",
                     "group": "2-toggles"
                 },
                 {
-                    "command": "todo-tree.toggleBadges",
-                    "when": "view =~ /todo-tree/",
+                    "command": "taskvision.toggleBadges",
+                    "when": "view =~ /taskvision/",
                     "group": "2-toggles"
                 },
                 {
-                    "command": "todo-tree.customizeAppearance",
-                    "when": "view =~ /todo-tree/ && viewItem =~ /^(tag|todo)$/",
+                    "command": "taskvision.customizeAppearance",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|todo)$/",
                     "group": "3-scheme@1"
                 },
                 {
-                    "command": "todo-tree.setScheme",
-                    "when": "view =~ /todo-tree/ && viewItem =~ /^(tag|todo)$/",
+                    "command": "taskvision.setScheme",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|todo)$/",
                     "group": "3-scheme@2"
                 },
                 {
-                    "command": "todo-tree.toggleCompactFolders",
-                    "when": "view =~/todo-tree/ && todo-tree-can-toggle-compact-folders == true",
+                    "command": "taskvision.toggleCompactFolders",
+                    "when": "view =~/taskvision/ && taskvision-can-toggle-compact-folders == true",
                     "group": "2-toggles"
                 },
                 {
-                    "command": "todo-tree.scanOpenFilesOnly",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode != 'open files'",
+                    "command": "taskvision.scanOpenFilesOnly",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode != 'open files'",
                     "group": "3-view"
                 },
                 {
-                    "command": "todo-tree.scanCurrentFileOnly",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode != 'current file'",
+                    "command": "taskvision.scanCurrentFileOnly",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode != 'current file'",
                     "group": "3-view"
                 },
                 {
-                    "command": "todo-tree.scanWorkspaceAndOpenFiles",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode != 'workspace'",
+                    "command": "taskvision.scanWorkspaceAndOpenFiles",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode != 'workspace'",
                     "group": "3-view"
                 },
                 {
-                    "command": "todo-tree.scanWorkspaceOnly",
-                    "when": "view =~ /todo-tree/ && todo-tree-scan-mode != 'workspace only'",
+                    "command": "taskvision.scanWorkspaceOnly",
+                    "when": "view =~ /taskvision/ && taskvision-scan-mode != 'workspace only'",
                     "group": "3-view"
                 },
                 {
-                    "command": "todo-tree.expand",
-                    "when": "view =~ /todo-tree/ && todo-tree-expanded == false",
+                    "command": "taskvision.expand",
+                    "when": "view =~ /taskvision/ && taskvision-expanded == false",
                     "group": "4-tree@1"
                 },
                 {
-                    "command": "todo-tree.collapse",
-                    "when": "view =~ /todo-tree/ && todo-tree-expanded == true",
+                    "command": "taskvision.collapse",
+                    "when": "view =~ /taskvision/ && taskvision-expanded == true",
                     "group": "4-tree@1"
                 },
                 {
-                    "command": "todo-tree.showFlatView",
-                    "when": "view =~ /todo-tree/ && todo-tree-flat == false",
+                    "command": "taskvision.showFlatView",
+                    "when": "view =~ /taskvision/ && taskvision-flat == false",
                     "group": "4-tree@2"
                 },
                 {
-                    "command": "todo-tree.showTagsOnlyView",
-                    "when": "view =~ /todo-tree/ && todo-tree-tags-only == false",
+                    "command": "taskvision.showTagsOnlyView",
+                    "when": "view =~ /taskvision/ && taskvision-tags-only == false",
                     "group": "4-tree@3"
                 },
                 {
-                    "command": "todo-tree.showTreeView",
-                    "when": "view =~ /todo-tree/ && todo-tree-flat == true || todo-tree-tags-only == true",
+                    "command": "taskvision.showTreeView",
+                    "when": "view =~ /taskvision/ && taskvision-flat == true || taskvision-tags-only == true",
                     "group": "4-tree@4"
                 },
                 {
-                    "command": "todo-tree.groupByTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-tag == false",
+                    "command": "taskvision.groupByTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-tag == false",
                     "group": "4-tree@5"
                 },
                 {
-                    "command": "todo-tree.ungroupByTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-tag == true",
+                    "command": "taskvision.ungroupByTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-tag == true",
                     "group": "4-tree@5"
                 },
                 {
-                    "command": "todo-tree.groupBySubTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-sub-tag == false && todo-tree-has-sub-tags == true",
+                    "command": "taskvision.groupBySubTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-sub-tag == false && taskvision-has-sub-tags == true",
                     "group": "4-tree@6"
                 },
                 {
-                    "command": "todo-tree.ungroupBySubTag",
-                    "when": "view =~ /todo-tree/ && todo-tree-grouped-by-sub-tag == true && todo-tree-has-sub-tags == true",
+                    "command": "taskvision.ungroupBySubTag",
+                    "when": "view =~ /taskvision/ && taskvision-grouped-by-sub-tag == true && taskvision-has-sub-tags == true",
                     "group": "4-tree@6"
                 },
                 {
-                    "command": "todo-tree.exportTree",
-                    "when": "view =~/todo-tree/",
+                    "command": "taskvision.exportTree",
+                    "when": "view =~/taskvision/",
                     "group": "5-misc1"
                 },
                 {
-                    "command": "todo-tree.reveal",
-                    "when": "view =~/todo-tree/",
+                    "command": "taskvision.reveal",
+                    "when": "view =~/taskvision/",
                     "group": "6-misc2"
                 }
             ],
             "commandPalette": [
                 {
-                    "command": "todo-tree.showOnlyThisFolder",
+                    "command": "taskvision.showOnlyThisFolder",
                     "when": "false"
                 },
                 {
-                    "command": "todo-tree.showOnlyThisFolderAndSubfolders",
+                    "command": "taskvision.showOnlyThisFolderAndSubfolders",
                     "when": "false"
                 },
                 {
-                    "command": "todo-tree.excludeThisFolder",
+                    "command": "taskvision.excludeThisFolder",
                     "when": "false"
                 },
                 {
-                    "command": "todo-tree.excludeThisFile",
+                    "command": "taskvision.excludeThisFile",
                     "when": "false"
                 }
             ]
         },
         "commands": [
             {
-                "command": "todo-tree.showFlatView",
-                "title": "%todo-tree.command.showFlatView.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.showFlatView",
+                "title": "%taskvision.command.showFlatView.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(list-unordered)"
             },
             {
-                "command": "todo-tree.showTagsOnlyView",
-                "title": "%todo-tree.command.showTagsOnlyView.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.showTagsOnlyView",
+                "title": "%taskvision.command.showTagsOnlyView.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(list-flat)"
             },
             {
-                "command": "todo-tree.showTreeView",
-                "title": "%todo-tree.command.showTreeView.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.showTreeView",
+                "title": "%taskvision.command.showTreeView.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(list-tree)"
             },
             {
-                "command": "todo-tree.refresh",
-                "title": "%todo-tree.command.refresh.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.refresh",
+                "title": "%taskvision.command.refresh.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(refresh)"
             },
             {
-                "command": "todo-tree.expand",
-                "title": "%todo-tree.command.expand.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.expand",
+                "title": "%taskvision.command.expand.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(expand-all)",
-                "enablement": "todo-tree-collapsible"
+                "enablement": "taskvision-collapsible"
             },
             {
-                "command": "todo-tree.collapse",
-                "title": "%todo-tree.command.collapse.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.collapse",
+                "title": "%taskvision.command.collapse.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(collapse-all)",
-                "enablement": "todo-tree-collapsible"
+                "enablement": "taskvision-collapsible"
             },
             {
-                "command": "todo-tree.filter",
-                "title": "%todo-tree.command.filter.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.filter",
+                "title": "%taskvision.command.filter.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(filter)"
             },
             {
-                "command": "todo-tree.filterClear",
-                "title": "%todo-tree.command.filterClear.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.filterClear",
+                "title": "%taskvision.command.filterClear.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(clear-all)"
             },
             {
-                "command": "todo-tree.groupByTag",
-                "title": "%todo-tree.command.groupByTag.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.groupByTag",
+                "title": "%taskvision.command.groupByTag.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(tag)"
             },
             {
-                "command": "todo-tree.ungroupByTag",
-                "title": "%todo-tree.command.ungroupByTag.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.ungroupByTag",
+                "title": "%taskvision.command.ungroupByTag.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(unfold)"
             },
             {
-                "command": "todo-tree.groupBySubTag",
-                "title": "%todo-tree.command.groupBySubTag.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.groupBySubTag",
+                "title": "%taskvision.command.groupBySubTag.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(chrome-restore)"
             },
             {
-                "command": "todo-tree.ungroupBySubTag",
-                "title": "%todo-tree.command.ungroupBySubTag.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.ungroupBySubTag",
+                "title": "%taskvision.command.ungroupBySubTag.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(chrome-maximize)"
             },
             {
-                "command": "todo-tree.scanOpenFilesOnly",
-                "title": "%todo-tree.command.scanOpenFilesOnly.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.scanOpenFilesOnly",
+                "title": "%taskvision.command.scanOpenFilesOnly.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(files)"
             },
             {
-                "command": "todo-tree.scanCurrentFileOnly",
-                "title": "%todo-tree.command.scanCurrentFileOnly.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.scanCurrentFileOnly",
+                "title": "%taskvision.command.scanCurrentFileOnly.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(symbol-file)"
             },
             {
-                "command": "todo-tree.scanWorkspaceAndOpenFiles",
-                "title": "%todo-tree.command.scanWorkspaceAndOpenFiles.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.scanWorkspaceAndOpenFiles",
+                "title": "%taskvision.command.scanWorkspaceAndOpenFiles.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(folder-active)"
             },
             {
-                "command": "todo-tree.scanWorkspaceOnly",
-                "title": "%todo-tree.command.scanWorkspaceOnly.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.scanWorkspaceOnly",
+                "title": "%taskvision.command.scanWorkspaceOnly.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(folder)"
             },
             {
-                "command": "todo-tree.addTag",
-                "title": "%todo-tree.command.addTag.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.addTag",
+                "title": "%taskvision.command.addTag.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.removeTag",
-                "title": "%todo-tree.command.removeTag.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.removeTag",
+                "title": "%taskvision.command.removeTag.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.exportTree",
-                "title": "%todo-tree.command.exportTree.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.exportTree",
+                "title": "%taskvision.command.exportTree.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(save)"
             },
             {
-                "command": "todo-tree.showOnlyThisFolder",
-                "title": "%todo-tree.command.showOnlyThisFolder.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.showOnlyThisFolder",
+                "title": "%taskvision.command.showOnlyThisFolder.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(filter)"
             },
             {
-                "command": "todo-tree.showOnlyThisFolderAndSubfolders",
-                "title": "%todo-tree.command.showOnlyThisFolderAndSubfolders.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.showOnlyThisFolderAndSubfolders",
+                "title": "%taskvision.command.showOnlyThisFolderAndSubfolders.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(filter)"
             },
             {
-                "command": "todo-tree.switchScope",
-                "title": "%todo-tree.command.switchScope.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.switchScope",
+                "title": "%taskvision.command.switchScope.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(filter)"
             },
             {
-                "command": "todo-tree.excludeThisFolder",
-                "title": "%todo-tree.command.excludeThisFolder.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.excludeThisFolder",
+                "title": "%taskvision.command.excludeThisFolder.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(filter)"
             },
             {
-                "command": "todo-tree.excludeThisFile",
-                "title": "%todo-tree.command.excludeThisFile.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.excludeThisFile",
+                "title": "%taskvision.command.excludeThisFile.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(filter)"
             },
             {
-                "command": "todo-tree.removeFilter",
-                "title": "%todo-tree.command.removeFilter.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.removeFilter",
+                "title": "%taskvision.command.removeFilter.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(filter)"
             },
             {
-                "command": "todo-tree.resetAllFilters",
-                "title": "%todo-tree.command.resetAllFilters.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.resetAllFilters",
+                "title": "%taskvision.command.resetAllFilters.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(clear-all)"
             },
             {
-                "command": "todo-tree.reveal",
-                "title": "%todo-tree.command.reveal.title%",
-                "category": "%todo-tree.command.category%",
+                "command": "taskvision.reveal",
+                "title": "%taskvision.command.reveal.title%",
+                "category": "%taskvision.command.category%",
                 "icon": "$(location)"
             },
             {
-                "command": "todo-tree.resetCache",
-                "title": "%todo-tree.command.resetCache.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.resetCache",
+                "title": "%taskvision.command.resetCache.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.toggleItemCounts",
-                "title": "%todo-tree.command.toggleItemCounts.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.toggleItemCounts",
+                "title": "%taskvision.command.toggleItemCounts.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.toggleBadges",
-                "title": "%todo-tree.command.toggleBadges.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.toggleBadges",
+                "title": "%taskvision.command.toggleBadges.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.toggleCompactFolders",
-                "title": "%todo-tree.command.toggleCompactFolders.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.toggleCompactFolders",
+                "title": "%taskvision.command.toggleCompactFolders.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.goToNext",
-                "title": "%todo-tree.command.goToNext.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.goToNext",
+                "title": "%taskvision.command.goToNext.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.goToPrevious",
-                "title": "%todo-tree.command.goToPrevious.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.goToPrevious",
+                "title": "%taskvision.command.goToPrevious.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.revealInFile",
-                "title": "%todo-tree.command.revealInFile.title%",
-                "category": "%todo-tree.command.category%"
+                "command": "taskvision.revealInFile",
+                "title": "%taskvision.command.revealInFile.title%",
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.setScheme",
+                "command": "taskvision.setScheme",
                 "title": "Set Highlight Scheme",
-                "category": "%todo-tree.command.category%"
+                "category": "%taskvision.command.category%"
             },
             {
-                "command": "todo-tree.customizeAppearance",
+                "command": "taskvision.customizeAppearance",
                 "title": "Customize Tag Appearance",
-                "category": "%todo-tree.command.category%"
+                "category": "%taskvision.command.category%"
             }
         ],
         "configuration": [
             {
-                "title": "%todo-tree.configuration.general%",
+                "title": "%taskvision.configuration.general%",
                 "order": 1,
                 "type": "object",
                 "properties": {
-                    "todo-tree.general.debug": {
+                    "taskvision.general.debug": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.general.debug.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.debug.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.general.automaticGitRefreshInterval": {
+                    "taskvision.general.automaticGitRefreshInterval": {
                         "default": 10,
-                        "markdownDescription": "%todo-tree.configuration.general.automaticGitRefreshInterval.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.automaticGitRefreshInterval.markdownDescription%",
                         "type": "integer"
                     },
-                    "todo-tree.general.periodicRefreshInterval": {
+                    "taskvision.general.periodicRefreshInterval": {
                         "default": 5,
-                        "markdownDescription": "%todo-tree.configuration.general.periodicRefreshInterval.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.periodicRefreshInterval.markdownDescription%",
                         "type": "integer"
                     },
-                    "todo-tree.general.revealBehaviour": {
+                    "taskvision.general.revealBehaviour": {
                         "default": "start of todo",
                         "enum": [
                             "start of line",
                             "start of todo",
                             "end of todo"
                         ],
-                        "markdownDescription": "%todo-tree.configuration.general.revealBehaviour.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.revealBehaviour.markdownDescription%",
                         "markdownEnumDescriptions": [
-                            "%todo-tree.configuration.general.revealBehaviour.markdownEnumDescriptions.1%",
-                            "%todo-tree.configuration.general.revealBehaviour.markdownEnumDescriptions.2%",
-                            "%todo-tree.configuration.general.revealBehaviour.markdownEnumDescriptions.3%"
+                            "%taskvision.configuration.general.revealBehaviour.markdownEnumDescriptions.1%",
+                            "%taskvision.configuration.general.revealBehaviour.markdownEnumDescriptions.2%",
+                            "%taskvision.configuration.general.revealBehaviour.markdownEnumDescriptions.3%"
                         ],
                         "type": "string"
                     },
-                    "todo-tree.general.exportPath": {
-                        "default": "~/todo-tree-%Y%m%d-%H%M.txt",
-                        "markdownDescription": "%todo-tree.configuration.general.exportPath.markdownDescription%",
+                    "taskvision.general.exportPath": {
+                        "default": "~/taskvision-%Y%m%d-%H%M.txt",
+                        "markdownDescription": "%taskvision.configuration.general.exportPath.markdownDescription%",
                         "type": "string"
                     },
-                    "todo-tree.general.rootFolder": {
+                    "taskvision.general.rootFolder": {
                         "default": "",
-                        "markdownDescription": "%todo-tree.configuration.general.rootFolder.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.rootFolder.markdownDescription%",
                         "type": "string"
                     },
-                    "todo-tree.general.schemes": {
+                    "taskvision.general.schemes": {
                         "default": [
                             "file",
                             "ssh",
@@ -571,10 +571,10 @@
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.general.schemes.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.schemes.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.general.statusBar": {
+                    "taskvision.general.statusBar": {
                         "default": "none",
                         "enum": [
                             "none",
@@ -583,39 +583,39 @@
                             "top three",
                             "current file"
                         ],
-                        "markdownDescription": "%todo-tree.configuration.general.statusBar.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.statusBar.markdownDescription%",
                         "markdownEnumDescriptions": [
-                            "%todo-tree.configuration.general.statusBar.markdownEnumDescriptions.1%",
-                            "%todo-tree.configuration.general.statusBar.markdownEnumDescriptions.2%",
-                            "%todo-tree.configuration.general.statusBar.markdownEnumDescriptions.3%",
-                            "%todo-tree.configuration.general.statusBar.markdownEnumDescriptions.4%",
-                            "%todo-tree.configuration.general.statusBar.markdownEnumDescriptions.5%"
+                            "%taskvision.configuration.general.statusBar.markdownEnumDescriptions.1%",
+                            "%taskvision.configuration.general.statusBar.markdownEnumDescriptions.2%",
+                            "%taskvision.configuration.general.statusBar.markdownEnumDescriptions.3%",
+                            "%taskvision.configuration.general.statusBar.markdownEnumDescriptions.4%",
+                            "%taskvision.configuration.general.statusBar.markdownEnumDescriptions.5%"
                         ],
                         "type": "string"
                     },
-                    "todo-tree.general.showIconsInsteadOfTagsInStatusBar": {
+                    "taskvision.general.showIconsInsteadOfTagsInStatusBar": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.general.showIconsInsteadOfTagsInStatusBar.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.showIconsInsteadOfTagsInStatusBar.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.general.statusBarClickBehaviour": {
+                    "taskvision.general.statusBarClickBehaviour": {
                         "default": "reveal",
                         "enum": [
                             "cycle",
                             "reveal",
                             "toggle highlights"
                         ],
-                        "markdownDescription": "%todo-tree.configuration.general.statusBarClickBehaviour.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.statusBarClickBehaviour.markdownDescription%",
                         "markdownEnumDescriptions": [
-                            "%todo-tree.configuration.general.statusBarClickBehaviour.markdownEnumDescriptions.1%",
-                            "%todo-tree.configuration.general.statusBarClickBehaviour.markdownEnumDescriptions.2%",
-                            "%todo-tree.configuration.general.statusBarClickBehaviour.markdownEnumDescriptions.3%"
+                            "%taskvision.configuration.general.statusBarClickBehaviour.markdownEnumDescriptions.1%",
+                            "%taskvision.configuration.general.statusBarClickBehaviour.markdownEnumDescriptions.2%",
+                            "%taskvision.configuration.general.statusBarClickBehaviour.markdownEnumDescriptions.3%"
                         ],
                         "type": "string"
                     },
-                    "todo-tree.general.tagGroups": {
+                    "taskvision.general.tagGroups": {
                         "default": {},
-                        "markdownDescription": "%todo-tree.configuration.general.tagGroups.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.tagGroups.markdownDescription%",
                         "type": "object",
                         "additionalProperties": {
                             "type": "array",
@@ -624,7 +624,7 @@
                             }
                         }
                     },
-                    "todo-tree.general.tags": {
+                    "taskvision.general.tags": {
                         "default": [
                             "BLOCKER",
                             "BUG",
@@ -639,116 +639,134 @@
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.general.tags.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.tags.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.general.showActivityBarBadge": {
+                    "taskvision.general.showActivityBarBadge": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.general.showActivityBarBadge.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.general.showActivityBarBadge.markdownDescription%",
                         "type": "boolean"
                     }
                 }
             },
             {
-                "title": "%todo-tree.configuration.highlights%",
+                "title": "%taskvision.configuration.highlights%",
                 "order": 2,
                 "type": "object",
                 "properties": {
-                    "todo-tree.highlights.customHighlight": {
+                    "taskvision.highlights.customHighlight": {
                         "default": {
                             "BLOCKER": {
-                                "type": "whole-line",
-                                "background": "#FF174466",
-                                "foreground": "#FFFFFF",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "scheme": "neon+glass",
+                                "background": "#FF1744",
                                 "gutterIcon": true,
                                 "icon": "issue-opened",
                                 "iconColour": "#FF1744",
                                 "rulerColour": "#FF1744",
-                                "fontWeight": "bold"
+                                "fontWeight": "bold",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
                             "FIXME": {
-                                "type": "tag",
-                                "background": "#9C27B066",
-                                "foreground": "#FFFFFF",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#9C27B0",
                                 "gutterIcon": true,
                                 "icon": "flame",
                                 "iconColour": "#9C27B0",
                                 "rulerColour": "#9C27B0",
                                 "fontStyle": "italic",
                                 "fontWeight": "bold",
-                                "scheme": "neon"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
                             "BUG": {
-                                "type": "tag",
-                                "background": "#FF704366",
-                                "foreground": "#FFFFFF",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#FF7043",
                                 "gutterIcon": true,
                                 "icon": "bug",
                                 "iconColour": "#FF7043",
                                 "rulerColour": "#FF7043",
                                 "fontWeight": "bold",
-                                "scheme": "neon"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
-                            "XXX": {
-                                "type": "tag",
-                                "background": "#E040FB66",
-                                "foreground": "#FFFFFF",
+                            "HACK": {
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#E040FB",
                                 "gutterIcon": true,
                                 "icon": "x-circle",
                                 "iconColour": "#E040FB",
                                 "rulerColour": "#E040FB",
                                 "fontStyle": "italic",
                                 "fontWeight": "bold",
-                                "scheme": "neon"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
-                            "HACK": {
-                                "type": "whole-line",
-                                "background": "#FFD74066",
-                                "foreground": "#000000",
+                            "XXX": {
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#FFD740",
                                 "gutterIcon": true,
                                 "icon": "tools",
                                 "iconColour": "#FFD740",
                                 "rulerColour": "#FFD740",
                                 "fontWeight": "bold",
-                                "scheme": "glass"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
                             "TODO": {
-                                "type": "whole-line",
-                                "background": "#42A5F566",
-                                "foreground": "#FFFFFF",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#42A5F5",
                                 "gutterIcon": true,
                                 "icon": "tasklist",
                                 "iconColour": "#42A5F5",
                                 "rulerColour": "#42A5F5",
                                 "fontWeight": "bold",
-                                "scheme": "glass"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
                             "[ ]": {
-                                "type": "whole-line",
-                                "background": "#26C6DA66",
-                                "foreground": "#FFFFFF",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#26C6DA",
                                 "gutterIcon": true,
                                 "icon": "issue-opened",
                                 "iconColour": "#26C6DA",
                                 "rulerColour": "#26C6DA",
                                 "fontStyle": "italic",
                                 "fontWeight": "bold",
-                                "scheme": "glass"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
                             "[x]": {
-                                "type": "whole-line",
-                                "background": "#2E7D3266",
-                                "foreground": "#FFFFFF",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#81C784",
                                 "gutterIcon": true,
                                 "icon": "issue-closed",
-                                "iconColour": "#2E7D32",
-                                "rulerColour": "#2E7D32",
+                                "iconColour": "#81C784",
+                                "rulerColour": "#81C784",
                                 "fontWeight": "bold",
-                                "scheme": "glass"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             },
                             "NOTE": {
-                                "type": "whole-line",
-                                "background": "#546E7A66",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#546E7A",
                                 "foreground": "#FFEE58",
                                 "gutterIcon": true,
                                 "icon": "note",
@@ -756,10 +774,12 @@
                                 "rulerColour": "#546E7A",
                                 "fontStyle": "italic",
                                 "fontWeight": "bold",
-                                "scheme": "glass"
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
                             }
                         },
-                        "markdownDescription": "%todo-tree.configuration.highlights.customHighlight.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.highlights.customHighlight.markdownDescription%",
                         "type": "object",
                         "additionalProperties": {
                             "type": "object",
@@ -825,6 +845,63 @@
                                         "line",
                                         "whole-line",
                                         "none"
+                                    ],
+                                    "description": "Legacy key from 1.x. 2.0 highlight channels use colorType/glowType/glassType/fontType."
+                                },
+                                "colorType": {
+                                    "type": "string",
+                                    "description": "Scope for foreground color channel.",
+                                    "enum": [
+                                        "tag",
+                                        "text",
+                                        "tag-and-comment",
+                                        "text-and-comment",
+                                        "tag-and-subTag",
+                                        "line",
+                                        "whole-line",
+                                        "none"
+                                    ]
+                                },
+                                "glowType": {
+                                    "type": "string",
+                                    "description": "Scope for glow text-shadow channel.",
+                                    "enum": [
+                                        "tag",
+                                        "text",
+                                        "tag-and-comment",
+                                        "text-and-comment",
+                                        "tag-and-subTag",
+                                        "line",
+                                        "whole-line",
+                                        "none"
+                                    ]
+                                },
+                                "glassType": {
+                                    "type": "string",
+                                    "description": "Scope for glass background channel.",
+                                    "enum": [
+                                        "tag",
+                                        "text",
+                                        "tag-and-comment",
+                                        "text-and-comment",
+                                        "tag-and-subTag",
+                                        "line",
+                                        "whole-line",
+                                        "none"
+                                    ]
+                                },
+                                "fontType": {
+                                    "type": "string",
+                                    "description": "Scope for font style channel.",
+                                    "enum": [
+                                        "tag",
+                                        "text",
+                                        "tag-and-comment",
+                                        "text-and-comment",
+                                        "tag-and-subTag",
+                                        "line",
+                                        "whole-line",
+                                        "none"
                                     ]
                                 },
                                 "hideFromTree": {
@@ -840,25 +917,29 @@
                                     "type": "string",
                                     "enum": [
                                         "neon",
-                                        "glass"
+                                        "glass",
+                                        "neon+glass"
                                     ],
                                     "description": "Pre-configured highlight scheme."
                                 }
                             }
                         }
                     },
-                    "todo-tree.highlights.defaultHighlight": {
+                    "taskvision.highlights.defaultHighlight": {
                         "default": {
-                            "type": "whole-line",
-                            "background": "#5C6BC066",
-                            "foreground": "#FFFFFF",
+                            "background": "#5C6BC0",
                             "gutterIcon": true,
                             "icon": "tag",
                             "iconColour": "#5C6BC0",
                             "rulerColour": "#5C6BC0",
-                            "rulerLane": "center"
+                            "rulerLane": "center",
+                            "scheme": "neon+glass",
+                            "colorType": "text",
+                            "glowType": "tag",
+                            "glassType": "whole-line",
+                            "fontType": "tag"
                         },
-                        "markdownDescription": "%todo-tree.configuration.highlights.defaultHighlight.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.highlights.defaultHighlight.markdownDescription%",
                         "type": "object",
                         "properties": {
                             "foreground": {
@@ -922,6 +1003,63 @@
                                     "line",
                                     "whole-line",
                                     "none"
+                                ],
+                                "description": "Legacy key from 1.x. 2.0 highlight channels use colorType/glowType/glassType/fontType."
+                            },
+                            "colorType": {
+                                "type": "string",
+                                "description": "Scope for foreground color channel.",
+                                "enum": [
+                                    "tag",
+                                    "text",
+                                    "tag-and-comment",
+                                    "text-and-comment",
+                                    "tag-and-subTag",
+                                    "line",
+                                    "whole-line",
+                                    "none"
+                                ]
+                            },
+                            "glowType": {
+                                "type": "string",
+                                "description": "Scope for glow text-shadow channel.",
+                                "enum": [
+                                    "tag",
+                                    "text",
+                                    "tag-and-comment",
+                                    "text-and-comment",
+                                    "tag-and-subTag",
+                                    "line",
+                                    "whole-line",
+                                    "none"
+                                ]
+                            },
+                            "glassType": {
+                                "type": "string",
+                                "description": "Scope for glass background channel.",
+                                "enum": [
+                                    "tag",
+                                    "text",
+                                    "tag-and-comment",
+                                    "text-and-comment",
+                                    "tag-and-subTag",
+                                    "line",
+                                    "whole-line",
+                                    "none"
+                                ]
+                            },
+                            "fontType": {
+                                "type": "string",
+                                "description": "Scope for font style channel.",
+                                "enum": [
+                                    "tag",
+                                    "text",
+                                    "tag-and-comment",
+                                    "text-and-comment",
+                                    "tag-and-subTag",
+                                    "line",
+                                    "whole-line",
+                                    "none"
                                 ]
                             },
                             "hideFromTree": {
@@ -937,28 +1075,29 @@
                                 "type": "string",
                                 "enum": [
                                     "neon",
-                                    "glass"
+                                    "glass",
+                                    "neon+glass"
                                 ],
                                 "description": "Pre-configured highlight scheme."
                             }
                         }
                     },
-                    "todo-tree.highlights.enabled": {
+                    "taskvision.highlights.enabled": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.highlights.enabled.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.highlights.enabled.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.highlights.highlightDelay": {
+                    "taskvision.highlights.highlightDelay": {
                         "default": 500,
-                        "markdownDescription": "%todo-tree.configuration.highlights.highlightDelay.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.highlights.highlightDelay.markdownDescription%",
                         "type": "integer"
                     },
-                    "todo-tree.highlights.useColourScheme": {
+                    "taskvision.highlights.useColourScheme": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.highlights.useColourScheme.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.highlights.useColourScheme.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.highlights.foregroundColourScheme": {
+                    "taskvision.highlights.foregroundColourScheme": {
                         "default": [
                             "white",
                             "black",
@@ -971,10 +1110,10 @@
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.highlights.foregroundColourScheme.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.highlights.foregroundColourScheme.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.highlights.backgroundColourScheme": {
+                    "taskvision.highlights.backgroundColourScheme": {
                         "default": [
                             "red",
                             "orange",
@@ -987,71 +1126,71 @@
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.highlights.backgroundColourScheme.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.highlights.backgroundColourScheme.markdownDescription%",
                         "type": "array"
                     }
                 }
             },
             {
-                "title": "%todo-tree.configuration.filtering%",
+                "title": "%taskvision.configuration.filtering%",
                 "order": 3,
                 "type": "object",
                 "properties": {
-                    "todo-tree.filtering.excludedWorkspaces": {
+                    "taskvision.filtering.excludedWorkspaces": {
                         "default": [],
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.filtering.excludedWorkspaces.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.excludedWorkspaces.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.filtering.excludeGlobs": {
+                    "taskvision.filtering.excludeGlobs": {
                         "default": [
                             "**/node_modules/*/**"
                         ],
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.filtering.excludeGlobs.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.excludeGlobs.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.filtering.ignoreGitSubmodules": {
+                    "taskvision.filtering.ignoreGitSubmodules": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.filtering.ignoreGitSubmodules.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.ignoreGitSubmodules.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.filtering.includedWorkspaces": {
+                    "taskvision.filtering.includedWorkspaces": {
                         "default": [],
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.filtering.includedWorkspaces.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.includedWorkspaces.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.filtering.includeGlobs": {
+                    "taskvision.filtering.includeGlobs": {
                         "default": [],
                         "items": {
                             "type": "string"
                         },
-                        "markdownDescription": "%todo-tree.configuration.filtering.includeGlobs.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.includeGlobs.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.filtering.includeHiddenFiles": {
+                    "taskvision.filtering.includeHiddenFiles": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.filtering.includeHiddenFiles.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.includeHiddenFiles.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.filtering.passGlobsToRipgrep": {
+                    "taskvision.filtering.passGlobsToRipgrep": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.filtering.passGlobsToRipgrep.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.passGlobsToRipgrep.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.filtering.scopes": {
+                    "taskvision.filtering.scopes": {
                         "default": [],
-                        "markdownDescription": "%todo-tree.configuration.filtering.scopes.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.scopes.markdownDescription%",
                         "type": "array"
                     },
-                    "todo-tree.filtering.useBuiltInExcludes": {
+                    "taskvision.filtering.useBuiltInExcludes": {
                         "default": "none",
                         "enum": [
                             "none",
@@ -1059,78 +1198,78 @@
                             "search excludes",
                             "file and search excludes"
                         ],
-                        "markdownDescription": "%todo-tree.configuration.filtering.useBuiltInExcludes.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.filtering.useBuiltInExcludes.markdownDescription%",
                         "markdownEnumDescriptions": [
-                            "%todo-tree.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.1%",
-                            "%todo-tree.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.2%",
-                            "%todo-tree.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.3%",
-                            "%todo-tree.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.4%"
+                            "%taskvision.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.1%",
+                            "%taskvision.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.2%",
+                            "%taskvision.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.3%",
+                            "%taskvision.configuration.filtering.useBuiltInExcludes.markdownEnumDescriptions.4%"
                         ],
                         "type": "string"
                     }
                 }
             },
             {
-                "title": "%todo-tree.configuration.tree%",
+                "title": "%taskvision.configuration.tree%",
                 "order": 4,
                 "type": "object",
                 "properties": {
-                    "todo-tree.tree.autoRefresh": {
+                    "taskvision.tree.autoRefresh": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.autoRefresh.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.autoRefresh.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.disableCompactFolders": {
+                    "taskvision.tree.disableCompactFolders": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.disableCompactFolders.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.disableCompactFolders.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.expanded": {
+                    "taskvision.tree.expanded": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.expanded.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.expanded.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.filterCaseSensitive": {
+                    "taskvision.tree.filterCaseSensitive": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.filterCaseSensitive.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.filterCaseSensitive.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.flat": {
+                    "taskvision.tree.flat": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.flat.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.flat.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.groupedByTag": {
+                    "taskvision.tree.groupedByTag": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.groupedByTag.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.groupedByTag.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.groupedBySubTag": {
+                    "taskvision.tree.groupedBySubTag": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.groupedBySubTag.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.groupedBySubTag.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.hideIconsWhenGroupedByTag": {
+                    "taskvision.tree.hideIconsWhenGroupedByTag": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.hideIconsWhenGroupedByTag.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.hideIconsWhenGroupedByTag.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.hideTreeWhenEmpty": {
+                    "taskvision.tree.hideTreeWhenEmpty": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.hideTreeWhenEmpty.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.hideTreeWhenEmpty.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.labelFormat": {
+                    "taskvision.tree.labelFormat": {
                         "default": "${tag} ${after}",
-                        "markdownDescription": "%todo-tree.configuration.tree.labelFormat.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.labelFormat.markdownDescription%",
                         "type": "string"
                     },
-                    "todo-tree.tree.scanAtStartup": {
+                    "taskvision.tree.scanAtStartup": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.scanAtStartup.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.scanAtStartup.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.scanMode": {
+                    "taskvision.tree.scanMode": {
                         "default": "workspace",
                         "enum": [
                             "workspace",
@@ -1138,181 +1277,181 @@
                             "current file",
                             "workspace only"
                         ],
-                        "markdownDescription": "%todo-tree.configuration.tree.scanMode.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.scanMode.markdownDescription%",
                         "markdownEnumDescriptions": [
-                            "%todo-tree.configuration.tree.scanMode.markdownEnumDescriptions.1%",
-                            "%todo-tree.configuration.tree.scanMode.markdownEnumDescriptions.2%",
-                            "%todo-tree.configuration.tree.scanMode.markdownEnumDescriptions.3%",
-                            "%todo-tree.configuration.tree.scanMode.markdownEnumDescriptions.4%"
+                            "%taskvision.configuration.tree.scanMode.markdownEnumDescriptions.1%",
+                            "%taskvision.configuration.tree.scanMode.markdownEnumDescriptions.2%",
+                            "%taskvision.configuration.tree.scanMode.markdownEnumDescriptions.3%",
+                            "%taskvision.configuration.tree.scanMode.markdownEnumDescriptions.4%"
                         ],
                         "type": "string"
                     },
-                    "todo-tree.tree.showBadges": {
+                    "taskvision.tree.showBadges": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.showBadges.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.showBadges.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.showCountsInTree": {
+                    "taskvision.tree.showCountsInTree": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.showCountsInTree.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.showCountsInTree.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.showInExplorer": {
+                    "taskvision.tree.showInExplorer": {
                         "default": false,
-                        "deprecationMessage": "%todo-tree.configuration.tree.showInExplorer.deprecationMessage%",
+                        "deprecationMessage": "%taskvision.configuration.tree.showInExplorer.deprecationMessage%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.showCurrentScanMode": {
+                    "taskvision.tree.showCurrentScanMode": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.showCurrentScanMode.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.showCurrentScanMode.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.showScanOpenFilesOrWorkspaceButton": {
+                    "taskvision.tree.showScanOpenFilesOrWorkspaceButton": {
                         "default": false,
-                        "deprecationMessage": "%todo-tree.configuration.tree.showScanOpenFilesOrWorkspaceButton.deprecationMessage%",
+                        "deprecationMessage": "%taskvision.configuration.tree.showScanOpenFilesOrWorkspaceButton.deprecationMessage%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.subTagClickUrl": {
+                    "taskvision.tree.subTagClickUrl": {
                         "default": "",
-                        "markdownDescription": "%todo-tree.configuration.tree.subTagClickUrl.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.subTagClickUrl.markdownDescription%",
                         "type": "string"
                     },
-                    "todo-tree.tree.showTagsFromOpenFilesOnly": {
+                    "taskvision.tree.showTagsFromOpenFilesOnly": {
                         "default": false,
-                        "deprecationMessage": "%todo-tree.configuration.tree.showTagsFromOpenFilesOnly.deprecationMessage%",
+                        "deprecationMessage": "%taskvision.configuration.tree.showTagsFromOpenFilesOnly.deprecationMessage%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.sortTagsOnlyViewAlphabetically": {
+                    "taskvision.tree.sortTagsOnlyViewAlphabetically": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.sortTagsOnlyViewAlphabetically.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.sortTagsOnlyViewAlphabetically.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.sort": {
+                    "taskvision.tree.sort": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.sort.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.sort.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.tagsOnly": {
+                    "taskvision.tree.tagsOnly": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.tagsOnly.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.tagsOnly.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.tooltipFormat": {
+                    "taskvision.tree.tooltipFormat": {
                         "default": "${tag}: ${afterOrBefore}  — ${filepath}, line ${line}",
-                        "markdownDescription": "%todo-tree.configuration.tree.tooltipFormat.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.tooltipFormat.markdownDescription%",
                         "type": "string"
                     },
-                    "todo-tree.tree.trackFile": {
+                    "taskvision.tree.trackFile": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.trackFile.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.trackFile.markdownDescription%",
                         "type": "boolean"
                     }
                 }
             },
             {
-                "title": "%todo-tree.configuration.buttons%",
+                "title": "%taskvision.configuration.buttons%",
                 "order": 5,
                 "type": "object",
                 "properties": {
-                    "todo-tree.tree.buttons.reveal": {
+                    "taskvision.tree.buttons.reveal": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.reveal.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.reveal.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.scanMode": {
+                    "taskvision.tree.buttons.scanMode": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.scanMode.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.scanMode.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.viewStyle": {
+                    "taskvision.tree.buttons.viewStyle": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.viewStyle.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.viewStyle.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.groupByTag": {
+                    "taskvision.tree.buttons.groupByTag": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.groupByTag.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.groupByTag.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.groupBySubTag": {
+                    "taskvision.tree.buttons.groupBySubTag": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.groupBySubTag.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.groupBySubTag.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.filter": {
+                    "taskvision.tree.buttons.filter": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.filter.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.filter.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.refresh": {
+                    "taskvision.tree.buttons.refresh": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.refresh.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.refresh.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.expand": {
+                    "taskvision.tree.buttons.expand": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.expand.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.expand.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.tree.buttons.export": {
+                    "taskvision.tree.buttons.export": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.tree.buttons.export.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.tree.buttons.export.markdownDescription%",
                         "type": "boolean"
                     }
                 }
             },
             {
-                "title": "%todo-tree.configuration.regex%",
+                "title": "%taskvision.configuration.regex%",
                 "order": 6,
                 "type": "object",
                 "properties": {
-                    "todo-tree.regex.regex": {
+                    "taskvision.regex.regex": {
                         "default": "(//|#|<!--|;|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)",
-                        "markdownDescription": "%todo-tree.configuration.regex.regex.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.regex.regex.markdownDescription%",
                         "type": "string",
                         "minLength": 1,
                         "scope": "language-overridable"
                     },
-                    "todo-tree.regex.regexCaseSensitive": {
+                    "taskvision.regex.regexCaseSensitive": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.regex.regexCaseSensitive.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.regex.regexCaseSensitive.markdownDescription%",
                         "type": "boolean"
                     },
-                    "todo-tree.regex.subTagRegex": {
+                    "taskvision.regex.subTagRegex": {
                         "default": "",
-                        "markdownDescription": "%todo-tree.configuration.regex.subTagRegex.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.regex.subTagRegex.markdownDescription%",
                         "type": "string"
                     },
-                    "todo-tree.regex.enableMultiLine": {
+                    "taskvision.regex.enableMultiLine": {
                         "default": false,
-                        "markdownDescription": "%todo-tree.configuration.regex.enableMultiLine%",
+                        "markdownDescription": "%taskvision.configuration.regex.enableMultiLine%",
                         "type": "boolean"
                     },
-                    "todo-tree.ripgrep.ripgrep": {
+                    "taskvision.ripgrep.ripgrep": {
                         "default": "",
-                        "markdownDescription": "%todo-tree.configuration.ripgrep.ripgrep.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.ripgrep.ripgrep.markdownDescription%",
                         "type": "string"
                     },
-                    "todo-tree.ripgrep.ripgrepArgs": {
+                    "taskvision.ripgrep.ripgrepArgs": {
                         "default": "--max-columns=1000 --no-config ",
-                        "markdownDescription": "%todo-tree.configuration.ripgrep.ripgrepArgs.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.ripgrep.ripgrepArgs.markdownDescription%",
                         "type": "string"
                     }
                 }
             },
             {
-                "title": "%todo-tree.configuration.ripgrep%",
+                "title": "%taskvision.configuration.ripgrep%",
                 "order": 7,
                 "type": "object",
                 "properties": {
-                    "todo-tree.ripgrep.ripgrepMaxBuffer": {
+                    "taskvision.ripgrep.ripgrepMaxBuffer": {
                         "default": 200,
-                        "markdownDescription": "%todo-tree.configuration.ripgrep.ripgrepMaxBuffer.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.ripgrep.ripgrepMaxBuffer.markdownDescription%",
                         "type": "integer"
                     },
-                    "todo-tree.ripgrep.usePatternFile": {
+                    "taskvision.ripgrep.usePatternFile": {
                         "default": true,
-                        "markdownDescription": "%todo-tree.configuration.ripgrep.usePatternFile.markdownDescription%",
+                        "markdownDescription": "%taskvision.configuration.ripgrep.usePatternFile.markdownDescription%",
                         "type": "boolean"
                     }
                 }
@@ -1326,10 +1465,10 @@
     },
     "dependencies": {
         "@primer/octicons": "^17.0.0",
-        "comment-patterns": "^0.10.1",
+        "comment-patterns": "^0.12.2",
         "fast-strftime": "^1.1.1",
         "find": "^0.3.0",
-        "micromatch": "^4.0.2",
+        "micromatch": "^4.0.8",
         "regexp-match-indices": "^1.0.2",
         "treeify": "^1.1.0"
     },
@@ -1338,5 +1477,8 @@
         "qunit": "^2.18.0",
         "webpack": "^4.43.0",
         "webpack-cli": "^3.3.12"
+    },
+    "overrides": {
+        "lodash": "4.17.23"
     }
 }

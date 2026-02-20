@@ -1,0 +1,29 @@
+﻿commit f95d5fff4afbe8f028c74d914af02857ac4f307d
+Author: Yuki-zik <226004241@nbu.edu.cn>
+Date:   Thu Feb 19 23:10:21 2026 +0800
+
+    feat: implement tag-based syntax highlighting with configurable attributes and VS Code decorations
+
+commit 212b600d08841d6003441284ef2555a3cc7d31b0
+Author: Yuki-zik <226004241@nbu.edu.cn>
+Date:   Thu Feb 19 23:09:56 2026 +0800
+
+    feat: Add initial VS Code extension files, resources, and comprehensive unit tests for core utilities.
+
+commit eb03cd558082a6c1688e1d7ea0e4b827fac0c756
+Author: Yuki-zik <226004241@nbu.edu.cn>
+Date:   Thu Feb 19 20:21:01 2026 +0800
+
+    Delete `DEPLOY.md` and update the publisher in `package.json`.
+
+commit 36f877e8b7fd2d40939e099e47fe07d991253eaf
+Author: Yuki-zik <226004241@nbu.edu.cn>
+Date:   Thu Feb 19 17:30:02 2026 +0800
+
+    docs: add deployment documentation
+
+commit 50b63370cbd06e79c97bc5c48a5815439f93faf4
+Author: Yuki-zik <226004241@nbu.edu.cn>
+Date:   Thu Feb 19 17:27:00 2026 +0800
+
+    feat: Rename project to TaskVision, update English README with new visual effects, and add Chinese documentation.

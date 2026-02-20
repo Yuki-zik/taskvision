@@ -54,7 +54,10 @@ function hexToRgba(hex, opacity) {
         var b = toComponent(rgb.substring(2 * rgb.length / 3, 3 * rgb.length / 3));
 
         if (hex.length == 4 || hex.length == 8) {
-            opacity = parseInt(toComponent(hex.substring(3 * hex.length / 4, 4 * hex.length / 4)) * 100 / 255);
+            var extractedOpacity = parseInt(toComponent(hex.substring(3 * hex.length / 4, 4 * hex.length / 4)) * 100 / 255);
+            if (opacity === undefined) {
+                opacity = extractedOpacity;
+            }
         }
 
         return 'rgba(' + r + ',' + g + ',' + b + ',' + opacity / 100 + ')';
@@ -150,12 +153,33 @@ function removeLineComments(text, fileName) {
 function getTagRegex() {
     var tags = config.tags().slice().sort().reverse();
     tags = tags.map(function (tag) {
+        // Normalise markdown checkbox variants:
+        // [x], [ x ], [X] should all be treated as one token family.
+        if (/^\[\s*x\s*\]$/i.test(tag)) {
+            return "\\[\\s*[xX]\\s*\\]";
+        }
+        if (/^\[\s*\]$/.test(tag)) {
+            return "\\[\\s*\\]";
+        }
         tag = tag.replace(/\\/g, '\\\\\\');
         tag = tag.replace(/[|{}()[\]^$+*?.-]/g, '\\$&');
         return tag;
     });
     tags = tags.join('|');
     return '(' + tags + ')';
+}
+
+function normaliseCheckboxTag(tag) {
+    if (typeof tag !== "string") {
+        return tag;
+    }
+    if (/^\[\s*x\s*\]$/i.test(tag)) {
+        return "[x]";
+    }
+    if (/^\[\s*\]$/.test(tag)) {
+        return "[ ]";
+    }
+    return tag;
 }
 
 function extractTag(text, matchOffset) {
@@ -179,7 +203,7 @@ function extractTag(text, matchOffset) {
             if (subTagMatch && subTagMatch.length > 1) {
                 subTag = subTagMatch[1];
             }
-            rightOfTag = rightOfTagText.replace(subTagRegex, "");
+            var rightOfTag = rightOfTagText.replace(subTagRegex, "");
             if (rightOfTag.length === 0) {
                 text = text.substr(0, matchOffset ? matchOffset - 1 : tagMatch.index).trim();
                 after = "";
@@ -190,21 +214,27 @@ function extractTag(text, matchOffset) {
                 text = rightOfTag;
                 after = rightOfTag;
             }
-            c.tags.map(function (tag) {
+            var matchedTag = normaliseCheckboxTag(tagMatch[0]);
+            c.tags.forEach(function (tag) {
+                if (originalTag !== undefined) return;
+                var normalisedConfiguredTag = normaliseCheckboxTag(tag);
                 if (config.isRegexCaseSensitive()) {
-                    if (tag === tagMatch[0]) {
+                    if (normalisedConfiguredTag === matchedTag) {
                         originalTag = tag;
                     }
                 }
-                else if (tag.toLowerCase() === tagMatch[0].toLowerCase()) {
+                else if (normalisedConfiguredTag.toLowerCase() === matchedTag.toLowerCase()) {
                     originalTag = tag;
                 }
             });
+            if (originalTag === undefined) {
+                originalTag = matchedTag;
+            }
         }
     }
     if (tagMatch === null && c.regex.trim() !== "") {
         var regex = new RegExp(c.regex, flags);
-        match = regex.exec(text);
+        var match = regex.exec(text);
         if (match !== null) {
             tagMatch = true;
             originalTag = match[0];
@@ -248,7 +278,7 @@ function updateBeforeAndAfter(result, text, matchOffset) {
         if (subTagMatch && subTagMatch.length > 1) {
             result.subTag = subTagMatch[1];
         }
-        rightOfTag = rightOfTagText.replace(subTagRegex, "");
+        var rightOfTag = rightOfTagText.replace(subTagRegex, "");
         if (rightOfTag.length === 0) {
             result.text = text.substr(0, matchOffset ? matchOffset - 1 : tagMatch.index).trim();
             result.after = "";

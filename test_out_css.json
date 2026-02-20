@@ -1,0 +1,75 @@
+{
+  "channels": {
+    "color": {
+      "kind": "color",
+      "enabled": true,
+      "rangeType": "text",
+      "style": {
+        "light": {
+          "color": "#FFFFFF"
+        },
+        "dark": {
+          "color": "#FFFFFF"
+        }
+      }
+    },
+    "glow": {
+      "kind": "glow",
+      "enabled": true,
+      "rangeType": "tag",
+      "style": {
+        "light": {
+          "textShadow": "0 0 5px #9C27B0, 0 0 10px #9C27B0, 0 0 15px #9C27B0, 0 0 20px #9C27B0, 0 0 30px #9C27B0"
+        },
+        "dark": {
+          "textShadow": "0 0 5px #9C27B0, 0 0 10px #9C27B0, 0 0 15px #9C27B0, 0 0 20px #9C27B0, 0 0 30px #9C27B0"
+        }
+      }
+    },
+    "glass": {
+      "kind": "glass",
+      "enabled": true,
+      "rangeType": "whole-line",
+      "style": {
+        "light": {
+          "backgroundColor": "#9C27B066",
+          "border": "1px solid rgba(156,39,176,0.4)"
+        },
+        "dark": {
+          "backgroundColor": "#9C27B066",
+          "border": "1px solid rgba(156,39,176,0.4)"
+        },
+        "borderRadius": "6px"
+      }
+    },
+    "font": {
+      "kind": "font",
+      "enabled": true,
+      "rangeType": "tag",
+      "style": {
+        "light": {
+          "fontWeight": "bold",
+          "fontStyle": "italic"
+        },
+        "dark": {
+          "fontWeight": "bold",
+          "fontStyle": "italic"
+        }
+      }
+    }
+  },
+  "fontStyle": {
+    "light": {
+      "color": "#FFFFFF",
+      "fontWeight": "bold",
+      "fontStyle": "italic",
+      "textDecoration": "none; text-shadow: 0 0 5px #9C27B0, 0 0 10px #9C27B0, 0 0 15px #9C27B0, 0 0 20px #9C27B0, 0 0 30px #9C27B0;"
+    },
+    "dark": {
+      "color": "#FFFFFF",
+      "fontWeight": "bold",
+      "fontStyle": "italic",
+      "textDecoration": "none; text-shadow: 0 0 5px #9C27B0, 0 0 10px #9C27B0, 0 0 15px #9C27B0, 0 0 20px #9C27B0, 0 0 30px #9C27B0;"
+    }
+  }
+}

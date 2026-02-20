@@ -6,19 +6,27 @@ function init(configuration) {
 
 function getAttribute(tag, attribute, defaultValue, ignoreDefaultHighlight) {
     function getCustomHighlightSettings(customHighlight, tag) {
+        if (!customHighlight) return undefined;
+
+        if (customHighlight[tag] !== undefined) {
+            return customHighlight[tag];
+        }
+
         var result;
-        Object.keys(customHighlight).map(function (t) {
+        Object.keys(customHighlight).forEach(function (t) {
             var flags = '';
             if (config.isRegexCaseSensitive() === false) {
                 flags += 'i';
             }
-            t = t.replace(/\\/g, '\\\\');
-            t = t.replace(/[|{}()[\]^$+*?.-]/g, '\\$&');
+            var escapedT = t.replace(/\\/g, '\\\\').replace(/[|{}()[\]^$+*?.-]/g, '\\$&');
 
-            var regex = new RegExp(t, flags);
-
-            if (tag.match(regex)) {
-                result = customHighlight[t];
+            try {
+                var regex = new RegExp(escapedT, flags);
+                if (tag.match(regex)) {
+                    result = customHighlight[t];
+                }
+            } catch (e) {
+                // Ignore improperly formed dynamic regexes
             }
         });
         return result;

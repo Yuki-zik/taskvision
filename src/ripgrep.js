@@ -11,6 +11,7 @@
 'use strict';
 const child_process = require( 'child_process' );
 const fs = require( 'fs' );
+const path = require( 'path' );
 const utils = require( './utils' );
 
 var currentProcess;
@@ -69,6 +70,129 @@ function formatResults( stdout, multiline )
         .map( ( line ) => new Match( line ) );
 }
 
+function parseAdditionalArgs( additional )
+{
+    if( typeof additional !== 'string' || additional.trim() === '' )
+    {
+        return [];
+    }
+
+    var args = [];
+    var tokenRegex = /[^\s"']+|"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'/g;
+    var match;
+    while( ( match = tokenRegex.exec( additional ) ) !== null )
+    {
+        if( match[ 1 ] !== undefined )
+        {
+            args.push( match[ 1 ].replace( /\\"/g, '"' ) );
+        }
+        else if( match[ 2 ] !== undefined )
+        {
+            args.push( match[ 2 ].replace( /\\'/g, '\'' ) );
+        }
+        else
+        {
+            args.push( match[ 0 ] );
+        }
+    }
+    return args;
+}
+
+function quoteArg( arg )
+{
+    if( arg === undefined || arg === null )
+    {
+        return "";
+    }
+
+    var text = String( arg );
+    return /\s/.test( text ) ? '"' + text.replace( /"/g, '\\"' ) + '"' : text;
+}
+
+function ensurePatternFile( options, debug )
+{
+    if( !options.patternFilePath )
+    {
+        return false;
+    }
+
+    try
+    {
+        var parentFolder = path.dirname( options.patternFilePath );
+        if( parentFolder && !fs.existsSync( parentFolder ) )
+        {
+            fs.mkdirSync( parentFolder, { recursive: true } );
+        }
+
+        debug( "Writing pattern file:" + options.patternFilePath );
+        fs.writeFileSync( options.patternFilePath, options.unquotedRegex + '\n' );
+        return fs.existsSync( options.patternFilePath );
+    }
+    catch( e )
+    {
+        debug( "Failed writing pattern file - fallback to -e regex: " + e.message );
+        return false;
+    }
+}
+
+function buildArgs( options, debug )
+{
+    var args = [
+        '--no-messages',
+        '--vimgrep',
+        '-H',
+        '--column',
+        '--line-number',
+        '--color',
+        'never'
+    ];
+
+    args = args.concat( parseAdditionalArgs( options.additional ) );
+
+    if( options.multiline )
+    {
+        args.push( '-U' );
+    }
+
+    var usePatternFile = ensurePatternFile( options, debug );
+    if( usePatternFile )
+    {
+        args.push( '-f', options.patternFilePath );
+        debug( "Pattern:" + options.unquotedRegex );
+    }
+    else
+    {
+        var regex = options.unquotedRegex || options.regex || '';
+        args.push( '-e', regex );
+        debug( "No pattern file found - passing regex in arguments" );
+    }
+
+    args = ( options.globs || [] ).reduce( function( list, glob )
+    {
+        list.push( '-g', glob );
+        return list;
+    }, args );
+
+    if( options.filename )
+    {
+        args.push( options.filename );
+    }
+    else
+    {
+        args.push( '.' );
+    }
+
+    return args;
+}
+
+function cleanupPatternFile( patternFilePath )
+{
+    if( patternFilePath && fs.existsSync( patternFilePath ) === true )
+    {
+        fs.unlinkSync( patternFilePath );
+    }
+}
+
 module.exports.search = function ripGrep( cwd, options )
 {
     function debug( text )
@@ -92,9 +216,9 @@ module.exports.search = function ripGrep( cwd, options )
 
     options.regex = options.regex || '';
     options.globs = options.globs || [];
-
+    options.unquotedRegex = options.unquotedRegex || options.regex;
+    options.additional = options.additional || '';
     var rgPath = options.rgPath;
-    var isWin = /^win/.test( process.platform );
 
     if( !fs.existsSync( rgPath ) )
     {
@@ -105,91 +229,84 @@ module.exports.search = function ripGrep( cwd, options )
         return Promise.reject( { error: "root folder not found (" + cwd + ")" } );
     }
 
-    if( isWin )
-    {
-        rgPath = '"' + rgPath + '"';
-    }
-    else
-    {
-        rgPath = rgPath.replace( / /g, '\\ ' );
-    }
-
-    let execString = rgPath + ' --no-messages --vimgrep -H --column --line-number --color never ' + options.additional;
-    if( options.multiline )
-    {
-        execString += " -U ";
-    }
-
-    if( options.patternFilePath )
-    {
-        debug( "Writing pattern file:" + options.patternFilePath );
-        fs.writeFileSync( options.patternFilePath, options.unquotedRegex + '\n' );
-    }
-
-    if( !fs.existsSync( options.patternFilePath ) )
-    {
-        debug( "No pattern file found - passing regex in command" );
-        execString = `${execString} -e ${options.regex}`;
-    }
-    else
-    {
-        execString = `${execString} -f \"${options.patternFilePath}\"`;
-        debug( "Pattern:" + options.unquotedRegex );
-    }
-
-    execString = options.globs.reduce( ( command, glob ) =>
-    {
-        return `${command} -g \"${glob}\"`;
-    }, execString );
-
-    if( options.filename )
-    {
-        var filename = options.filename;
-        if( isWin && filename.slice( -1 ) === "\\" )
-        {
-            filename = filename.substr( 0, filename.length - 1 );
-        }
-        execString += " \"" + filename + "\"";
-    }
-    else
-    {
-        execString += " .";
-    }
-
-    debug( "Command: " + execString );
+    var args = buildArgs( options, debug );
+    debug( "Command: " + [ rgPath ].concat( args.map( quoteArg ) ).join( ' ' ) );
 
     return new Promise( function( resolve, reject )
     {
-        // The default for omitting maxBuffer, according to Node docs, is 200kB.
-        // We'll explicitly give that here if a custom value is not provided.
-        // Note that our options value is in KB, so we have to convert to bytes.
         const maxBuffer = ( options.maxBuffer || 200 ) * 1024;
-        var currentProcess = child_process.exec( execString, { cwd, maxBuffer } );
         var results = "";
+        var errors = "";
+        var hasCompleted = false;
+
+        currentProcess = child_process.spawn( rgPath, args, {
+            cwd: cwd,
+            shell: false,
+            windowsHide: true
+        } );
+
+        currentProcess.stdout.setEncoding( 'utf8' );
+        currentProcess.stderr.setEncoding( 'utf8' );
+
+        function fail( error, stderr )
+        {
+            if( hasCompleted )
+            {
+                return;
+            }
+            hasCompleted = true;
+            cleanupPatternFile( options.patternFilePath );
+            currentProcess = undefined;
+            reject( new RipgrepError( error, stderr ) );
+        }
 
         currentProcess.stdout.on( 'data', function( data )
         {
             debug( "Search results:\n" + data );
             results += data;
+            if( Buffer.byteLength( results, 'utf8' ) > maxBuffer )
+            {
+                currentProcess.kill( 'SIGINT' );
+                fail( "Search output exceeded maxBuffer of " + ( options.maxBuffer || 200 ) + " KB", errors );
+            }
         } );
 
         currentProcess.stderr.on( 'data', function( data )
         {
             debug( "Search failed:\n" + data );
-            if( fs.existsSync( options.patternFilePath ) === true )
-            {
-                fs.unlinkSync( options.patternFilePath );
-            }
-            reject( new RipgrepError( data, "" ) );
+            errors += data;
         } );
 
-        currentProcess.on( 'close', function( code )
+        currentProcess.on( 'error', function( error )
         {
-            if( fs.existsSync( options.patternFilePath ) === true )
+            fail( error.message, errors );
+        } );
+
+        currentProcess.on( 'close', function( code, signal )
+        {
+            if( hasCompleted )
             {
-                fs.unlinkSync( options.patternFilePath );
+                return;
             }
-            resolve( formatResults( results, options.multiline ) );
+
+            hasCompleted = true;
+            cleanupPatternFile( options.patternFilePath );
+            currentProcess = undefined;
+
+            if( signal )
+            {
+                reject( new RipgrepError( "Search interrupted (" + signal + ")", errors ) );
+                return;
+            }
+
+            if( code === 0 || code === 1 )
+            {
+                resolve( formatResults( results, options.multiline ) );
+                return;
+            }
+
+            var stderr = errors.trim();
+            reject( new RipgrepError( "Search failed with exit code " + code, stderr ) );
         } );
 
     } );
@@ -199,7 +316,20 @@ module.exports.kill = function()
 {
     if( currentProcess !== undefined )
     {
-        currentProcess.kill( 'SIGINT' );
+        try
+        {
+            currentProcess.kill( 'SIGINT' );
+        }
+        catch( e )
+        {
+            try
+            {
+                currentProcess.kill();
+            }
+            catch( ignored )
+            {
+            }
+        }
     }
 };
 
@@ -247,3 +377,5 @@ class Match
 }
 
 module.exports.Match = Match;
+module.exports._parseAdditionalArgs = parseAdditionalArgs;
+module.exports._buildArgs = buildArgs;

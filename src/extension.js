@@ -16,6 +16,7 @@ var config = require('./config.js');
 var utils = require('./utils.js');
 var attributes = require('./attributes.js');
 var searchResults = require('./searchResults.js');
+var settingsMigration = require('./settingsMigration.js');
 
 var searchList = [];
 var currentFilter;
@@ -52,11 +53,18 @@ function activate(context) {
     var outputChannel;
 
     function settingLocation(setting) {
-        var current = vscode.workspace.getConfiguration('todo-tree').inspect(setting);
+        var current = vscode.workspace.getConfiguration('taskvision').inspect(setting);
         if (current.workspaceFolderValue !== undefined) {
             return vscode.ConfigurationTarget.WorkspaceFolder;
         }
         else if (current.workspaceValue !== undefined) {
+            return vscode.ConfigurationTarget.Workspace;
+        }
+        return vscode.ConfigurationTarget.Global;
+    }
+
+    function resolveConfigTarget() {
+        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
             return vscode.ConfigurationTarget.Workspace;
         }
         return vscode.ConfigurationTarget.Global;
@@ -82,7 +90,7 @@ function activate(context) {
     provider = new tree.TreeNodeProvider(context, debug, setButtonsAndContext);
     var statusBarIndicator = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
 
-    var todoTreeView = vscode.window.createTreeView("todo-tree-view", { treeDataProvider: provider });
+    var todoTreeView = vscode.window.createTreeView("taskvision-view", { treeDataProvider: provider });
 
     var fileSystemWatcher;
 
@@ -106,8 +114,8 @@ function activate(context) {
             outputChannel.dispose();
             outputChannel = undefined;
         }
-        if (vscode.workspace.getConfiguration('todo-tree.general').debug === true) {
-            outputChannel = vscode.window.createOutputChannel("Todo Tree");
+        if (vscode.workspace.getConfiguration('taskvision.general').debug === true) {
+            outputChannel = vscode.window.createOutputChannel("TaskVision");
         }
     }
 
@@ -135,7 +143,7 @@ function activate(context) {
     }
 
     function updateInformation() {
-        var statusBar = vscode.workspace.getConfiguration('todo-tree.general').statusBar;
+        var statusBar = vscode.workspace.getConfiguration('taskvision.general').statusBar;
 
         var counts = provider.getTagCountsForActivityBar();
         var total = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
@@ -168,7 +176,7 @@ function activate(context) {
                 title = "Tree";
             }
 
-            if (total > 0 && vscode.workspace.getConfiguration('todo-tree.tree').get('showCountsInTree') === true) {
+            if (total > 0 && vscode.workspace.getConfiguration('taskvision.tree').get('showCountsInTree') === true) {
                 title += " (" + total + ")";
             }
             todoTreeView.title = title;
@@ -176,7 +184,7 @@ function activate(context) {
 
         if (statusBar === STATUS_BAR_TOTAL) {
             statusBarIndicator.text = "$(check) " + total;
-            statusBarIndicator.tooltip = "Todo-Tree total";
+            statusBarIndicator.tooltip = "TaskVision total";
             statusBarIndicator.show();
         }
         else if (statusBar === STATUS_BAR_TAGS || statusBar === STATUS_BAR_CURRENT_FILE || statusBar === STATUS_BAR_TOP_THREE) {
@@ -209,13 +217,13 @@ function activate(context) {
             });
             statusBarIndicator.text = showIcons ? text.trim() : "$(check) " + text.trim();
             if (statusBar === STATUS_BAR_CURRENT_FILE) {
-                statusBarIndicator.tooltip = "Todo-Tree tags counts in current file";
+                statusBarIndicator.tooltip = "TaskVision tags counts in current file";
             }
             else if (statusBar === STATUS_BAR_TOP_THREE) {
-                statusBarIndicator.tooltip = "Todo-Tree top three tag counts";
+                statusBarIndicator.tooltip = "TaskVision top three tag counts";
             }
             else {
-                statusBarIndicator.tooltip = "Todo-Tree tags counts";
+                statusBarIndicator.tooltip = "TaskVision tags counts";
             }
             if (Object.keys(counts).length === 0) {
                 statusBarIndicator.text = "$(check) 0";
@@ -234,39 +242,39 @@ function activate(context) {
             statusBarIndicator.text += " (in current file)";
         }
 
-        statusBarIndicator.command = "todo-tree.onStatusBarClicked";
+        statusBarIndicator.command = "taskvision.onStatusBarClicked";
     }
 
     function onStatusBarClicked() {
         if (config.clickingStatusBarShouldRevealTree()) {
             if (todoTreeView.visible === false) {
-                vscode.commands.executeCommand('todo-tree-view.focus');
+                vscode.commands.executeCommand('taskvision-view.focus');
             }
         }
         else if (config.clickingStatusBarShouldToggleHighlights()) {
-            var enabled = vscode.workspace.getConfiguration('todo-tree.highlights').get('enabled');
+            var enabled = vscode.workspace.getConfiguration('taskvision.highlights').get('enabled');
             var target = settingLocation('highlights.enabled');
-            vscode.workspace.getConfiguration('todo-tree.highlights').update('enabled', !enabled, target);
+            vscode.workspace.getConfiguration('taskvision.highlights').update('enabled', !enabled, target);
         }
         else {
-            var setting = vscode.workspace.getConfiguration('todo-tree.general').statusBar;
+            var setting = vscode.workspace.getConfiguration('taskvision.general').statusBar;
             if (setting === STATUS_BAR_TOTAL) {
                 setting = STATUS_BAR_TAGS;
-                vscode.window.showInformationMessage("Todo Tree: Now showing tag counts");
+                vscode.window.showInformationMessage("TaskVision: Now showing tag counts");
             }
             else if (setting === STATUS_BAR_TAGS) {
                 setting = STATUS_BAR_TOP_THREE;
-                vscode.window.showInformationMessage("Todo Tree: Now showing top three tag counts");
+                vscode.window.showInformationMessage("TaskVision: Now showing top three tag counts");
             }
             else if (setting === STATUS_BAR_TOP_THREE) {
                 setting = STATUS_BAR_CURRENT_FILE;
-                vscode.window.showInformationMessage("Todo Tree: Now showing total tags in current file");
+                vscode.window.showInformationMessage("TaskVision: Now showing total tags in current file");
             }
             else {
                 setting = STATUS_BAR_TOTAL;
-                vscode.window.showInformationMessage("Todo Tree: Now showing total tags");
+                vscode.window.showInformationMessage("TaskVision: Now showing total tags");
             }
-            vscode.workspace.getConfiguration('todo-tree.general').update('statusBar', setting, true);
+            vscode.workspace.getConfiguration('taskvision.general').update('statusBar', setting, true);
         }
     }
 
@@ -289,7 +297,7 @@ function activate(context) {
             if (e.stderr) {
                 message += " (" + e.stderr + ")";
             }
-            vscode.window.showErrorMessage("Todo-Tree: " + message);
+            vscode.window.showErrorMessage("TaskVision: " + message);
         });
     }
 
@@ -326,14 +334,14 @@ function activate(context) {
     }
 
     function getOptions(filename) {
-        var c = vscode.workspace.getConfiguration('todo-tree');
+        var c = vscode.workspace.getConfiguration('taskvision');
 
         var tempIncludeGlobs = context.workspaceState.get('includeGlobs') || [];
         var tempExcludeGlobs = context.workspaceState.get('excludeGlobs') || [];
         var submoduleExcludeGlobs = context.workspaceState.get('submoduleExcludeGlobs') || [];
 
         var options = {
-            regex: "\"" + utils.getRegexSource() + "\"",
+            regex: utils.getRegexSource(),
             unquotedRegex: utils.getRegexSource(),
             rgPath: config.ripgrepPath()
         };
@@ -352,19 +360,20 @@ function activate(context) {
             options.filename = filename;
         }
 
-        if (context.storageUri.fsPath && !fs.existsSync(context.storageUri.fsPath)) {
-            debug("Attempting to create local storage folder " + context.storageUri.fsPath);
-            fs.mkdirSync(context.storageUri.fsPath, { recursive: true });
+        var storagePath = context.storageUri && context.storageUri.fsPath;
+        if (storagePath && !fs.existsSync(storagePath)) {
+            debug("Attempting to create local storage folder " + storagePath);
+            fs.mkdirSync(storagePath, { recursive: true });
         }
 
         options.outputChannel = outputChannel;
-        options.additional = c.get('ripgrep.ripgrepArgs');
+        options.additional = c.get('ripgrep.ripgrepArgs') || '';
         options.maxBuffer = c.get('ripgrep.ripgrepMaxBuffer');
         options.multiline = utils.getRegexSource().indexOf("\\n") > -1 || c.get('regex.enableMultiLine') === true;
 
-        if (fs.existsSync(context.storageUri.fsPath) === true && c.get('ripgrep.usePatternFile') === true) {
+        if (storagePath && fs.existsSync(storagePath) === true && c.get('ripgrep.usePatternFile') === true) {
             var patternFileName = crypto.randomBytes(6).readUIntLE(0, 6).toString(36) + '.txt';
-            options.patternFilePath = path.join(context.storageUri.fsPath, patternFileName);
+            options.patternFilePath = path.join(storagePath, patternFileName);
         }
 
         if (c.get('filtering.includeHiddenFiles')) {
@@ -380,8 +389,8 @@ function activate(context) {
     function searchWorkspaces(searchList) {
         var scanMode = config.scanMode();
         if (scanMode === SCAN_MODE_WORKSPACE_AND_OPEN_FILES || scanMode === SCAN_MODE_WORKSPACE_ONLY) {
-            var includes = vscode.workspace.getConfiguration('todo-tree.filtering').get('includedWorkspaces', []);
-            var excludes = vscode.workspace.getConfiguration('todo-tree.filtering').get('excludedWorkspaces', []);
+            var includes = vscode.workspace.getConfiguration('taskvision.filtering').get('includedWorkspaces', []);
+            var excludes = vscode.workspace.getConfiguration('taskvision.filtering').get('excludedWorkspaces', []);
             if (vscode.workspace.workspaceFolders) {
                 vscode.workspace.workspaceFolders.map(function (folder) {
                     if (folder.uri && folder.uri.scheme === 'file' && utils.isIncluded(folder.uri.fsPath, includes, excludes)) {
@@ -401,8 +410,8 @@ function activate(context) {
     }
 
     function applyGlobs() {
-        var includeGlobs = vscode.workspace.getConfiguration('todo-tree.filtering').get('includeGlobs');
-        var excludeGlobs = vscode.workspace.getConfiguration('todo-tree.filtering').get('excludeGlobs');
+        var includeGlobs = vscode.workspace.getConfiguration('taskvision.filtering').get('includeGlobs');
+        var excludeGlobs = vscode.workspace.getConfiguration('taskvision.filtering').get('excludeGlobs');
 
         var tempIncludeGlobs = context.workspaceState.get('includeGlobs') || [];
         var tempExcludeGlobs = context.workspaceState.get('excludeGlobs') || [];
@@ -423,7 +432,7 @@ function activate(context) {
             return searchList.reduce((p, entry) => p.finally(() => search(getOptions(entry))), Promise.resolve())
                 .finally(() => {
                     debug("Found " + searchResults.count() + " items");
-                    if (vscode.workspace.getConfiguration('todo-tree.ripgrep').get('passGlobsToRipgrep') !== true) {
+                    if (vscode.workspace.getConfiguration('taskvision.ripgrep').get('passGlobsToRipgrep') !== true) {
                         applyGlobs();
                     }
                     addResultsToTree();
@@ -440,7 +449,7 @@ function activate(context) {
     function getRootFolders() {
         var rootFolders = [];
         var valid = true;
-        var rootFolder = vscode.workspace.getConfiguration('todo-tree.general').get('rootFolder');
+        var rootFolder = vscode.workspace.getConfiguration('taskvision.general').get('rootFolder');
         if (rootFolder.indexOf("${workspaceFolder}") > -1) {
             if (vscode.workspace.workspaceFolders) {
                 vscode.workspace.workspaceFolders.map(function (folder) {
@@ -462,8 +471,8 @@ function activate(context) {
             rootFolder = utils.replaceEnvironmentVariables(rootFolder);
         });
 
-        var includes = vscode.workspace.getConfiguration('todo-tree.filtering').get('includedWorkspaces', []);
-        var excludes = vscode.workspace.getConfiguration('todo-tree.filtering').get('excludedWorkspaces', []);
+        var includes = vscode.workspace.getConfiguration('taskvision.filtering').get('includedWorkspaces', []);
+        var excludes = vscode.workspace.getConfiguration('taskvision.filtering').get('excludedWorkspaces', []);
 
         if (valid === true) {
             rootFolders = rootFolders.filter(function (folder) {
@@ -484,9 +493,9 @@ function activate(context) {
 
         interrupted = false;
 
-        statusBarIndicator.text = "Todo-Tree: Scanning...";
+        statusBarIndicator.text = "TaskVision: Scanning...";
         statusBarIndicator.show();
-        statusBarIndicator.command = "todo-tree.stopScan";
+        statusBarIndicator.command = "taskvision.stopScan";
         statusBarIndicator.tooltip = "Click to interrupt scan";
 
         searchList = getRootFolders();
@@ -531,7 +540,7 @@ function activate(context) {
             }
         }
 
-        var timerInterval = vscode.workspace.getConfiguration('todo-tree.general').get('automaticGitRefreshInterval');
+        var timerInterval = vscode.workspace.getConfiguration('taskvision.general').get('automaticGitRefreshInterval');
 
         if (autoGitRefreshTimer) {
             clearInterval(autoGitRefreshTimer);
@@ -547,7 +556,7 @@ function activate(context) {
     }
 
     function resetPeriodicRefresh() {
-        var timerInterval = vscode.workspace.getConfiguration('todo-tree.general').get('periodicRefreshInterval');
+        var timerInterval = vscode.workspace.getConfiguration('taskvision.general').get('periodicRefreshInterval');
 
         if (periodicRefreshTimer) {
             clearInterval(periodicRefreshTimer);
@@ -563,7 +572,7 @@ function activate(context) {
     }
 
     function setButtonsAndContext() {
-        var c = vscode.workspace.getConfiguration('todo-tree');
+        var c = vscode.workspace.getConfiguration('taskvision');
         var isTagsOnly = context.workspaceState.get('tagsOnly', c.get('tree.tagsOnly', false));
         var isGroupedByTag = context.workspaceState.get('groupedByTag', c.get('tree.groupedByTag', false));
         var isGroupedBySubTag = context.workspaceState.get('groupedBySubTag', c.get('tree.groupedBySubTag', false));
@@ -582,29 +591,29 @@ function activate(context) {
         var showExpandButton = c.get('tree.buttons').expand === true;
         var showExportButton = c.get('tree.buttons').export === true;
 
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-reveal-button', showRevealButton && !c.get('tree.trackFile', false));
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-scan-mode-button', showScanModeButton);
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-view-style-button', showViewStyleButton);
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-group-by-tag-button', showGroupByTagButton);
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-group-by-sub-tag-button', showGroupBySubTagButton);
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-filter-button', showFilterButton);
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-refresh-button', showRefreshButton);
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-expand-button', showExpandButton);
-        vscode.commands.executeCommand('setContext', 'todo-tree-show-export-button', showExportButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-reveal-button', showRevealButton && !c.get('tree.trackFile', false));
+        vscode.commands.executeCommand('setContext', 'taskvision-show-scan-mode-button', showScanModeButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-view-style-button', showViewStyleButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-group-by-tag-button', showGroupByTagButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-group-by-sub-tag-button', showGroupBySubTagButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-filter-button', showFilterButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-refresh-button', showRefreshButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-expand-button', showExpandButton);
+        vscode.commands.executeCommand('setContext', 'taskvision-show-export-button', showExportButton);
 
-        vscode.commands.executeCommand('setContext', 'todo-tree-expanded', context.workspaceState.get('expanded', c.get('tree.expanded', false)));
-        vscode.commands.executeCommand('setContext', 'todo-tree-flat', context.workspaceState.get('flat', c.get('tree.flat', false)));
-        vscode.commands.executeCommand('setContext', 'todo-tree-tags-only', isTagsOnly);
-        vscode.commands.executeCommand('setContext', 'todo-tree-grouped-by-tag', isGroupedByTag);
-        vscode.commands.executeCommand('setContext', 'todo-tree-grouped-by-sub-tag', isGroupedBySubTag);
-        vscode.commands.executeCommand('setContext', 'todo-tree-filtered', context.workspaceState.get('filtered', false));
-        vscode.commands.executeCommand('setContext', 'todo-tree-collapsible', isCollapsible);
-        vscode.commands.executeCommand('setContext', 'todo-tree-folder-filter-active', includeGlobs.length + excludeGlobs.length > 0);
-        vscode.commands.executeCommand('setContext', 'todo-tree-global-filter-active', currentFilter);
-        vscode.commands.executeCommand('setContext', 'todo-tree-can-toggle-compact-folders', vscode.workspace.getConfiguration('explorer').compactFolders === true);
-        vscode.commands.executeCommand('setContext', 'todo-tree-has-sub-tags', hasSubTags);
+        vscode.commands.executeCommand('setContext', 'taskvision-expanded', context.workspaceState.get('expanded', c.get('tree.expanded', false)));
+        vscode.commands.executeCommand('setContext', 'taskvision-flat', context.workspaceState.get('flat', c.get('tree.flat', false)));
+        vscode.commands.executeCommand('setContext', 'taskvision-tags-only', isTagsOnly);
+        vscode.commands.executeCommand('setContext', 'taskvision-grouped-by-tag', isGroupedByTag);
+        vscode.commands.executeCommand('setContext', 'taskvision-grouped-by-sub-tag', isGroupedBySubTag);
+        vscode.commands.executeCommand('setContext', 'taskvision-filtered', context.workspaceState.get('filtered', false));
+        vscode.commands.executeCommand('setContext', 'taskvision-collapsible', isCollapsible);
+        vscode.commands.executeCommand('setContext', 'taskvision-folder-filter-active', includeGlobs.length + excludeGlobs.length > 0);
+        vscode.commands.executeCommand('setContext', 'taskvision-global-filter-active', currentFilter);
+        vscode.commands.executeCommand('setContext', 'taskvision-can-toggle-compact-folders', vscode.workspace.getConfiguration('explorer').compactFolders === true);
+        vscode.commands.executeCommand('setContext', 'taskvision-has-sub-tags', hasSubTags);
 
-        vscode.commands.executeCommand('setContext', 'todo-tree-scan-mode', config.scanMode());
+        vscode.commands.executeCommand('setContext', 'taskvision-scan-mode', config.scanMode());
 
         clearTimeout(hideTimeout);
         hideTimeout = setTimeout(hideTreeIfEmpty, 1000);
@@ -616,19 +625,19 @@ function activate(context) {
             return child.isStatusNode !== true;
         });
 
-        if (vscode.workspace.getConfiguration('todo-tree').get("tree.hideTreeWhenEmpty") === true) {
-            vscode.commands.executeCommand('setContext', 'todo-tree-is-empty', children.length == 0);
+        if (vscode.workspace.getConfiguration('taskvision').get("tree.hideTreeWhenEmpty") === true) {
+            vscode.commands.executeCommand('setContext', 'taskvision-is-empty', children.length == 0);
         }
         else {
-            vscode.commands.executeCommand('setContext', 'todo-tree-is-empty', false);
+            vscode.commands.executeCommand('setContext', 'taskvision-is-empty', false);
         }
     }
 
     function isIncluded(uri) {
         if (uri.fsPath) {
-            var includeGlobs = vscode.workspace.getConfiguration('todo-tree.filtering').get('includeGlobs');
-            var excludeGlobs = vscode.workspace.getConfiguration('todo-tree.filtering').get('excludeGlobs');
-            var includeHiddenFiles = vscode.workspace.getConfiguration('todo-tree.filtering').get('includeHiddenFiles');
+            var includeGlobs = vscode.workspace.getConfiguration('taskvision.filtering').get('includeGlobs');
+            var excludeGlobs = vscode.workspace.getConfiguration('taskvision.filtering').get('excludeGlobs');
+            var includeHiddenFiles = vscode.workspace.getConfiguration('taskvision.filtering').get('includeHiddenFiles');
 
             var tempIncludeGlobs = context.workspaceState.get('includeGlobs') || [];
             var tempExcludeGlobs = context.workspaceState.get('excludeGlobs') || [];
@@ -770,10 +779,10 @@ function activate(context) {
     }
 
     function addTag(tag) {
-        var tags = vscode.workspace.getConfiguration('todo-tree.general').get('tags');
+        var tags = vscode.workspace.getConfiguration('taskvision.general').get('tags');
         if (tags.indexOf(tag) === -1) {
             tags.push(tag);
-            vscode.workspace.getConfiguration('todo-tree.general').update('tags', tags, true);
+            vscode.workspace.getConfiguration('taskvision.general').update('tags', tags, true);
         }
     }
 
@@ -786,31 +795,31 @@ function activate(context) {
     }
 
     function removeTagDialog() {
-        var tags = vscode.workspace.getConfiguration('todo-tree.general').get('tags');
+        var tags = vscode.workspace.getConfiguration('taskvision.general').get('tags');
         vscode.window.showQuickPick(tags, { matchOnDetail: true, matchOnDescription: true, canPickMany: true, placeHolder: "Select tags to remove" }).then(function (tagsToRemove) {
             if (tagsToRemove) {
                 tagsToRemove.map(tag => {
                     tags = tags.filter(t => tag != t);
                 });
-                vscode.workspace.getConfiguration('todo-tree.general').update('tags', tags, true);
+                vscode.workspace.getConfiguration('taskvision.general').update('tags', tags, true);
             }
         });
     }
 
     function scanWorkspaceAndOpenFiles() {
-        vscode.workspace.getConfiguration('todo-tree.tree').update('scanMode', SCAN_MODE_WORKSPACE_AND_OPEN_FILES, vscode.ConfigurationTarget.Workspace);
+        vscode.workspace.getConfiguration('taskvision.tree').update('scanMode', SCAN_MODE_WORKSPACE_AND_OPEN_FILES, vscode.ConfigurationTarget.Workspace);
     }
 
     function scanOpenFilesOnly() {
-        vscode.workspace.getConfiguration('todo-tree.tree').update('scanMode', SCAN_MODE_OPEN_FILES, vscode.ConfigurationTarget.Workspace);
+        vscode.workspace.getConfiguration('taskvision.tree').update('scanMode', SCAN_MODE_OPEN_FILES, vscode.ConfigurationTarget.Workspace);
     }
 
     function scanCurrentFileOnly() {
-        vscode.workspace.getConfiguration('todo-tree.tree').update('scanMode', SCAN_MODE_CURRENT_FILE, vscode.ConfigurationTarget.Workspace);
+        vscode.workspace.getConfiguration('taskvision.tree').update('scanMode', SCAN_MODE_CURRENT_FILE, vscode.ConfigurationTarget.Workspace);
     }
 
     function scanWorkspaceOnly() {
-        vscode.workspace.getConfiguration('todo-tree.tree').update('scanMode', SCAN_MODE_WORKSPACE_ONLY, vscode.ConfigurationTarget.Workspace);
+        vscode.workspace.getConfiguration('taskvision.tree').update('scanMode', SCAN_MODE_WORKSPACE_ONLY, vscode.ConfigurationTarget.Workspace);
     }
 
     function dumpFolderFilter() {
@@ -820,14 +829,14 @@ function activate(context) {
 
     function checkForMarkdownUpgrade() {
         if (markdownUpdatePopupOpen === false && ignoreMarkdownUpdate === false) {
-            var c = vscode.workspace.getConfiguration('todo-tree');
+            var c = vscode.workspace.getConfiguration('taskvision');
             if (c.get('regex.regex').indexOf("|^\\s*- \\[ \\])") > -1) {
                 markdownUpdatePopupOpen = true;
                 setTimeout(function () {
                     // Information messages seem to self close after 15 seconds.
                     markdownUpdatePopupOpen = false;
                 }, 15000);
-                var message = "Todo Tree: There is now an improved method of locating markdown TODOs.";
+                var message = "TaskVision: There is now an improved method of locating markdown TODOs.";
                 var buttons = [MORE_INFO_BUTTON, NEVER_SHOW_AGAIN_BUTTON];
                 if (c.get('regex.regex') === c.inspect('regex.regex').defaultValue) {
                     message += " Would you like to update your settings automatically?";
@@ -845,7 +854,7 @@ function activate(context) {
                         c.update('regex.regex', '(//|#|<!--|;|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)', true);
                     }
                     else if (button === MORE_INFO_BUTTON) {
-                        vscode.env.openExternal(vscode.Uri.parse("https://github.com/Gruntfuggly/todo-tree#markdown-support"));
+                        vscode.env.openExternal(vscode.Uri.parse("https://github.com/Yuki-zik/taskvision#markdown-support"));
                     }
                     else if (button === NEVER_SHOW_AGAIN_BUTTON) {
                         context.globalState.update('ignoreMarkdownUpdate', true);
@@ -858,122 +867,9 @@ function activate(context) {
 
     function register() {
         function migrateSettings() {
-            function migrateIfRequired(setting, type, destination) {
-                function typeMatch(item, type) {
-                    return typeof (item) == type || (type == 'array' && item && item.length > 0);
-                }
-
-                var details = c.inspect(setting);
-                if (typeMatch(details.globalValue, type)) {
-                    debug("Migrating global setting '" + setting + "'");
-                    c.update(destination + "." + setting, details.globalValue, vscode.ConfigurationTarget.Global);
-                    migrated = true;
-                }
-                if (typeMatch(details.workspaceValue, type)) {
-                    debug("Migrating workspace setting '" + setting + "'");
-                    c.update(destination + "." + setting, details.workspaceValue, vscode.ConfigurationTarget.Workspace);
-                    migrated = true;
-                }
-                if (typeMatch(details.workspaceFolderValue, type)) {
-                    debug("Migrating workspaceFolder setting '" + setting + "'");
-                    c.update(destination + "." + setting, details.workspaceFolderValue, vscode.ConfigurationTarget.WorkspaceFolder);
-                    migrated = true;
-                }
-            }
-
-            var c = vscode.workspace.getConfiguration('todo-tree');
-            var migrated = false;
-
-            migrateIfRequired('autoRefresh', 'boolean', 'tree');
-            migrateIfRequired('customHighlight', 'object', 'highlights');
-            migrateIfRequired('debug', 'boolean', 'general');
-            migrateIfRequired('defaultHighlight', 'object', 'highlights');
-            migrateIfRequired('excludedWorkspaces', 'array', 'filtering');
-            migrateIfRequired('excludeGlobs', 'array', 'filtering');
-            migrateIfRequired('expanded', 'boolean', 'tree');
-            migrateIfRequired('filterCaseSensitive', 'boolean', 'tree');
-            migrateIfRequired('flat', 'boolean', 'tree');
-            migrateIfRequired('grouped', 'boolean', 'tree');
-            migrateIfRequired('hideIconsWhenGroupedByTag', 'boolean', 'tree');
-            migrateIfRequired('hideTreeWhenEmpty', 'boolean', 'tree');
-            migrateIfRequired('highlightDelay', 'number', 'highlights');
-            migrateIfRequired('includedWorkspaces', 'array', 'filtering');
-            migrateIfRequired('includeGlobs', 'array', 'filtering');
-            migrateIfRequired('labelFormat', 'string', 'tree');
-            migrateIfRequired('passGlobsToRipgrep', 'boolean', 'filtering');
-            migrateIfRequired('regex', 'string', 'regex');
-            migrateIfRequired('regexCaseSensitive', 'boolean', 'regex');
-            migrateIfRequired('revealBehaviour', 'string', 'general');
-            migrateIfRequired('ripgrep', 'string', 'ripgrep');
-            migrateIfRequired('ripgrepArgs', 'string', 'ripgrep');
-            migrateIfRequired('ripgrepMaxBuffer', 'number', 'ripgrep');
-            migrateIfRequired('rootFolder', 'string', 'general');
-            migrateIfRequired('showBadges', 'boolean', 'tree');
-            migrateIfRequired('showCountsInTree', 'boolean', 'tree');
-            migrateIfRequired('sortTagsOnlyViewAlphabetically', 'boolean', 'tree');
-            migrateIfRequired('statusBar', 'string', 'general');
-            migrateIfRequired('statusBarClickBehaviour', 'string', 'general');
-            migrateIfRequired('tags', 'array', 'general');
-            migrateIfRequired('tagsOnly', 'boolean', 'tree');
-            migrateIfRequired('trackFile', 'boolean', 'tree');
-
-            if (context.globalState.get('migratedVersion', 0) < 189) {
-                if (vscode.workspace.getConfiguration('todo-tree.tree').get('showInExplorer') === true) {
-                    vscode.commands.executeCommand('vscode.moveViews', {
-                        viewIds: ['todo-tree-view'],
-                        destinationId: 'workbench.view.explorer'
-                    });
-
-                    vscode.window.showInformationMessage("Todo-Tree: 'showInExplorer' has been deprecated. If needed, the view can now be dragged to where you want it.", OPEN_SETTINGS_BUTTON, NEVER_SHOW_AGAIN_BUTTON).then(function (button) {
-                        if (button === OPEN_SETTINGS_BUTTON) {
-                            vscode.commands.executeCommand('workbench.action.openSettingsJson', 'todo-tree.tree.showInExplorer');
-                        }
-                        else if (button === NEVER_SHOW_AGAIN_BUTTON) {
-                            context.globalState.update('migratedVersion', 189);
-                        }
-                    });
-                }
-            }
-
-            if (context.globalState.get('migratedVersion', 0) < 210) {
-                var validValues = ['start of line', 'start of todo', 'end of todo'];
-                if (validValues.indexOf(vscode.workspace.getConfiguration('todo-tree.general').revealBehaviour) === -1) {
-                    vscode.window.showInformationMessage("Todo-Tree: some 'revealBehaviour' settings have been removed to make the extension more consistent with VSCode.", OPEN_SETTINGS_BUTTON, NEVER_SHOW_AGAIN_BUTTON).then(function (button) {
-                        if (button === OPEN_SETTINGS_BUTTON) {
-                            vscode.commands.executeCommand('workbench.action.openSettings', 'todo-tree.general.revealBehaviour');
-                        }
-                        else if (button === NEVER_SHOW_AGAIN_BUTTON) {
-                            context.globalState.update('migratedVersion', 210);
-                        }
-                    });
-                }
-            }
-
-            if (context.globalState.get('migratedVersion', 0) < 223) {
-                if (vscode.workspace.getConfiguration('todo-tree.general').enableFileWatcher === true) {
-                    vscode.window.showInformationMessage("Todo-Tree: File watcher functionality will be removed in the next version of the extension.", MORE_INFO_BUTTON, OPEN_SETTINGS_BUTTON, NEVER_SHOW_AGAIN_BUTTON).then(function (button) {
-                        if (button == MORE_INFO_BUTTON) {
-                            vscode.env.openExternal(vscode.Uri.parse("https://github.com/Gruntfuggly/todo-tree/issues/723"));
-                        }
-                        else if (button === OPEN_SETTINGS_BUTTON) {
-                            vscode.commands.executeCommand('workbench.action.openSettingsJson', 'todo-tree.general.enableFileWatcher');
-                        }
-                        else if (button === NEVER_SHOW_AGAIN_BUTTON) {
-                            context.globalState.update('migratedVersion', 223);
-                        }
-                    });
-                }
-            }
-
-            var currentSchemes = vscode.workspace.getConfiguration('todo-tree.highlights').get('schemes');
-            if (vscode.workspace.getConfiguration('todo-tree.highlights').schemes !== undefined) {
-                var schemesSettings = vscode.workspace.getConfiguration('todo-tree.general').inspect('schemes');
-
-                if (currentSchemes !== schemesSettings.defaultValue) {
-                    var target = settingLocation('highlights.schemes');
-                    vscode.workspace.getConfiguration('todo-tree.general').update('schemes', currentSchemes, target);
-                }
-            }
+            settingsMigration.migrateLegacySettings(vscode, context, debug).catch(function (error) {
+                debug("legacy namespace migration failed: " + error.message);
+            });
         }
 
         function showInTree(uri) {
@@ -986,10 +882,10 @@ function activate(context) {
 
         function documentChanged(document) {
             if (document) {
-                console.log('[TaskVision] documentChanged:', document.fileName,
-                    'scheme:', document.uri.scheme,
-                    'validScheme:', config.isValidScheme(document.uri),
-                    'included:', isIncluded(document.uri));
+                debug('[TaskVision] documentChanged: ' + document.fileName +
+                    ' scheme=' + document.uri.scheme +
+                    ' validScheme=' + config.isValidScheme(document.uri) +
+                    ' included=' + isIncluded(document.uri));
                 vscode.window.visibleTextEditors.map(editor => {
                     if (document === editor.document && config.isValidScheme(document.uri)) {
                         if (isIncluded(document.uri)) {
@@ -1019,18 +915,18 @@ function activate(context) {
         function validateColours() {
             var invalidColourMessage = colours.validateColours(vscode.workspace);
             if (invalidColourMessage) {
-                vscode.window.showWarningMessage("Todo Tree: " + invalidColourMessage);
+                vscode.window.showWarningMessage("TaskVision: " + invalidColourMessage);
             }
             var invalidIconColourMessage = colours.validateIconColours(vscode.workspace);
             if (invalidIconColourMessage) {
-                vscode.window.showWarningMessage("Todo Tree: " + invalidIconColourMessage);
+                vscode.window.showWarningMessage("TaskVision: " + invalidIconColourMessage);
             }
         }
 
         function validateIcons() {
             var invalidIconMessage = icons.validateIcons(vscode.workspace);
             if (invalidIconMessage) {
-                vscode.window.showWarningMessage("Todo Tree: " + invalidIconMessage);
+                vscode.window.showWarningMessage("TaskVision: " + invalidIconMessage);
             }
         }
 
@@ -1038,26 +934,26 @@ function activate(context) {
             var unexpectedPlaceholders = [];
             utils.formatLabel(config.labelFormat(), {}, unexpectedPlaceholders);
             if (unexpectedPlaceholders.length > 0) {
-                vscode.window.showErrorMessage("Todo Tree: Unexpected placeholders (" + unexpectedPlaceholders.join(",") + ")");
+                vscode.window.showErrorMessage("TaskVision: Unexpected placeholders (" + unexpectedPlaceholders.join(",") + ")");
             }
         }
 
         function shouldRefreshFile() {
-            return vscode.workspace.getConfiguration('todo-tree.tree').autoRefresh === true && config.scanMode() !== SCAN_MODE_WORKSPACE_ONLY;
+            return vscode.workspace.getConfiguration('taskvision.tree').autoRefresh === true && config.scanMode() !== SCAN_MODE_WORKSPACE_ONLY;
         }
 
         // We can't do anything if we can't find ripgrep
         if (!config.ripgrepPath()) {
-            vscode.window.showErrorMessage("Todo-Tree: Failed to find vscode-ripgrep - please install ripgrep manually and set 'todo-tree.ripgrep' to point to the executable");
+            vscode.window.showErrorMessage("TaskVision: Failed to find vscode-ripgrep - please install ripgrep manually and set 'taskvision.ripgrep' to point to the executable");
             return;
         }
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.openUrl', (url) => {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.openUrl', (url) => {
             debug("Opening " + url);
             vscode.env.openExternal(vscode.Uri.parse(url));
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.filter', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.filter', function () {
             vscode.window.showInputBox({ prompt: "Filter tree" }).then(
                 function (term) {
                     currentFilter = term;
@@ -1070,16 +966,16 @@ function activate(context) {
                 });
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.stopScan', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.stopScan', function () {
             ripgrep.kill();
-            statusBarIndicator.text = "Todo-Tree: Scanning interrupted.";
+            statusBarIndicator.text = "TaskVision: Scanning interrupted.";
             statusBarIndicator.tooltip = "Click to restart";
-            statusBarIndicator.command = "todo-tree.refresh";
+            statusBarIndicator.command = "taskvision.refresh";
             interrupted = true;
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.exportTree', function () {
-            var exportPath = vscode.workspace.getConfiguration('todo-tree.general').get('exportPath');
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.exportTree', function () {
+            var exportPath = vscode.workspace.getConfiguration('taskvision.general').get('exportPath');
             exportPath = utils.replaceEnvironmentVariables(exportPath);
             exportPath = utils.formatExportPath(exportPath);
 
@@ -1089,7 +985,7 @@ function activate(context) {
             });
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.showOnlyThisFolder', function (node) {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.showOnlyThisFolder', function (node) {
             var rootNode = tree.locateWorkspaceNode(node.fsPath);
             var includeGlobs = [utils.createFolderGlob(node.fsPath, rootNode.fsPath, "/*")];
             context.workspaceState.update('includeGlobs', includeGlobs);
@@ -1097,7 +993,7 @@ function activate(context) {
             dumpFolderFilter();
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.showOnlyThisFolderAndSubfolders', function (node) {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.showOnlyThisFolderAndSubfolders', function (node) {
             var rootNode = tree.locateWorkspaceNode(node.fsPath);
             var includeGlobs = [utils.createFolderGlob(node.fsPath, rootNode.fsPath, "/**/*")];
             context.workspaceState.update('includeGlobs', includeGlobs);
@@ -1105,14 +1001,14 @@ function activate(context) {
             dumpFolderFilter();
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.switchScope', function () {
-            var config = vscode.workspace.getConfiguration('todo-tree.filtering').get('scopes');
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.switchScope', function () {
+            var config = vscode.workspace.getConfiguration('taskvision.filtering').get('scopes');
 
             if (!config || config.length === 0) {
-                vscode.window.showWarningMessage("Todo-Tree: No scopes configured (see todo-tree.filtering.scopes setting)", OPEN_SETTINGS_BUTTON, OK_BUTTON).then(function (button) {
+                vscode.window.showWarningMessage("TaskVision: No scopes configured (see taskvision.filtering.scopes setting)", OPEN_SETTINGS_BUTTON, OK_BUTTON).then(function (button) {
                     if (button === OPEN_SETTINGS_BUTTON) {
-                        vscode.workspace.getConfiguration('todo-tree.filtering').update('scopes', [], vscode.ConfigurationTarget.Global).then(function () {
-                            vscode.commands.executeCommand('workbench.action.openSettingsJson', 'todo-tree.filtering.scopes');
+                        vscode.workspace.getConfiguration('taskvision.filtering').update('scopes', [], vscode.ConfigurationTarget.Global).then(function () {
+                            vscode.commands.executeCommand('workbench.action.openSettingsJson', 'taskvision.filtering.scopes');
                         });
                     }
                 });
@@ -1147,7 +1043,7 @@ function activate(context) {
 
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.excludeThisFolder', function (node) {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.excludeThisFolder', function (node) {
             var rootNode = tree.locateWorkspaceNode(node.fsPath);
             var glob = utils.createFolderGlob(node.fsPath, rootNode.fsPath, "/**/*");
             var excludeGlobs = context.workspaceState.get('excludeGlobs') || [];
@@ -1159,7 +1055,7 @@ function activate(context) {
             }
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.excludeThisFile', function (node) {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.excludeThisFile', function (node) {
             var excludeGlobs = context.workspaceState.get('excludeGlobs') || [];
             if (excludeGlobs.indexOf(node.fsPath) === -1) {
                 excludeGlobs.push(node.fsPath);
@@ -1169,7 +1065,7 @@ function activate(context) {
             }
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.removeFilter', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.removeFilter', function () {
             var CLEAR_TREE_FILTER = "Clear Tree Filter";
             var excludeGlobs = context.workspaceState.get('excludeGlobs') || [];
             var includeGlobs = context.workspaceState.get('includeGlobs') || [];
@@ -1227,13 +1123,23 @@ function activate(context) {
             });
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.resetCache', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.resetCache', function () {
             function purgeFolder(folder) {
-                fs.readdir(folder, function (err, files) {
-                    files.map(function (file) {
-                        fs.unlinkSync(path.join(folder, file));
+                if (!folder || fs.existsSync(folder) !== true) {
+                    return;
+                }
+
+                try {
+                    fs.readdirSync(folder).forEach(function (file) {
+                        var target = path.join(folder, file);
+                        if (fs.lstatSync(target).isFile()) {
+                            fs.unlinkSync(target);
+                        }
                     });
-                });
+                }
+                catch (e) {
+                    debug("Failed to purge cache folder '" + folder + "': " + e.message);
+                }
             }
 
             context.workspaceState.update('includeGlobs', []);
@@ -1246,15 +1152,16 @@ function activate(context) {
             context.workspaceState.update('tagsOnly', undefined);
             context.workspaceState.update('flat', undefined);
             context.workspaceState.update('expanded', undefined);
-            context.workspaceState.update('grouped', undefined);
+            context.workspaceState.update('groupedByTag', undefined);
+            context.workspaceState.update('groupedBySubTag', undefined);
             context.globalState.update('migratedVersion', undefined);
             context.globalState.update('ignoreMarkdownUpdate', undefined);
 
-            purgeFolder(context.storageUri.fsPath);
-            purgeFolder(context.globalStorageUri.fsPath);
+            purgeFolder(context.storageUri && context.storageUri.fsPath);
+            purgeFolder(context.globalStorageUri && context.globalStorageUri.fsPath);
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.resetAllFilters', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.resetAllFilters', function () {
             context.workspaceState.update('includeGlobs', []);
             context.workspaceState.update('excludeGlobs', []);
             rebuild();
@@ -1262,185 +1169,251 @@ function activate(context) {
             clearTreeFilter();
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.setScheme', function (node) {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.setScheme', function (node) {
             if (node && node.tag) {
-                var currentConfig = vscode.workspace.getConfiguration('todo-tree.highlights');
+                var currentConfig = vscode.workspace.getConfiguration('taskvision.highlights');
                 var customHighlight = currentConfig.get('customHighlight', {});
                 var currentScheme = (customHighlight[node.tag] && customHighlight[node.tag].scheme) || '';
+                var customHighlightTarget = resolveConfigTarget();
 
                 var items = [
                     {
-                        label: '$(zap) Neon Night',
-                        description: currentScheme === 'neon' ? '$(check) 当前' : '',
-                        detail: 'OLED 霓虹辉光 — 关键词发光效果',
+                        label: '$(zap) Neon',
+                        description: currentScheme === 'neon' ? '$(check) Current' : '',
+                        detail: 'Enable glow preset only',
                         value: 'neon'
                     },
                     {
-                        label: '$(browser) Glassmorphism',
-                        description: currentScheme === 'glass' ? '$(check) 当前' : '',
-                        detail: '磨砂玻璃 — 半透明整行覆盖效果',
+                        label: '$(browser) Glass',
+                        description: currentScheme === 'glass' ? '$(check) Current' : '',
+                        detail: 'Enable glass preset only',
                         value: 'glass'
                     },
                     {
                         label: '$(sparkle) Neon + Glass',
-                        description: currentScheme === 'neon+glass' ? '$(check) 当前' : '',
-                        detail: '整行玻璃背景 + 关键词霓虹辉光 — 双重效果叠加',
+                        description: currentScheme === 'neon+glass' ? '$(check) Current' : '',
+                        detail: 'Enable both glow and glass presets',
                         value: 'neon+glass'
                     },
                     {
                         label: '$(circle-slash) None',
-                        description: (!currentScheme || currentScheme === '') ? '$(check) 当前' : '',
-                        detail: '恢复默认高亮样式',
+                        description: (!currentScheme || currentScheme === '') ? '$(check) Current' : '',
+                        detail: 'Clear scheme preset',
                         value: 'none'
                     }
                 ];
 
                 vscode.window.showQuickPick(items, {
-                    placeHolder: '为 ' + node.tag + ' 选择高亮方案 (Highlight Scheme)',
+                    placeHolder: 'Choose a highlight scheme for ' + node.tag,
                     matchOnDetail: true
                 }).then(function (selection) {
-                    if (selection) {
-                        var updated = JSON.parse(JSON.stringify(currentConfig.get('customHighlight', {})));
-                        if (updated[node.tag] === undefined) {
-                            updated[node.tag] = {};
-                        }
-                        if (selection.value === 'none') {
-                            delete updated[node.tag].scheme;
-                        } else {
-                            updated[node.tag].scheme = selection.value;
-                        }
-                        currentConfig.update('customHighlight', updated, vscode.ConfigurationTarget.Global);
+                    if (!selection) {
+                        return;
                     }
+
+                    var updated = JSON.parse(JSON.stringify(currentConfig.get('customHighlight', {})));
+                    if (updated[node.tag] === undefined) {
+                        updated[node.tag] = {};
+                    }
+
+                    if (selection.value === 'none') {
+                        delete updated[node.tag].scheme;
+                    } else {
+                        updated[node.tag].scheme = selection.value;
+                    }
+
+                    currentConfig.update('customHighlight', updated, customHighlightTarget);
                 });
             }
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.customizeAppearance', function (node) {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.customizeAppearance', function (node) {
             if (node && node.tag) {
-                var currentConfig = vscode.workspace.getConfiguration('todo-tree.highlights');
+                var currentConfig = vscode.workspace.getConfiguration('taskvision.highlights');
                 var customHighlight = currentConfig.get('customHighlight', {});
                 var tagConfig = customHighlight[node.tag] || {};
                 var currentScheme = tagConfig.scheme || '';
 
-                // Parse current state: is neon on? is glass on?
                 var neonOn = (currentScheme === 'neon' || currentScheme === 'neon+glass');
                 var glassOn = (currentScheme === 'glass' || currentScheme === 'neon+glass');
-
-                // Build status indicators
-                var glowStatus = neonOn ? '$(check) ON' : '$(circle-slash) OFF';
-                var glassStatus = glassOn ? '$(check) ON' : '$(circle-slash) OFF';
+                var customHighlightTarget = resolveConfigTarget();
 
                 var mainItems = [
                     {
                         label: '$(zap) Toggle Glow Effect',
-                        description: glowStatus,
-                        detail: '霓虹辉光 — 关键词发光效果 (仅作用于关键字)',
+                        description: neonOn ? '$(check) ON' : '$(circle-slash) OFF',
+                        detail: 'Enable or disable Neon glow preset',
                         value: 'toggle-neon'
                     },
                     {
                         label: '$(browser) Toggle Glass Effect',
-                        description: glassStatus,
-                        detail: '磨砂玻璃 — 半透明整行覆盖效果',
+                        description: glassOn ? '$(check) ON' : '$(circle-slash) OFF',
+                        detail: 'Enable or disable Glass background preset',
                         value: 'toggle-glass'
                     },
                     {
                         label: '$(screen-full) Set Effect Scope',
-                        detail: '控制高亮作用范围：仅关键词 / 整行 / 标签到行尾',
+                        detail: 'Set independent scopes for color / glow / glass / font channels',
                         value: 'scope'
                     },
                     {
                         label: '$(symbol-color) Set Foreground Color',
-                        detail: '设置标签文字颜色 (当前: ' + (tagConfig.foreground || '默认') + ')',
+                        detail: 'Set text color for ' + node.tag + ' (current: ' + (tagConfig.foreground || 'default') + ')',
                         value: 'foreground'
                     },
                     {
                         label: '$(symbol-misc) Set Icon',
-                        detail: '更换标签图标 (当前: ' + (tagConfig.icon || '默认') + ')',
+                        detail: 'Change icon for ' + node.tag + ' (current: ' + (tagConfig.icon || 'default') + ')',
                         value: 'icon'
                     },
                     {
                         label: '$(bold) Set Font Style',
-                        detail: '设置字体样式: 加粗 / 斜体 / 加粗斜体',
+                        detail: 'Set bold / italic style for tag font channel',
                         value: 'font'
                     }
                 ];
 
                 vscode.window.showQuickPick(mainItems, {
-                    placeHolder: '自定义 ' + node.tag + ' 外观 (Customize Appearance)',
+                    placeHolder: 'Customize appearance for ' + node.tag,
                     matchOnDetail: true
                 }).then(function (selection) {
-                    if (!selection) return;
+                    if (!selection) {
+                        return;
+                    }
 
                     var updateConfig = function (key, val) {
-                        var cfg = vscode.workspace.getConfiguration('todo-tree.highlights');
+                        var cfg = vscode.workspace.getConfiguration('taskvision.highlights');
                         var updated = JSON.parse(JSON.stringify(cfg.get('customHighlight', {})));
-                        if (!updated[node.tag]) updated[node.tag] = {};
+                        if (!updated[node.tag]) {
+                            updated[node.tag] = {};
+                        }
                         if (val === undefined) {
                             delete updated[node.tag][key];
                         } else {
                             updated[node.tag][key] = val;
                         }
-                        cfg.update('customHighlight', updated, vscode.ConfigurationTarget.Global);
+                        cfg.update('customHighlight', updated, customHighlightTarget);
                     };
 
-                    // Helper to compute new scheme from independent neon/glass toggles
+                    var scopeValues = [
+                        { label: '$(symbol-key) Tag Only', detail: 'Only highlight tag keyword', value: 'tag' },
+                        { label: '$(symbol-text) Tag + Content', detail: 'Highlight from tag through comment text', value: 'text' },
+                        { label: '$(comment-discussion) Text + Comment', detail: 'Highlight from comment content to line end', value: 'text-and-comment' },
+                        { label: '$(comment) Tag + Comment', detail: 'Alias of text-and-comment', value: 'tag-and-comment' },
+                        { label: '$(symbol-enum) Tag + Sub Tag', detail: 'Highlight tag and detected sub tag', value: 'tag-and-subTag' },
+                        { label: '$(list-unordered) Line', detail: 'Highlight text range of the full line', value: 'line' },
+                        { label: '$(symbol-file) Whole Line', detail: 'Highlight entire visual line width', value: 'whole-line' },
+                        { label: '$(circle-slash) None', detail: 'Disable this channel', value: 'none' }
+                    ];
+
+                    function showScopePicker(currentValue, placeHolder, allowInherit) {
+                        var items = scopeValues.map(function (item) {
+                            return {
+                                label: item.label,
+                                detail: item.detail,
+                                description: item.value === currentValue ? '$(check)' : '',
+                                value: item.value
+                            };
+                        });
+
+                        if (allowInherit) {
+                            items.unshift({
+                                label: '$(debug-step-over) Inherit default',
+                                detail: 'Remove override and use defaultHighlight channel scope',
+                                description: currentValue === undefined ? '$(check)' : '',
+                                value: 'inherit'
+                            });
+                        }
+
+                        return vscode.window.showQuickPick(items, { placeHolder: placeHolder });
+                    }
+
                     var computeScheme = function (wantNeon, wantGlass) {
                         if (wantNeon && wantGlass) return 'neon+glass';
                         if (wantNeon) return 'neon';
                         if (wantGlass) return 'glass';
-                        return undefined; // No scheme
+                        return undefined;
                     };
 
                     if (selection.value === 'toggle-neon') {
                         var newNeon = !neonOn;
                         var newScheme = computeScheme(newNeon, glassOn);
                         updateConfig('scheme', newScheme);
-                        var msg = newNeon ? 'Glow ON' : 'Glow OFF';
-                        if (newNeon && glassOn) msg += ' + Glass ON';
-                        vscode.window.showInformationMessage(node.tag + ': ' + msg);
+                        vscode.window.showInformationMessage(node.tag + ': Glow ' + (newNeon ? 'ON' : 'OFF'));
                     } else if (selection.value === 'toggle-glass') {
                         var newGlass = !glassOn;
                         var newScheme = computeScheme(neonOn, newGlass);
                         updateConfig('scheme', newScheme);
-                        var msg = newGlass ? 'Glass ON' : 'Glass OFF';
-                        if (newGlass && neonOn) msg += ' + Glow ON';
-                        vscode.window.showInformationMessage(node.tag + ': ' + msg);
+                        vscode.window.showInformationMessage(node.tag + ': Glass ' + (newGlass ? 'ON' : 'OFF'));
                     } else if (selection.value === 'scope') {
-                        var scopeItems = [
+                        var scopeConfigItems = [
                             {
-                                label: '$(symbol-key) Tag Only',
-                                detail: '仅高亮标签关键词 (如 TODO)',
-                                description: (!tagConfig.type || tagConfig.type === 'tag') ? '$(check)' : '',
-                                value: 'tag'
+                                label: '$(symbol-color) Set Color Scope (colorType)',
+                                detail: 'Controls where foreground color is applied',
+                                description: 'Current: ' + (tagConfig.colorType || '(inherit default)'),
+                                value: 'scope-color'
                             },
                             {
-                                label: '$(symbol-text) Tag + Content',
-                                detail: '高亮标签到行尾内容',
-                                description: (tagConfig.type === 'text') ? '$(check)' : '',
-                                value: 'text'
+                                label: '$(zap) Set Glow Scope (glowType)',
+                                detail: 'Controls where glow text-shadow is applied',
+                                description: 'Current: ' + (tagConfig.glowType || '(inherit default)'),
+                                value: 'scope-glow'
                             },
                             {
-                                label: '$(symbol-file) Whole Line',
-                                detail: '整行高亮',
-                                description: (tagConfig.type === 'whole-line') ? '$(check)' : '',
-                                value: 'whole-line'
+                                label: '$(browser) Set Glass Scope (glassType)',
+                                detail: 'Controls where glass background is applied',
+                                description: 'Current: ' + (tagConfig.glassType || '(inherit default)'),
+                                value: 'scope-glass'
+                            },
+                            {
+                                label: '$(bold) Set Font Scope (fontType)',
+                                detail: 'Controls where font style is applied',
+                                description: 'Current: ' + (tagConfig.fontType || '(inherit default)'),
+                                value: 'scope-font'
                             }
                         ];
-                        vscode.window.showQuickPick(scopeItems, {
-                            placeHolder: '为 ' + node.tag + ' 选择高亮范围'
-                        }).then(function (scope) {
-                            if (scope) {
-                                updateConfig('type', scope.value);
+
+                        vscode.window.showQuickPick(scopeConfigItems, {
+                            placeHolder: 'Choose a channel scope to edit for ' + node.tag
+                        }).then(function (scopeConfig) {
+                            if (!scopeConfig) {
+                                return;
+                            }
+
+                            if (scopeConfig.value === 'scope-color') {
+                                showScopePicker(tagConfig.colorType, 'Set colorType for ' + node.tag, true).then(function (scopeValue) {
+                                    if (scopeValue) {
+                                        updateConfig('colorType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);
+                                    }
+                                });
+                            } else if (scopeConfig.value === 'scope-glow') {
+                                showScopePicker(tagConfig.glowType, 'Set glowType for ' + node.tag, true).then(function (scopeValue) {
+                                    if (scopeValue) {
+                                        updateConfig('glowType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);
+                                    }
+                                });
+                            } else if (scopeConfig.value === 'scope-glass') {
+                                showScopePicker(tagConfig.glassType, 'Set glassType for ' + node.tag, true).then(function (scopeValue) {
+                                    if (scopeValue) {
+                                        updateConfig('glassType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);
+                                    }
+                                });
+                            } else if (scopeConfig.value === 'scope-font') {
+                                showScopePicker(tagConfig.fontType, 'Set fontType for ' + node.tag, true).then(function (scopeValue) {
+                                    if (scopeValue) {
+                                        updateConfig('fontType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);
+                                    }
+                                });
                             }
                         });
                     } else if (selection.value === 'foreground') {
                         vscode.window.showInputBox({
-                            prompt: '输入 ' + node.tag + ' 的前景色 (Hex 格式)',
+                            prompt: 'Input foreground color for ' + node.tag + ' (Hex)',
                             placeHolder: '#FF0044',
                             value: tagConfig.foreground || '',
                             validateInput: function (value) {
                                 if (!value.match(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/)) {
-                                    return '请输入有效的 Hex 颜色值 (例如 #FF0044)';
+                                    return 'Please input a valid hex color (e.g. #FF0044)';
                                 }
                                 return null;
                             }
@@ -1469,13 +1442,14 @@ function activate(context) {
                             { label: '$(zap) zap', value: 'zap' }
                         ];
 
-                        iconItems.forEach(item => {
+                        iconItems.forEach(function (item) {
                             if (item.value === tagConfig.icon) {
                                 item.description = '$(check)';
                             }
                         });
+
                         vscode.window.showQuickPick(iconItems, {
-                            placeHolder: '为 ' + node.tag + ' 选择图标'
+                            placeHolder: 'Choose icon for ' + node.tag
                         }).then(function (icon) {
                             if (icon) {
                                 updateConfig('icon', icon.value);
@@ -1485,43 +1459,40 @@ function activate(context) {
                         var fontItems = [
                             {
                                 label: '$(bold) Bold',
-                                detail: '加粗',
+                                detail: 'Bold',
                                 description: (tagConfig.fontWeight === 'bold' && tagConfig.fontStyle !== 'italic') ? '$(check)' : '',
                                 fontWeight: 'bold',
                                 fontStyle: 'normal'
                             },
                             {
                                 label: '$(italic) Italic',
-                                detail: '斜体',
+                                detail: 'Italic',
                                 description: (tagConfig.fontWeight !== 'bold' && tagConfig.fontStyle === 'italic') ? '$(check)' : '',
                                 fontWeight: 'normal',
                                 fontStyle: 'italic'
                             },
                             {
                                 label: '$(bold) Bold + Italic',
-                                detail: '加粗斜体',
+                                detail: 'Bold + Italic',
                                 description: (tagConfig.fontWeight === 'bold' && tagConfig.fontStyle === 'italic') ? '$(check)' : '',
                                 fontWeight: 'bold',
                                 fontStyle: 'italic'
                             },
                             {
                                 label: '$(symbol-text) Normal',
-                                detail: '默认',
+                                detail: 'Normal',
                                 description: (!tagConfig.fontWeight && !tagConfig.fontStyle) ? '$(check)' : '',
                                 fontWeight: 'normal',
                                 fontStyle: 'normal'
                             }
                         ];
+
                         vscode.window.showQuickPick(fontItems, {
-                            placeHolder: '为 ' + node.tag + ' 选择字体样式'
+                            placeHolder: 'Choose font style for ' + node.tag
                         }).then(function (font) {
                             if (font) {
-                                var cfg = vscode.workspace.getConfiguration('todo-tree.highlights');
-                                var updated = JSON.parse(JSON.stringify(cfg.get('customHighlight', {})));
-                                if (!updated[node.tag]) updated[node.tag] = {};
-                                updated[node.tag].fontWeight = font.fontWeight;
-                                updated[node.tag].fontStyle = font.fontStyle;
-                                cfg.update('customHighlight', updated, vscode.ConfigurationTarget.Global);
+                                updateConfig('fontWeight', font.fontWeight);
+                                updateConfig('fontStyle', font.fontStyle);
                             }
                         });
                     }
@@ -1529,28 +1500,28 @@ function activate(context) {
             }
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.reveal', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.reveal', function () {
             if (vscode.window.activeTextEditor) {
                 showInTree(vscode.window.activeTextEditor.document.uri);
             }
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.toggleItemCounts', function () {
-            var current = vscode.workspace.getConfiguration('todo-tree.tree').get('showCountsInTree');
-            vscode.workspace.getConfiguration('todo-tree.tree').update('showCountsInTree', !current, vscode.ConfigurationTarget.Workspace);
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.toggleItemCounts', function () {
+            var current = vscode.workspace.getConfiguration('taskvision.tree').get('showCountsInTree');
+            vscode.workspace.getConfiguration('taskvision.tree').update('showCountsInTree', !current, vscode.ConfigurationTarget.Workspace);
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.toggleBadges', function () {
-            var current = vscode.workspace.getConfiguration('todo-tree.tree').get('showBadges');
-            vscode.workspace.getConfiguration('todo-tree.tree').update('showBadges', !current, vscode.ConfigurationTarget.Workspace);
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.toggleBadges', function () {
+            var current = vscode.workspace.getConfiguration('taskvision.tree').get('showBadges');
+            vscode.workspace.getConfiguration('taskvision.tree').update('showBadges', !current, vscode.ConfigurationTarget.Workspace);
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.toggleCompactFolders', function () {
-            var current = vscode.workspace.getConfiguration('todo-tree.tree').get('disableCompactFolders');
-            vscode.workspace.getConfiguration('todo-tree.tree').update('disableCompactFolders', !current, vscode.ConfigurationTarget.Workspace);
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.toggleCompactFolders', function () {
+            var current = vscode.workspace.getConfiguration('taskvision.tree').get('disableCompactFolders');
+            vscode.workspace.getConfiguration('taskvision.tree').update('disableCompactFolders', !current, vscode.ConfigurationTarget.Workspace);
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.goToNext', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.goToNext', function () {
             var editor = vscode.window.activeTextEditor;
 
             var text = editor.document.getText();
@@ -1590,7 +1561,7 @@ function activate(context) {
             }
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.goToPrevious', function () {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.goToPrevious', function () {
             var editor = vscode.window.activeTextEditor;
 
             var text = editor.document.getText();
@@ -1631,7 +1602,7 @@ function activate(context) {
             }
         }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.revealInFile', function (uri, selection) {
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.revealInFile', function (uri, selection) {
             function flashLine() {
                 var editor = vscode.window.activeTextEditor;
 
@@ -1664,24 +1635,24 @@ function activate(context) {
         context.subscriptions.push(todoTreeView.onDidExpandElement(function (e) { provider.setExpanded(e.element.fsPath, true); }));
         context.subscriptions.push(todoTreeView.onDidCollapseElement(function (e) { provider.setExpanded(e.element.fsPath, false); }));
 
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.filterClear', clearTreeFilter));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.refresh', rebuild));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.showFlatView', showFlatView));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.showTagsOnlyView', showTagsOnlyView));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.showTreeView', showTreeView));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.expand', expand));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.collapse', collapse));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.groupByTag', groupByTag));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.ungroupByTag', ungroupByTag));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.groupBySubTag', groupBySubTag));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.ungroupBySubTag', ungroupBySubTag));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.addTag', addTagDialog));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.removeTag', removeTagDialog));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.onStatusBarClicked', onStatusBarClicked));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.scanWorkspaceAndOpenFiles', scanWorkspaceAndOpenFiles));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.scanOpenFilesOnly', scanOpenFilesOnly));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.scanCurrentFileOnly', scanCurrentFileOnly));
-        context.subscriptions.push(vscode.commands.registerCommand('todo-tree.scanWorkspaceOnly', scanWorkspaceOnly));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.filterClear', clearTreeFilter));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.refresh', rebuild));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.showFlatView', showFlatView));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.showTagsOnlyView', showTagsOnlyView));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.showTreeView', showTreeView));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.expand', expand));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.collapse', collapse));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.groupByTag', groupByTag));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.ungroupByTag', ungroupByTag));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.groupBySubTag', groupBySubTag));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.ungroupBySubTag', ungroupBySubTag));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.addTag', addTagDialog));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.removeTag', removeTagDialog));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.onStatusBarClicked', onStatusBarClicked));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.scanWorkspaceAndOpenFiles', scanWorkspaceAndOpenFiles));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.scanOpenFilesOnly', scanOpenFilesOnly));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.scanCurrentFileOnly', scanCurrentFileOnly));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.scanWorkspaceOnly', scanWorkspaceOnly));
 
         context.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(function (editors) {
             editors.forEach(function (editor) {
@@ -1700,7 +1671,7 @@ function activate(context) {
                     refreshFile(e.document);
                 }
 
-                if (vscode.workspace.getConfiguration('todo-tree.tree').autoRefresh === true && vscode.workspace.getConfiguration('todo-tree.tree').trackFile === true) {
+                if (vscode.workspace.getConfiguration('taskvision.tree').autoRefresh === true && vscode.workspace.getConfiguration('taskvision.tree').trackFile === true) {
                     if (e.document.uri && config.isValidScheme(e.document.uri)) {
                         if (selectedDocument !== e.document.fileName) {
                             setTimeout(showInTree, 500, e.document.uri);
@@ -1745,7 +1716,7 @@ function activate(context) {
 
             delete openDocuments[document.uri.toString()];
 
-            if (vscode.workspace.getConfiguration('todo-tree.tree').autoRefresh === true && config.scanMode() !== SCAN_MODE_WORKSPACE_ONLY) {
+            if (vscode.workspace.getConfiguration('taskvision.tree').autoRefresh === true && config.scanMode() !== SCAN_MODE_WORKSPACE_ONLY) {
                 if (config.isValidScheme(document.uri)) {
                     if (config.scanMode() !== SCAN_MODE_WORKSPACE_AND_OPEN_FILES) {
                         removeFromTree(document.uri);
@@ -1772,19 +1743,19 @@ function activate(context) {
         }));
 
         context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(function (e) {
-            if (e.affectsConfiguration("todo-tree") ||
+            if (e.affectsConfiguration("taskvision") ||
                 e.affectsConfiguration('files.exclude') ||
                 e.affectsConfiguration('explorer.compactFolders')) {
-                if (e.affectsConfiguration("todo-tree.regex.regex")) {
+                if (e.affectsConfiguration("taskvision.regex.regex")) {
                     return;
                 }
 
-                if (e.affectsConfiguration("todo-tree.highlights.enabled") ||
-                    e.affectsConfiguration("todo-tree.highlights.useColourScheme") ||
-                    e.affectsConfiguration("todo-tree.highlights.foregroundColourScheme") ||
-                    e.affectsConfiguration("todo-tree.highlights.backgroundColourScheme") ||
-                    e.affectsConfiguration("todo-tree.highlights.defaultHighlight") ||
-                    e.affectsConfiguration("todo-tree.highlights.customHighlight")) {
+                if (e.affectsConfiguration("taskvision.highlights.enabled") ||
+                    e.affectsConfiguration("taskvision.highlights.useColourScheme") ||
+                    e.affectsConfiguration("taskvision.highlights.foregroundColourScheme") ||
+                    e.affectsConfiguration("taskvision.highlights.backgroundColourScheme") ||
+                    e.affectsConfiguration("taskvision.highlights.defaultHighlight") ||
+                    e.affectsConfiguration("taskvision.highlights.customHighlight")) {
                     highlights.clearCache();
                     validateColours();
                     validateIcons();
@@ -1794,41 +1765,41 @@ function activate(context) {
                     });
                     documentChanged(); // Keeps updating the active one, though loop covers it too. Checking if documentChanged does more.
                 }
-                else if (e.affectsConfiguration("todo-tree.tree.labelFormat")) {
+                else if (e.affectsConfiguration("taskvision.tree.labelFormat")) {
                     validatePlaceholders();
                 }
-                else if (e.affectsConfiguration("todo-tree.general.debug")) {
+                else if (e.affectsConfiguration("taskvision.general.debug")) {
                     resetOutputChannel();
                 }
-                else if (e.affectsConfiguration("todo-tree.general.automaticGitRefreshInterval")) {
+                else if (e.affectsConfiguration("taskvision.general.automaticGitRefreshInterval")) {
                     resetGitWatcher();
                 }
-                else if (e.affectsConfiguration("todo-tree.general.periodicRefreshInterval")) {
+                else if (e.affectsConfiguration("taskvision.general.periodicRefreshInterval")) {
                     resetPeriodicRefresh();
                 }
 
-                if (e.affectsConfiguration("todo-tree.general.tagGroups")) {
+                if (e.affectsConfiguration("taskvision.general.tagGroups")) {
                     highlights.clearCache();
                     config.refreshTagGroupLookup();
                     rebuild();
                     documentChanged();
                 }
-                else if (e.affectsConfiguration("todo-tree.tree.showCountsInTree") ||
-                    e.affectsConfiguration("todo-tree.tree.showBadges")) {
+                else if (e.affectsConfiguration("taskvision.tree.showCountsInTree") ||
+                    e.affectsConfiguration("taskvision.tree.showBadges")) {
                     refresh();
                 }
-                else if (e.affectsConfiguration("todo-tree.filtering") ||
-                    e.affectsConfiguration("todo-tree.regex") ||
-                    e.affectsConfiguration("todo-tree.ripgrep") ||
-                    e.affectsConfiguration("todo-tree.tree") ||
-                    e.affectsConfiguration("todo-tree.general.rootFolder") ||
-                    e.affectsConfiguration("todo-tree.general.tags") ||
+                else if (e.affectsConfiguration("taskvision.filtering") ||
+                    e.affectsConfiguration("taskvision.regex") ||
+                    e.affectsConfiguration("taskvision.ripgrep") ||
+                    e.affectsConfiguration("taskvision.tree") ||
+                    e.affectsConfiguration("taskvision.general.rootFolder") ||
+                    e.affectsConfiguration("taskvision.general.tags") ||
                     e.affectsConfiguration("files.exclude")) {
                     highlights.clearCache();
                     rebuild();
                     documentChanged();
                 }
-                else if (e.affectsConfiguration("todo-tree.general.showActivityBarBadge")) {
+                else if (e.affectsConfiguration("taskvision.general.showActivityBarBadge")) {
                     updateInformation();
                 }
                 else {
@@ -1862,7 +1833,7 @@ function activate(context) {
         resetGitWatcher();
         resetPeriodicRefresh();
 
-        if (vscode.workspace.getConfiguration('todo-tree.tree').scanAtStartup === true) {
+        if (vscode.workspace.getConfiguration('taskvision.tree').scanAtStartup === true) {
             rebuild();
 
             var editors = vscode.window.visibleTextEditors;

@@ -1,33 +1,13 @@
 --- Testing getDecoration("TODO") ---
-[TaskVision] getDecoration options for "TODO":
-[Mock] created decoration type with:
-{
-  "borderRadius": "6px",
-  "isWholeLine": true,
-  "light": {
-    "backgroundColor": "rgba(#42A5F5,15)",
-    "fontWeight": "bold",
-    "border": "1px solid rgba(#42A5F5,40)"
-  },
-  "dark": {
-    "backgroundColor": "rgba(#42A5F5,15)",
-    "fontWeight": "bold",
-    "border": "1px solid rgba(#42A5F5,40)"
-  }
-}
-[TaskVision] Secondary options for "TODO":
-[Mock] created decoration type with:
-{
-  "light": {
-    "color": "#42A5F5",
-    "textDecoration": "none; text-shadow: 0 0 5px #42A5F5, 0 0 10px #42A5F5, 0 0 15px #42A5F5; font-weight: bold;"
-  },
-  "dark": {
-    "color": "#42A5F5",
-    "textDecoration": "none; text-shadow: 0 0 5px #42A5F5, 0 0 10px #42A5F5, 0 0 15px #42A5F5; font-weight: bold;"
-  },
-  "isWholeLine": false,
-  "rangeBehavior": 1
-}
-Primary created.
-Secondary created.
+Error: TypeError: debug is not a function
+TypeError: debug is not a function
+    at trace (evalmachine.<anonymous>:34:9)
+    at Object.getDecoration (evalmachine.<anonymous>:235:5)
+    at Object.<anonymous> (C:\Users\A-Znk\Desktop\Code\taskvision\src\reproduce_issue_v5.js:140:31)
+    at Module._compile (node:internal/modules/cjs/loader:1760:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1480:32)
+    at Module._load (node:internal/modules/cjs/loader:1299:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)

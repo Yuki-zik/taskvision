@@ -14,7 +14,7 @@ const vscode = {
     workspace: {
         getConfiguration: (section) => ({
             get: (key, def) => {
-                // If section is 'todo-tree.highlights' it will enter here.
+                // If section is 'taskvision.highlights' it will enter here.
                 if (key === 'customHighlight') return { "TODO": { "scheme": "neon+glass", "type": "whole-line" } };
                 if (key === 'highlight') return 'whole-line';
                 if (key === 'schemes') return {};

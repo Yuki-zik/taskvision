@@ -559,7 +559,7 @@ class TreeNodeProvider {
                     if (url.trim() !== "") {
                         url = utils.formatLabel(url, node);
                         treeItem.command = {
-                            command: "todo-tree.openUrl",
+                            command: "taskvision.openUrl",
                             arguments: [
                                 url
                             ]
@@ -587,7 +587,7 @@ class TreeNodeProvider {
                     treeItem.label = utils.formatLabel(format, node) + (node.pathLabel ? (" " + node.pathLabel) : "");
                 }
 
-                var revealBehaviour = vscode.workspace.getConfiguration('todo-tree.general').get('revealBehaviour');
+                var revealBehaviour = vscode.workspace.getConfiguration('taskvision.general').get('revealBehaviour');
 
                 var todoSelection;
                 if (revealBehaviour === 'end of todo') {
@@ -604,7 +604,7 @@ class TreeNodeProvider {
                 }
 
                 treeItem.command = {
-                    command: "todo-tree.revealInFile",
+                    command: "taskvision.revealInFile",
                     arguments: [
                         node.uri ? node.uri : vscode.Uri.file(node.fsPath),
                         { selection: todoSelection }

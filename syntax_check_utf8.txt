@@ -1,0 +1,34 @@
+﻿node : C:\Users\A-Znk\D
+esktop\Code\taskvision\
+src\highlights.js:637
+At line:1 char:1
++ node -c 
+src/highlights.js > 
+syntax_check.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (C:\Users\A-Zn   
+ k\...ghlights.js:6    
+37:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+    }
+    ^
+
+SyntaxError: Missing 
+catch or finally after 
+try
+    at wrapSafe (node:i
+nternal/modules/cjs/loa
+der:1691:18)
+    at checkSyntax (nod
+e:internal/main/check_s
+yntax:76:3)
+
+Node.js v24.8.0

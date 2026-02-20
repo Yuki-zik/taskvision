@@ -57,6 +57,7 @@
 
 ```
 [TaskVision] Match #1: raw="# TODO" tag="TODO" type="whole-line"
+
 [TaskVision] Match #2: raw="# XXX" tag="XXX" type="whole-line"
 [TaskVision] Match #3: raw="# FIXME" tag="FIXME" type="whole-line"
 [TaskVision] Total matches: 4
@@ -70,16 +71,16 @@
 
 审查 [attributes.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js) 的导出列表：
 
-| 导出的函数 | 状态 |
-|-----------|------|
-| [getAttribute](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#8-48) | ✅ 存在 |
-| [getIcon](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#49-53) | ✅ 存在 |
-| [getIconColour](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#44-64) | ✅ 存在 |
-| [getForeground](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#88-98) | ✅ 存在 |
-| [getBackground](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#99-109) | ✅ 存在 |
-| [getOpacity](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#165-172) | ❌ **缺失** |
-| [getRulerColour](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#94-97) | ❌ **缺失** |
-| [getRulerLane](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#157-164) | ❌ **缺失** |
+| 导出的函数                                                                                  | 状态       |
+| ------------------------------------------------------------------------------------------- | ---------- |
+| [getAttribute](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#8-48)       | ✅ 存在     |
+| [getIcon](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#49-53)           | ✅ 存在     |
+| [getIconColour](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#44-64)     | ✅ 存在     |
+| [getForeground](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#88-98)     | ✅ 存在     |
+| [getBackground](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#99-109)    | ✅ 存在     |
+| [getOpacity](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#165-172)      | ❌ **缺失** |
+| [getRulerColour](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#94-97)    | ❌ **缺失** |
+| [getRulerLane](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#157-164)    | ❌ **缺失** |
 | [getBorderRadius](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#181-188) | ❌ **缺失** |
 
 [highlights.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js) 需要调用这 4 个函数，但 [attributes.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js) 从未定义或导出它们。这是代码级的遗漏——可能是上游 `todo-tree` 在某次重构中遗漏了，或者在 fork 时就已存在。
@@ -201,15 +202,15 @@ node -e "const o = require('./node_modules/@primer/octicons');
 
 ### 关键观察
 
-| 标签 | fontWeight | fontStyle | 高亮效果 |
-|------|-----------|-----------|---------|
-| TODO | _(无)_ | _(无)_ | ✅ 正常 |
-| [x] | _(无)_ | _(无)_ | ✅ 正常 |
-| FIXME | `"bold"` | `"italic"` | ❌ 不显示 |
-| XXX | `"bold"` | `"italic"` | ❌ 不显示 |
-| BUG | `"bold"` | _(无)_ | ❌ 不显示 |
-| HACK | `"bold"` | _(无)_ | ❌ 不显示 |
-| NOTE | _(无)_ | `"italic"` | ❌ 不显示 |
+| 标签  | fontWeight | fontStyle  | 高亮效果 |
+| ----- | ---------- | ---------- | -------- |
+| TODO  | _(无)_     | _(无)_     | ✅ 正常   |
+| [x]   | _(无)_     | _(无)_     | ✅ 正常   |
+| FIXME | `"bold"`   | `"italic"` | ❌ 不显示 |
+| XXX   | `"bold"`   | `"italic"` | ❌ 不显示 |
+| BUG   | `"bold"`   | _(无)_     | ❌ 不显示 |
+| HACK  | `"bold"`   | _(无)_     | ❌ 不显示 |
+| NOTE  | _(无)_     | `"italic"` | ❌ 不显示 |
 
 **100% 相关性：所有含 `fontWeight` 或 `fontStyle` 的标签都不显示。**
 
@@ -260,11 +261,11 @@ VS Code 的 `DecorationRenderOptions` 接口虽然**语法上**允许 `fontWeigh
 
 ## 七、修改文件总结
 
-| 文件 | 修改内容 | 目的 |
-|------|---------|------|
-| [attributes.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js) | 添加 [getOpacity](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#165-172)、[getRulerColour](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#94-97)、[getRulerLane](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#157-164)、[getBorderRadius](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#181-188) 4 个函数及导出 | 修复 `TypeError: attributes.getOpacity is not a function` |
-| [highlights.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js) | 1. `catch` 块添加 `console.error`<br>2. 入口点添加诊断日志<br>3. `forEach` 添加 per-tag try-catch<br>4. `fontWeight`/`fontStyle` 从顶层移入 [light](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#220-370)/`dark` 子对象 | 1. 让错误无处隐藏<br>2. 追踪调用链<br>3. 错误隔离<br>4. 修复装饰不渲染 |
-| [extension.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/extension.js) | [documentChanged()](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/extension.js#987-1018) 添加诊断日志 | 追踪事件触发链 |
+| 文件                                                                              | 修改内容                                                                                                                                                                                                                                                                                                                                                                                    | 目的                                                                   |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [attributes.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js) | 添加 [getOpacity](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#165-172)、[getRulerColour](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/attributes.js#94-97)、[getRulerLane](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#157-164)、[getBorderRadius](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#181-188) 4 个函数及导出 | 修复 `TypeError: attributes.getOpacity is not a function`              |
+| [highlights.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js) | 1. `catch` 块添加 `console.error`<br>2. 入口点添加诊断日志<br>3. `forEach` 添加 per-tag try-catch<br>4. `fontWeight`/`fontStyle` 从顶层移入 [light](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/highlights.js#220-370)/`dark` 子对象                                                                                                                                                 | 1. 让错误无处隐藏<br>2. 追踪调用链<br>3. 错误隔离<br>4. 修复装饰不渲染 |
+| [extension.js](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/extension.js)   | [documentChanged()](file:///C:/Users/A-Znk/Desktop/Code/taskvision/src/extension.js#987-1018) 添加诊断日志                                                                                                                                                                                                                                                                                  | 追踪事件触发链                                                         |
 
 ---
 

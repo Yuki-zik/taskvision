@@ -1,0 +1,279 @@
+diff --git a/src/highlights.js b/src/highlights.js
+index bfbb43f..b514fbc 100644
+--- a/src/highlights.js
++++ b/src/highlights.js
+@@ -514,150 +514,148 @@ function highlight(editor) {
+                                 }
+                             });
+ 
+-                            endDecorationPos = editor.document.positionAt(offsetStart + minIndex + terminatorLength);
++                            if (minIndex !== -1) {
++                                endDecorationPos = editor.document.positionAt(offsetStart + minIndex + terminatorLength);
++                            }
++
++                            // Use separate function to register different ranges for primary (background) and secondary (text)
++                            addTagSpecificDecoration(
++                                new vscode.Range(startPos, endPos), // Tag Range (for text/glow)
++                                new vscode.Range(startPos, endDecorationPos) // Full Range (for background)
++                            );
+                         }
++                        else if (type === 'line') {
++                            // For 'line', we keep the original behavior (0 to end)
++                            addDecoration(
++                                new vscode.Position(fullEndPos.line, editor.document.lineAt(fullEndPos.line).range.end.character),
++                                new vscode.Position(startPos.line, 0));
++                        }
++                        else {
++                            addDecoration(startPos, endPos);
+ 
+-                        // Use separate function to register different ranges for primary (background) and secondary (text)
+-                        addTagSpecificDecoration(
+-                            new vscode.Range(startPos, endPos), // Tag Range (for text/glow)
+-                            new vscode.Range(startPos, endDecorationPos) // Full Range (for background)
+-                        );
+-                    }
+-                    else if (type === 'line') {
+-                        // For 'line', we keep the original behavior (0 to end)
+-                        addDecoration(
+-                            new vscode.Position(fullEndPos.line, editor.document.lineAt(fullEndPos.line).range.end.character),
+-                            new vscode.Position(startPos.line, 0));
+-                    }
+-                    else {
+-                        addDecoration(startPos, endPos);
++                            // --- ISSUE 2: Apply comment coloring for standard 'tag'/'text' highlights ---
++                            // If we just highlighted the tag, we may also want to highlight the comment text following it
++                            // but ONLY with the foreground color (no glow).
++                            if ((type === 'text' || type === 'tag' || type === 'none' || type === undefined) && extracted.tag) { // Check extracted.tag to ensure we have a valid tag match
++
++                                // Calculate the range for the rest of the line (similar to whole-line logic)
++                                var lineEndPos = new vscode.Position(fullEndPos.line, editor.document.lineAt(fullEndPos.line).range.end.character);
++                                var commentEndPos = lineEndPos;
++
++                                // Check for block comment terminators
++                                var textFromTag = text.substring(offsetStart, editor.document.offsetAt(lineEndPos));
++                                var blockConnectors = ['*/', '-->', '}}'];
++                                var minIndex = -1;
++                                var terminatorLength = 0;
++
++                                blockConnectors.forEach(function (term) {
++                                    var idx = textFromTag.indexOf(term);
++                                    if (idx !== -1 && (minIndex === -1 || idx < minIndex)) {
++                                        minIndex = idx;
++                                        terminatorLength = term.length; // Don't include terminator in color usually, or do we?
++                                        // "Whole line" logic includes it up to the terminator start?
++                                        // Original whole-line logic: offsetStart + minIndex + terminatorLength.
++                                        // Actually, if we want to stop BEFORE the terminator, we should just use minIndex.
++                                        // But let's stick to the previous whole-line logic pattern which seemed to include it?
++                                        // Re-reading original line 452: positionAt(offsetStart + minIndex + terminatorLength)
++                                        // This means it INCLUDES the terminator in the background.
++                                        // For text coloring, maybe we want to include it too? Let's be consistent.
++                                    }
++                                });
+ 
+-                        // --- ISSUE 2: Apply comment coloring for standard 'tag'/'text' highlights ---
+-                        // If we just highlighted the tag, we may also want to highlight the comment text following it
+-                        // but ONLY with the foreground color (no glow).
+-                        if ((type === 'text' || type === 'tag' || type === 'none' || type === undefined) && extracted.tag) { // Check extracted.tag to ensure we have a valid tag match
++                                if (minIndex !== -1) {
++                                    commentEndPos = editor.document.positionAt(offsetStart + minIndex + terminatorLength);
++                                }
+ 
+-                            // Calculate the range for the rest of the line (similar to whole-line logic)
+-                            var lineEndPos = new vscode.Position(fullEndPos.line, editor.document.lineAt(fullEndPos.line).range.end.character);
+-                            var commentEndPos = lineEndPos;
++                                // Identify where the "comment text" actually starts.
++                                // 'endPos' is the end of the TAG.
++                                // We want from endPos to commentEndPos.
++                                if (commentEndPos.isAfter(endPos)) {
++                                    var commentDecoration = { range: new vscode.Range(endPos, commentEndPos) };
++                                    if (commentHighlights[tag] === undefined) {
++                                        commentHighlights[tag] = [];
++                                    }
++                                    commentHighlights[tag].push(commentDecoration);
++                                }
++                            }
++                        }
++                    }
+ 
+-                            // Check for block comment terminators
+-                            var textFromTag = text.substring(offsetStart, editor.document.offsetAt(lineEndPos));
+-                            var blockConnectors = ['*/', '-->', '}}'];
+-                            var minIndex = -1;
+-                            var terminatorLength = 0;
+ 
+-                            blockConnectors.forEach(function (term) {
+-                                var idx = textFromTag.indexOf(term);
+-                                if (idx !== -1 && (minIndex === -1 || idx < minIndex)) {
+-                                    minIndex = idx;
+-                                    terminatorLength = term.length; // Don't include terminator in color usually, or do we?
+-                                    // "Whole line" logic includes it up to the terminator start?
+-                                    // Original whole-line logic: offsetStart + minIndex + terminatorLength.
+-                                    // Actually, if we want to stop BEFORE the terminator, we should just use minIndex.
+-                                    // But let's stick to the previous whole-line logic pattern which seemed to include it?
+-                                    // Re-reading original line 452: positionAt(offsetStart + minIndex + terminatorLength)
+-                                    // This means it INCLUDES the terminator in the background.
+-                                    // For text coloring, maybe we want to include it too? Let's be consistent.
++                    console.log('[TaskVision] Total matches: ' + matchCount);
++                    console.log('[TaskVision] Tags with decorations: ' + Object.keys(documentHighlights).join(', '));
++
++                    Object.keys(documentHighlights).forEach(function (tag) {
++                        try {
++                            var decorationResult = getDecoration(tag);
++                            var locations = documentHighlights[tag];
++
++                            if (decorationResult.primary) {
++                                decorations[id].push(decorationResult.primary);
++                                editor.setDecorations(decorationResult.primary, locations);
++                            } else if (decorationResult && !decorationResult.primary && !decorationResult.secondary) {
++                                // Compatibility: if getDecoration returned a single object directly (shouldn't happen with new code but safe fallback)
++                                // However, we know getDecoration returns {primary: ...} now.
++                                // If it somehow returned a raw object, handle it:
++                                if (decorationResult.key) { // check for verify existence of VSCode decoration object property or similar?
++                                    // Actually, checking if it has .dispose is safer, but simpler:
++                                    decorations[id].push(decorationResult);
++                                    editor.setDecorations(decorationResult, locations);
+                                 }
+-                            });
++                            }
+ 
+-                            if (minIndex !== -1) {
+-                                commentEndPos = editor.document.positionAt(offsetStart + minIndex + terminatorLength);
++                            if (decorationResult.secondary) {
++                                decorations[id].push(decorationResult.secondary);
++                                // Use secondaryHighlights for secondary decoration (tag text/glow)
++                                var secondaryLocations = secondaryHighlights[tag] || locations;
++                                editor.setDecorations(decorationResult.secondary, secondaryLocations);
+                             }
+ 
+-                            // Identify where the "comment text" actually starts.
+-                            // 'endPos' is the end of the TAG.
+-                            // We want from endPos to commentEndPos.
+-                            if (commentEndPos.isAfter(endPos)) {
+-                                var commentDecoration = { range: new vscode.Range(endPos, commentEndPos) };
+-                                if (commentHighlights[tag] === undefined) {
+-                                    commentHighlights[tag] = [];
+-                                }
+-                                commentHighlights[tag].push(commentDecoration);
++                            // Apply Comment Decorations (Issue 2)
++                            if (decorationResult.comment && commentHighlights[tag]) {
++                                decorations[id].push(decorationResult.comment);
++                                editor.setDecorations(decorationResult.comment, commentHighlights[tag]);
++                                console.log('[TaskVision] Applied ' + commentHighlights[tag].length + ' comment decorations for tag "' + tag + '"');
+                             }
++
++                            console.log('[TaskVision] Applied ' + locations.length + ' decorations for tag "' + tag + '"');
++                        } catch (tagError) {
++                            console.error('[TaskVision] getDecoration FAILED for tag "' + tag + '":', tagError.message, tagError.stack);
+                         }
++                    });
++
++                    Object.keys(subTagHighlights).forEach(function (subTag) {
++                        var decoration = getDecoration(subTag);
++                        if (decoration.primary) { // Handle object vs property
++                            decorations[id].push(decoration.primary);
++                            editor.setDecorations(decoration.primary, subTagHighlights[subTag]);
++                        } else {
++                            decorations[id].push(decoration);
++                            editor.setDecorations(decoration, subTagHighlights[subTag]);
++                        }
++                    });
++                } catch (e) {
++                    console.error('[TaskVision] highlighting FAILED:', e.message, e.stack);
++                    if (debug) {
++                        debug("highlighting failed: " + e);
+                     }
+                 }
+             }
+ 
+-            console.log('[TaskVision] Total matches: ' + matchCount);
+-            console.log('[TaskVision] Tags with decorations: ' + Object.keys(documentHighlights).join(', '));
+-
+-            Object.keys(documentHighlights).forEach(function (tag) {
+-                try {
+-                    var decorationResult = getDecoration(tag);
+-                    var locations = documentHighlights[tag];
+-
+-                    if (decorationResult.primary) {
+-                        decorations[id].push(decorationResult.primary);
+-                        editor.setDecorations(decorationResult.primary, locations);
+-                    } else if (decorationResult && !decorationResult.primary && !decorationResult.secondary) {
+-                        // Compatibility: if getDecoration returned a single object directly (shouldn't happen with new code but safe fallback)
+-                        // However, we know getDecoration returns {primary: ...} now.
+-                        // If it somehow returned a raw object, handle it:
+-                        if (decorationResult.key) { // check for verify existence of VSCode decoration object property or similar?
+-                            // Actually, checking if it has .dispose is safer, but simpler:
+-                            decorations[id].push(decorationResult);
+-                            editor.setDecorations(decorationResult, locations);
+-                        }
+-                    }
++            function triggerHighlight(editor) {
++                console.log('[TaskVision] triggerHighlight() called, editor:', editor ? editor.document.fileName : 'null');
++                if (editor) {
++                    var id = editorId(editor);
+ 
+-                    if (decorationResult.secondary) {
+-                        decorations[id].push(decorationResult.secondary);
+-                        // Use secondaryHighlights for secondary decoration (tag text/glow)
+-                        var secondaryLocations = secondaryHighlights[tag] || locations;
+-                        editor.setDecorations(decorationResult.secondary, secondaryLocations);
++                    if (highlightTimer[id]) {
++                        clearTimeout(highlightTimer[id]);
+                     }
+-
+-                    // Apply Comment Decorations (Issue 2)
+-                    if (decorationResult.comment && commentHighlights[tag]) {
+-                        decorations[id].push(decorationResult.comment);
+-                        editor.setDecorations(decorationResult.comment, commentHighlights[tag]);
+-                        console.log('[TaskVision] Applied ' + commentHighlights[tag].length + ' comment decorations for tag "' + tag + '"');
+-                    }
+-
+-                    console.log('[TaskVision] Applied ' + locations.length + ' decorations for tag "' + tag + '"');
+-                } catch (tagError) {
+-                    console.error('[TaskVision] getDecoration FAILED for tag "' + tag + '":', tagError.message, tagError.stack);
+-                }
+-            });
+-
+-            Object.keys(subTagHighlights).forEach(function (subTag) {
+-                var decoration = getDecoration(subTag);
+-                if (decoration.primary) { // Handle object vs property
+-                    decorations[id].push(decoration.primary);
+-                    editor.setDecorations(decoration.primary, subTagHighlights[subTag]);
+-                } else {
+-                    decorations[id].push(decoration);
+-                    editor.setDecorations(decoration, subTagHighlights[subTag]);
++                    highlightTimer[id] = setTimeout(highlight, vscode.workspace.getConfiguration('todo-tree.highlights').highlightDelay, editor);
+                 }
+-            });
+-        }
+-    }
+-    }
+-    catch (e) {
+-    console.error('[TaskVision] highlighting FAILED:', e.message, e.stack);
+-    if (debug) {
+-        debug("highlighting failed: " + e);
+-    }
+-}
+-}
+-
+-function triggerHighlight(editor) {
+-    console.log('[TaskVision] triggerHighlight() called, editor:', editor ? editor.document.fileName : 'null');
+-    if (editor) {
+-        var id = editorId(editor);
+-
+-        if (highlightTimer[id]) {
+-            clearTimeout(highlightTimer[id]);
+-        }
+-        highlightTimer[id] = setTimeout(highlight, vscode.workspace.getConfiguration('todo-tree.highlights').highlightDelay, editor);
+-    }
+-}
++            }
+ 
+-module.exports.init = init;
+-module.exports.getDecoration = getDecoration;
+-module.exports.triggerHighlight = triggerHighlight;
+-module.exports.clearCache = clearCache;
++            module.exports.init = init;
++            module.exports.getDecoration = getDecoration;
++            module.exports.triggerHighlight = triggerHighlight;
++            module.exports.clearCache = clearCache;
+ 
