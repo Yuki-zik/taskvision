@@ -16,7 +16,10 @@
     "engines": {
         "vscode": "^1.72.0"
     },
-    "repository": "https://github.com/Yuki-zik/taskvision",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Yuki-zik/taskvision.git"
+    },
     "bugs": {
         "url": "https://github.com/Yuki-zik/taskvision/issues"
     },

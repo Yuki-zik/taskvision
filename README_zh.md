@@ -4,6 +4,8 @@
 
 TaskVision 用于在代码注释中高亮 TODO 类标签，并在活动栏树视图中集中展示。
 
+![TaskVision 截图](resources/PixPin_2026-02-21_01-04-22.png)
+
 > [!IMPORTANT]
 > TaskVision 2.0 采用**四通道高亮模型**。旧 `type` 不再作为样式范围控制入口。
 

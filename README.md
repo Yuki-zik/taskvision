@@ -4,6 +4,8 @@
 
 TaskVision highlights TODO-style tags in code comments and shows them in a tree view.
 
+![TaskVision Screenshot](resources/PixPin_2026-02-21_01-04-22.png)
+
 > [!IMPORTANT]
 > TaskVision 2.0 uses a **four-channel** highlight model. Legacy `type` scope is deprecated for styling.
 
