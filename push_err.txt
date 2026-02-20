@@ -1,0 +1,3 @@
+To https://github.com/Yuki-zik/taskvision.git
+ ! [remote rejected] master -> master (refusing to allow an OAuth App to create or update workflow `.github/workflows/ci.yml` without `workflow` scope)
+error: failed to push some refs to 'https://github.com/Yuki-zik/taskvision.git'
