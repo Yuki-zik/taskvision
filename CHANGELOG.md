@@ -1,4 +1,16 @@
-# Todo Tree Change Log
+# TaskVision Change Log
+
+## v2.0.1 - 2026-02-21
+
+- Fix image URL warning during extension packaging by updating package.json repository field.
+- Update README documentation with new screenshots.
+
+## v2.0.0 - 2026-02-18
+
+- Forked from Todo Tree.
+- Refactored core to use a four-channel highlight model (`colorType`, `glowType`, `glassType`, `fontType`).
+- Changed `type` scope to be deprecated for styling.
+- Added support for multiple, simultaneous highlight visual ranges, including full-line backgrounds and neon text glows.
 
 ## v0.0.224 - 2023-02-09
 
