@@ -6,10 +6,13 @@ var path = require("path");
 var utils = require('./utils.js');
 var icons = require('./icons.js');
 var config = require('./config.js');
+var taskState = require('./taskState.js');
+var taskMetaStore = require('./taskMetaStore.js');
 
 var workspaceFolders;
 var nodes = [];
 var currentFilter;
+var currentStatusFilter;
 
 const PATH = "path";
 const TODO = "todo";
@@ -20,6 +23,7 @@ var nodeCounter = 1;
 var expandedNodes = {};
 
 var treeHasSubTags = false;
+var DEFAULT_LABEL_FORMAT = "${tag} ${after}";
 
 var isVisible = function (e) {
     return e.visible === true && e.hidden !== true;
@@ -173,16 +177,27 @@ function createSubTagNode(subTag) {
     };
 }
 
-function createTodoNode(result) {
-    var id = (buildCounter * 1000000) + nodeCounter++;
-    var joined = result.match.substr(result.column - 1);
-    if (result.extraLines) {
-        result.extraLines.map(function (extraLine) {
-            joined += "\n" + extraLine.match;
-        });
-    }
-    var text = utils.removeBlockComments(joined, result.uri.fsPath);
-    var extracted = utils.extractTag(text, result.column);
+function getWorkspaceRootForFile(filename) {
+    var result;
+
+    (workspaceFolders || []).forEach(function (folder) {
+        if (!folder.uri || folder.uri.scheme !== 'file') {
+            return;
+        }
+
+        var folderPath = folder.uri.fsPath;
+        var relative = path.relative(folderPath, filename);
+        if (relative === '' || (relative && relative.indexOf('..') !== 0 && path.isAbsolute(relative) === false)) {
+            if (!result || folderPath.length > result.length) {
+                result = folderPath;
+            }
+        }
+    });
+
+    return result;
+}
+
+function buildTodoLabel(extracted, result) {
     var label = (extracted.withoutTag && extracted.withoutTag.length > 0) ? extracted.withoutTag : "line " + result.line;
 
     if (config.shouldGroupByTag() !== true) {
@@ -194,7 +209,45 @@ function createTodoNode(result) {
         }
     }
 
+    return label;
+}
+
+function renderTodoDisplayLabel(node) {
+    var label = node.label;
+    var format = config.labelFormat();
+
+    if (format !== "" && (node.extraLines === undefined || node.extraLines.length === 0)) {
+        label = utils.formatLabel(format, node);
+        if (config.shouldShowStatusPrefix() &&
+            node.status &&
+            format.indexOf("${status}") === -1 &&
+            format === DEFAULT_LABEL_FORMAT) {
+            label = "[" + node.status + "] " + label;
+        }
+    }
+    else if (config.shouldShowStatusPrefix() && node.status && node.isExtraLine !== true) {
+        label = "[" + node.status + "] " + label;
+    }
+
+    return label + (node.pathLabel ? (" " + node.pathLabel) : "");
+}
+
+function createTodoNode(result, rootNode) {
+    var id = (buildCounter * 1000000) + nodeCounter++;
+    var joined = result.match.substr(result.column - 1);
+    if (result.extraLines) {
+        result.extraLines.map(function (extraLine) {
+            joined += "\n" + extraLine.match;
+        });
+    }
+    var text = utils.removeBlockComments(joined, result.uri.fsPath);
+    var extracted = utils.extractTag(text, result.column);
+    var label = buildTodoLabel(extracted, result);
+
     var tagGroup = config.tagGroup(extracted.tag);
+    var rootPath = getWorkspaceRootForFile(result.uri.fsPath) || (rootNode && rootNode.fsPath ? rootNode.fsPath : undefined);
+    var taskId = utils.createTaskId(rootPath, result.uri.fsPath, extracted.tag, extracted.withoutTag, extracted.subTag);
+    var meta = taskMetaStore.getTaskMetadata(rootPath, taskId, config.defaultTaskPriority(), config.aiContextOutputDir());
 
     var todo = {
         type: TODO,
@@ -211,7 +264,16 @@ function createTodoNode(result) {
         before: extracted.before ? extracted.before.trim() : "",
         id: id,
         visible: true,
-        extraLines: []
+        extraLines: [],
+        status: extracted.status,
+        hasExplicitStatus: extracted.hasExplicitStatus === true,
+        priority: meta.priority,
+        note: meta.note,
+        lastActor: meta.lastActor,
+        updatedAt: meta.updatedAt,
+        taskId: taskId,
+        rootPath: rootPath,
+        sourceOfTruth: extracted.sourceOfTruth || 'inline'
     };
 
     if (result.extraLines) {
@@ -223,7 +285,7 @@ function createTodoNode(result) {
             if (extraLine.match) {
                 var extraLineMatch = extraLine.match.trim();
                 if (extraLineMatch && extraLineMatch != todo.tag) {
-                    var extraLineNode = createTodoNode(extraLine);
+                    var extraLineNode = createTodoNode(extraLine, rootNode);
                     extraLineNode.isExtraLine = true;
                     todo.extraLines.push(extraLineNode);
                 }
@@ -365,6 +427,22 @@ function countChildTags(children, tagCounts, forStatusBar, fileFilter) {
     return tagCounts;
 }
 
+function normaliseStatusFilter(statuses) {
+    if (!Array.isArray(statuses)) {
+        return undefined;
+    }
+
+    var normalised = statuses.map(function (status) {
+        return taskState.normaliseStatus(status);
+    }).filter(Boolean);
+
+    if (normalised.length === 0) {
+        return undefined;
+    }
+
+    return Array.from(new Set(normalised));
+}
+
 function addWorkspaceFolders() {
     if (workspaceFolders && config.shouldShowTagsOnly() === false) {
         workspaceFolders.map(function (folder) {
@@ -410,6 +488,11 @@ class TreeNodeProvider {
 
             if (currentFilter) {
                 tooltip += "Tree Filter: \"" + currentFilter + "\"\n";
+                totalFilters++;
+            }
+
+            if (currentStatusFilter && currentStatusFilter.length > 0) {
+                tooltip += "Status Filter: " + currentStatusFilter.join(", ") + "\n";
                 totalFilters++;
             }
 
@@ -493,7 +576,7 @@ class TreeNodeProvider {
     getTreeItem(node) {
         var treeItem;
         try {
-            treeItem = new vscode.TreeItem(node.label + (node.pathLabel ? (" " + node.pathLabel) : ""));
+            treeItem = new vscode.TreeItem(isTodoNode(node) ? renderTodoDisplayLabel(node) : node.label + (node.pathLabel ? (" " + node.pathLabel) : ""));
         }
         catch (e) {
             console.log("Failed to create tree item: " + e);
@@ -580,11 +663,6 @@ class TreeNodeProvider {
                     else {
                         treeItem.iconPath = "no-icon";
                     }
-                }
-
-                var format = config.labelFormat();
-                if (format !== "" && (node.extraLines === undefined || node.extraLines.length === 0)) {
-                    treeItem.label = utils.formatLabel(format, node) + (node.pathLabel ? (" " + node.pathLabel) : "");
                 }
 
                 var revealBehaviour = vscode.workspace.getConfiguration('taskvision.general').get('revealBehaviour');
@@ -674,24 +752,25 @@ class TreeNodeProvider {
         this._onDidChangeTreeData.fire();
     }
 
-    filter(text, children) {
-        var matcher = new RegExp(text, config.showFilterCaseSensitive() ? "" : "i");
+    applyFilters(children) {
+        var matcher = currentFilter ? new RegExp(currentFilter, config.showFilterCaseSensitive() ? "" : "i") : undefined;
 
         if (children === undefined) {
-            currentFilter = text;
             children = nodes;
         }
+
         children.forEach(child => {
             if (child.type === TODO) {
-                var match = matcher.test(child.label);
-                child.visible = !text || match;
+                var textMatch = !matcher || matcher.test(child.label);
+                var statusMatch = !currentStatusFilter || currentStatusFilter.indexOf(taskState.normaliseStatus(child.status)) !== -1;
+                child.visible = textMatch && statusMatch;
             }
 
             if (child.nodes !== undefined) {
-                this.filter(text, child.nodes);
+                this.applyFilters(child.nodes);
             }
             if (child.extraLines !== undefined) {
-                this.filter(text, child.extraLines);
+                this.applyFilters(child.extraLines);
             }
             if ((child.nodes && child.nodes.length > 0) || (child.extraLines && child.extraLines.length > 0)) {
                 var visibleNodes = child.nodes ? child.nodes.filter(isVisible).length : 0;
@@ -701,21 +780,40 @@ class TreeNodeProvider {
         });
     }
 
-    clearTreeFilter(children) {
-        currentFilter = undefined;
-
+    filter(text, children) {
         if (children === undefined) {
+            currentFilter = text;
             children = nodes;
         }
-        children.forEach(function (child) {
-            child.visible = true;
-            if (child.nodes !== undefined) {
-                this.clearTreeFilter(child.nodes);
-            }
-            if (child.extraLines !== undefined) {
-                this.clearTreeFilter(child.extraLines);
-            }
-        }, this);
+
+        this.applyFilters(children);
+    }
+
+    clearTreeFilter(children) {
+        if (children === undefined) {
+            currentFilter = undefined;
+            children = nodes;
+        }
+
+        this.applyFilters(children);
+    }
+
+    filterByStatus(statuses, children) {
+        if (children === undefined) {
+            currentStatusFilter = normaliseStatusFilter(statuses);
+            children = nodes;
+        }
+
+        this.applyFilters(children);
+    }
+
+    clearStatusFilter(children) {
+        if (children === undefined) {
+            currentStatusFilter = undefined;
+            children = nodes;
+        }
+
+        this.applyFilters(children);
     }
 
     add(result) {
@@ -726,7 +824,7 @@ class TreeNodeProvider {
         var fullPath = result.uri.scheme === 'file' ? result.uri.fsPath : path.join(result.uri.authority, result.uri.fsPath);
 
         var rootNode = locateWorkspaceNode(fullPath);
-        var todoNode = createTodoNode(result);
+        var todoNode = createTodoNode(result, rootNode);
 
         if (config.shouldHideFromTree(todoNode.tag ? todoNode.tag : todoNode.label)) {
             todoNode.hidden = true;
@@ -938,8 +1036,8 @@ class TreeNodeProvider {
                     itemLabel = child.fsPath + " " + itemLabel;
                 }
                 parent[itemLabel] = (format !== "") ?
-                    utils.formatLabel(format, child) + (child.pathLabel ? (" " + child.pathLabel) : "") :
-                    child.label;
+                    renderTodoDisplayLabel(child) :
+                    renderTodoDisplayLabel(child);
             }
         }, this);
         return parent;
@@ -965,6 +1063,54 @@ class TreeNodeProvider {
 
     hasSubTags() {
         return treeHasSubTags;
+    }
+
+    getStatusFilter() {
+        return currentStatusFilter ? currentStatusFilter.slice() : [];
+    }
+
+    collectTodoNodes(children, visibleOnly, collected) {
+        if (children === undefined) {
+            children = nodes;
+        }
+        if (collected === undefined) {
+            collected = [];
+        }
+
+        children.forEach(function (child) {
+            if (child.isStatusNode) {
+                return;
+            }
+
+            if (isTodoNode(child) && (!visibleOnly || isVisible(child))) {
+                collected.push(child);
+            }
+
+            if (child.nodes !== undefined) {
+                this.collectTodoNodes(child.nodes, visibleOnly, collected);
+            }
+            if (child.extraLines !== undefined) {
+                this.collectTodoNodes(child.extraLines, visibleOnly, collected);
+            }
+        }, this);
+
+        return collected;
+    }
+
+    getVisibleTodoNodes(node) {
+        if (node && isTodoNode(node)) {
+            return [node].concat(node.extraLines ? this.collectTodoNodes(node.extraLines, true, []) : []);
+        }
+
+        if (node) {
+            return this.collectTodoNodes(this.getChildren(node) || [], true, []);
+        }
+
+        return this.collectTodoNodes(nodes, true, []);
+    }
+
+    getAllTodoNodes() {
+        return this.collectTodoNodes(nodes, false, []);
     }
 
     sort(children) {

@@ -28,3 +28,19 @@ QUnit.test('extension exposes independent color/glow/glass/font scope controls',
     assert.ok(source.indexOf("updateConfig('glassType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);") !== -1);
     assert.ok(source.indexOf("updateConfig('fontType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);") !== -1);
 });
+
+QUnit.test('package contributes icons for AI context and status tree commands', function (assert) {
+    var packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    var commands = packageJson.contributes.commands;
+
+    function getCommand(commandId) {
+        return commands.find(function (command) {
+            return command.command === commandId;
+        });
+    }
+
+    assert.ok(getCommand('taskvision.exportAiContext').icon);
+    assert.ok(getCommand('taskvision.openAiStatusReport').icon);
+    assert.ok(getCommand('taskvision.filterByStatus').icon);
+    assert.ok(getCommand('taskvision.addMissingTaskStatuses').icon);
+});

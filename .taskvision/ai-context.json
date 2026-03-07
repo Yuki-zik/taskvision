@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "generatedAt": "2026-03-07T13:25:40.703Z",
+  "workspaceRoot": "/Users/a-znk/code",
+  "scope": "visible-tree",
+  "syntax": {
+    "inlineStatusFormat": "[status]"
+  },
+  "allowedStatuses": [
+    "todo",
+    "doing",
+    "blocked",
+    "paused",
+    "review",
+    "done",
+    "wontdo",
+    "idea"
+  ],
+  "allowedPriorities": [
+    "critical",
+    "high",
+    "normal",
+    "low",
+    "trivial"
+  ],
+  "tasks": [
+    {
+      "taskId": "822a55048eb9e9d5fa8bf94e27baf20748e32459",
+      "file": ".taskvision/ai-context.md",
+      "line": 42,
+      "column": 8,
+      "tag": "[x]",
+      "status": "done",
+      "priority": "normal",
+      "note": "",
+      "text": "# [x]",
+      "subTag": "",
+      "sourceExcerpt": "  41 |   41 |   35 | \n> 42 | > 42 | > 36 | # [x]\n  43 |   43 |   37 | "
+    },
+    {
+      "taskId": "0b96303d9caf21fe5d23e21161d03263235cd807",
+      "file": ".taskvision/ai-context.md",
+      "line": 58,
+      "column": 9,
+      "tag": "[x]",
+      "status": "done",
+      "priority": "normal",
+      "note": "",
+      "text": "安全的拒绝类前缀（仅强调图片隐私,无 may）",
+      "subTag": "",
+      "sourceExcerpt": "  57 |   57 |   117 | \n> 58 | > 58 | > 118 | # [x] 安全的拒绝类前缀（仅强调图片隐私,无 may）\n  59 |   59 |   119 | PREFIX_SAFE = ("
+    }
+  ]
+}

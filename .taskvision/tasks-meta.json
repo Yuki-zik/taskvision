@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "tasks": {
+    "3796e9738672603ddd050e098ac070abdde5fb36": {
+      "note": "321",
+      "lastActor": "user",
+      "updatedAt": "2026-03-07T13:24:02.675Z"
+    },
+    "f0fbebc075f6faf686de19ffc779ea614e1468d7": {
+      "lastExportedStatus": "done",
+      "lastExportedAt": "2026-03-07T13:25:36.446Z",
+      "file": "/Users/a-znk/code/fingerprintformllm/base_test/SV_opt/SCAV/我的sv代码.py",
+      "line": 36
+    },
+    "a79ff5f22b84304c33d00bddaf291fea099087fb": {
+      "lastExportedStatus": "done",
+      "lastExportedAt": "2026-03-07T13:25:36.446Z",
+      "file": "/Users/a-znk/code/fingerprintformllm/base_test/SV_opt/SCAV/我的sv代码.py",
+      "line": 118
+    },
+    "822a55048eb9e9d5fa8bf94e27baf20748e32459": {
+      "lastExportedStatus": "done",
+      "lastExportedAt": "2026-03-07T13:25:40.703Z",
+      "file": "/Users/a-znk/code/.taskvision/ai-context.md",
+      "line": 42
+    },
+    "0b96303d9caf21fe5d23e21161d03263235cd807": {
+      "lastExportedStatus": "done",
+      "lastExportedAt": "2026-03-07T13:25:40.703Z",
+      "file": "/Users/a-znk/code/.taskvision/ai-context.md",
+      "line": 58
+    }
+  }
+}
