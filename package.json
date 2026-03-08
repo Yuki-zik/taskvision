@@ -63,6 +63,11 @@
                     "group": "navigation@1"
                 },
                 {
+                    "command": "taskvision.syncDataModel",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@1.05"
+                },
+                {
                     "command": "taskvision.exportAiContext",
                     "when": "view =~ /taskvision/",
                     "group": "navigation@1.1"
@@ -236,32 +241,52 @@
                 },
                 {
                     "command": "taskvision.setTaskStatus",
-                    "when": "view =~ /taskvision/ && viewItem == todo",
+                    "when": "view =~ /taskvision/ && viewItem == task",
                     "group": "3-status@1"
                 },
                 {
                     "command": "taskvision.setTaskPriority",
-                    "when": "view =~ /taskvision/ && viewItem == todo",
+                    "when": "view =~ /taskvision/ && viewItem == task",
                     "group": "3-status@2"
                 },
                 {
                     "command": "taskvision.editTaskNote",
-                    "when": "view =~ /taskvision/ && viewItem == todo",
+                    "when": "view =~ /taskvision/ && viewItem == task",
                     "group": "3-status@3"
                 },
                 {
-                    "command": "taskvision.addMissingTaskStatuses",
-                    "when": "view =~ /taskvision/ && viewItem =~ /^(folder|file|tag|todo)$/",
+                    "command": "taskvision.addContextAnnotation",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|context|folder|file|tag)$/",
                     "group": "3-status@4"
                 },
                 {
+                    "command": "taskvision.startAgentSession",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|context|review|folder|file|tag)$/",
+                    "group": "3-status@5"
+                },
+                {
+                    "command": "taskvision.writeAgentAnnotations",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|review)$/",
+                    "group": "3-status@6"
+                },
+                {
+                    "command": "taskvision.syncDataModel",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|context|review|folder|file|tag)$/",
+                    "group": "3-status@7"
+                },
+                {
+                    "command": "taskvision.addMissingTaskStatuses",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(folder|file|tag|task)$/",
+                    "group": "3-status@8"
+                },
+                {
                     "command": "taskvision.customizeAppearance",
-                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|todo)$/",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|task|context|review)$/",
                     "group": "4-scheme@1"
                 },
                 {
                     "command": "taskvision.setScheme",
-                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|todo)$/",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|task|context|review)$/",
                     "group": "4-scheme@2"
                 },
                 {
@@ -341,7 +366,7 @@
                 },
                 {
                     "command": "taskvision.exportAiContext",
-                    "when": "view =~ /taskvision/ && viewItem =~ /^(folder|file|tag|todo)$/",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(folder|file|tag|task|context|review)$/",
                     "group": "5-misc2"
                 },
                 {
@@ -507,6 +532,30 @@
                 "title": "Open AI Status Report",
                 "category": "%taskvision.command.category%",
                 "icon": "$(report)"
+            },
+            {
+                "command": "taskvision.syncDataModel",
+                "title": "Sync Data Model",
+                "category": "%taskvision.command.category%",
+                "icon": "$(sync)"
+            },
+            {
+                "command": "taskvision.addContextAnnotation",
+                "title": "Add Context Annotation",
+                "category": "%taskvision.command.category%",
+                "icon": "$(note)"
+            },
+            {
+                "command": "taskvision.startAgentSession",
+                "title": "Start Agent Session",
+                "category": "%taskvision.command.category%",
+                "icon": "$(debug-start)"
+            },
+            {
+                "command": "taskvision.writeAgentAnnotations",
+                "title": "Write Agent Annotations",
+                "category": "%taskvision.command.category%",
+                "icon": "$(comment)"
             },
             {
                 "command": "taskvision.addMissingTaskStatuses",

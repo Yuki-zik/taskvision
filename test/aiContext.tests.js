@@ -4,6 +4,8 @@ var path = require('path');
 
 var aiContext = require('../src/aiContext.js');
 var taskMetaStore = require('../src/taskMetaStore.js');
+var contextStore = require('../src/contextStore.js');
+var changeSessionStore = require('../src/changeSessionStore.js');
 
 function makeTempRoot() {
     return fs.mkdtempSync(path.join(os.tmpdir(), 'taskvision-ai-'));
@@ -68,6 +70,43 @@ QUnit.test("aiContext writes markdown/json files and reports status changes", fu
 
     try {
         taskMetaStore.resetCache();
+        contextStore.resetCache();
+        changeSessionStore.resetCache();
+        taskMetaStore.ensureTaskStableId(root, 'task-1', 'task.cache.123abc', 'user', generatedAt);
+        taskMetaStore.addTaskContextRefs(root, 'task.cache.123abc', ['ctx.cache.456def'], 'user', generatedAt);
+        contextStore.upsertContext(root, 'ctx.cache.456def', {
+            kind: 'constraint',
+            title: 'Cache writes stay synchronous',
+            summary: 'cache writes must stay synchronous',
+            body: 'Do not defer cache writes past request completion.',
+            taskRefs: ['task.cache.123abc'],
+            anchors: [{ file: path.join('src', 'cache.js'), line: 2, tag: 'NOTE' }],
+            replaceAnchors: true,
+            replaceTaskRefs: true,
+            updatedBy: 'user',
+            updatedAt: generatedAt
+        });
+        changeSessionStore.upsertSession(root, {
+            sessionId: 'sess.20260307.codex.001',
+            sessionType: 'review',
+            actor: 'codex',
+            status: 'open',
+            createdAt: generatedAt,
+            updatedAt: generatedAt,
+            summary: 'Review cache invalidation changes',
+            taskRefs: ['task.cache.123abc'],
+            annotations: [{
+                annotationId: 'ann.001',
+                kind: 'verify',
+                file: path.join('src', 'cache.js'),
+                line: 2,
+                stableId: 'ctx.cache.verify.9ab123',
+                sourceComment: true,
+                reviewState: 'unread',
+                text: 'Verify invalidation when force flag is enabled'
+            }]
+        });
+
         var paths = aiContext.writeContextFiles(root, 'visible-tree', exportedTasks, generatedAt);
         taskMetaStore.markTasksExported(root, exportedTasks, generatedAt);
 
@@ -77,9 +116,16 @@ QUnit.test("aiContext writes markdown/json files and reports status changes", fu
         var markdown = fs.readFileSync(paths.markdown, 'utf8');
         var json = JSON.parse(fs.readFileSync(paths.json, 'utf8'));
 
-        assert.ok(markdown.indexOf('Allowed states: `todo`, `doing`, `blocked`, `paused`, `review`, `done`, `wontdo`, `idea`') !== -1);
+        assert.ok(markdown.indexOf('TaskVision directives: `[tv:key=value]`') !== -1);
+        assert.ok(markdown.indexOf('## Context Cards') !== -1);
+        assert.ok(markdown.indexOf('## Open Sessions') !== -1);
+        assert.equal(json.version, 2);
         assert.equal(json.tasks[0].file, path.join('src', 'cache.js'));
+        assert.equal(json.tasks[0].stableId, 'task.cache.123abc');
         assert.ok(json.tasks[0].sourceExcerpt.indexOf('> 2 | // TODO [todo] fix cache invalidation') !== -1);
+        assert.equal(json.contexts[0].contextId, 'ctx.cache.456def');
+        assert.equal(json.openSessions[0].sessionId, 'sess.20260307.codex.001');
+        assert.equal(json.readOrder[0].type, 'contexts');
 
         exportedTasks[0].status = 'review';
         var reportPath = aiContext.writeStatusReport(root, exportedTasks, '2026-03-07T13:00:00Z');

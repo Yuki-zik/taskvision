@@ -10,7 +10,7 @@
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/version-2.0.1-3B82F6?style=flat-square" alt="Version 2.0.1" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/tests-92%20passing-22C55E?style=flat-square" alt="92 passing tests" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/tests-100%20passing-22C55E?style=flat-square" alt="100 passing tests" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
 </p>
 
@@ -45,14 +45,17 @@ code --install-extension A-Znk.taskvision
 - 在源码注释里高亮 TODO 类标签和 Markdown checkbox
 - 在树视图、平铺视图、标签视图中统一管理任务
 - 解析 `[todo]`、`[blocked]`、`[review]` 等内联状态
-- 把优先级和备注写入 `.taskvision/tasks-meta.json`
+- 在树里区分 `task`、`context`、`review` 三类注释
+- 把稳定 ID、优先级、备注和上下文关联写入 `.taskvision/tasks-meta.json`
 
 </td>
 <td width="50%">
 
 **AI 集成**
 - 导出 `ai-context.md`、`ai-context.json`、`ai-status-report.md`
-- 允许外部 AI 工具仅通过修改源码注释来回写任务进度
+- 在 `context-index.json` 中持久化上下文卡片
+- 在 `change-sessions/*.json` 中持久化 planning / review 会话
+- 允许外部 AI 工具通过源码注释和官方同步命令回写协作信息
 - 自动排除生成的 AI 上下文，避免说明文件反向污染扫描
 - 兼容 Claude Code、Codex 及任何 Markdown/JSON 消费工具
 
@@ -91,23 +94,58 @@ TaskVision 内置以下状态：
 
 ---
 
+## AI 协作语法
+
+TaskVision 支持在 `TAG [status]` 之后继续写 `tv:` 指令：
+
+```ts
+// TODO [todo] [tv:id=task.auth-refresh.c3f12a] 修复 refresh 并发问题
+// NOTE [idea] [tv:id=ctx.auth-refresh.8a91de] [tv:ctx=invariant] refresh 必须保持 single-flight
+// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.auth-refresh.c3f12a] [tv:review=verify] 验证重试分支
+```
+
+源码里的三类注释：
+
+| 类型 | 常见形态 | 作用 |
+| :--- | :--- | :--- |
+| `task` | `TODO/FIXME/[ ]/[x] + [tv:id]` | 进入任务状态流的工作项 |
+| `context` | `NOTE [idea] + [tv:ctx=...]` | 人类或 AI 标注的重要约束、决策、不变量 |
+| `review` | `NOTE [review] + [tv:session=...] + [tv:review=...]` | 带会话 ID 的 AI review / follow-up 注释 |
+
+支持的 `tv:` 指令：
+
+| 指令 | 说明 |
+| :--- | :--- |
+| `[tv:id=...]` | 任务或上下文锚点的稳定 ID |
+| `[tv:ctx=...]` | 上下文类型，如 `must-read`、`constraint`、`invariant`、`decision` |
+| `[tv:task=...]` | 关联的任务 stable ID，可写多个 |
+| `[tv:review=...]` | review 类型，如 `changed`、`why`、`risk`、`verify`、`blocked`、`followup` |
+| `[tv:session=...]` | 当前 planning / review / implementation 会话 ID |
+
+---
+
 ## 树视图工作流
 
-在树视图里可以直接完成完整的任务流转：
+在树视图里可以直接完成完整的任务 + AI 协作流：
 
 | 操作 | 作用 |
 | :--- | :--- |
 | **Set Task Status** | 直接改源码里的 `[status]` |
 | **Set Task Priority** | 把优先级写入 `.taskvision/tasks-meta.json` |
 | **Edit Task Note** | 给 AI 总结和交接补充备注 |
+| **Add Context Annotation** | 在当前行上方插入 `NOTE [idea] [tv:ctx=...] ...` 上下文注释 |
+| **Start Agent Session** | 创建或切换当前工作区的活跃 AI 会话 |
+| **Write Agent Annotations** | 在当前行上方插入 `NOTE [review] [tv:session=...] [tv:review=...] ...` |
+| **Sync Data Model** | 对齐源码注释、sidecar JSON 和导出的 AI 上下文 |
 | **Add Missing Inline Statuses** | 给可见范围内还没写状态的任务补上状态文字 |
 | **Filter By Status** | 按一个或多个状态筛选树 |
 | **Clear Status Filter** | 清除状态筛选 |
 
 > [!NOTE]
 > - 批量补状态默认作用于当前可见范围。
-> - 从文件夹、文件、标签或 todo 节点右键触发时，只处理该子树。
+> - 从文件夹、文件、标签、task、context 或 review 节点右键触发时，只处理该子树。
 > - 导出的 AI 文件会被扫描器忽略，打开 `ai-context.md` 不会把说明文字识别成任务。
+> - task 节点显示任务元数据，context 节点显示 `ctx:<kind>`，review 节点显示 `review:<kind>`。
 
 ---
 
@@ -117,12 +155,36 @@ TaskVision 会为外部 AI 编程工具生成一组稳定的交接文件：
 
 ```
 .taskvision/
-├── ai-context.md           # 人类可读的任务列表
-├── ai-context.json         # 机器可读的任务数据
-└── ai-status-report.md     # 状态变化摘要
+├── ai-context.md                 # 人类可读的统一上下文包
+├── ai-context.json               # 机器可读的统一上下文包
+├── ai-status-report.md           # 任务状态变化摘要
+├── tasks-meta.json               # 任务元数据与 stable ID 索引
+├── context-index.json            # 上下文卡片
+└── change-sessions/
+    └── sess.<date>.<actor>.<n>.json
 ```
 
-**导出内容包括：** 工作区根目录、导出范围、允许的状态与优先级、任务 ID、文件路径、行号、状态、优先级、备注、源码摘录、给 AI 的修改约束。
+`ai-context.json` v2 至少包含：
+
+- `tasks`：带 stable ID、优先级、备注、contextRefs 的任务
+- `contexts`：来自 `context-index.json` 的相关上下文卡片
+- `openSessions`：来自 `change-sessions/` 的开放会话
+- `readOrder`：建议 AI 的阅读顺序
+
+最小结构：
+
+```json
+{
+  "version": 2,
+  "generatedAt": "2026-03-08T12:34:56.000Z",
+  "workspaceRoot": "/workspace",
+  "scope": "visible-tree",
+  "tasks": [],
+  "contexts": [],
+  "openSessions": [],
+  "readOrder": []
+}
+```
 
 <details>
 <summary><strong>推荐的 AI 协议</strong></summary>
@@ -131,12 +193,18 @@ TaskVision 会为外部 AI 编程工具生成一组稳定的交接文件：
 
 | 规则 | 说明 |
 | :--- | :--- |
-| 只改源码 | 只改源码注释中的内联状态 |
+| 走官方同步 | 修改源码注释后执行 `Sync Data Model` 或 `Export AI Context` |
 | 优先 `review` | 未验证完成前改成 `review`，不要直接跳 `done` |
-| 不碰元数据 | 不要直接修改 `.taskvision/tasks-meta.json` |
-| 回传变更 | 回传任务 ID、涉及文件和状态变化说明 |
+| 不碰 sidecar | 不要直接修改 `.taskvision/*.json`，除非由 TaskVision 命令生成 |
+| 回传变更 | 回传 stable task / session ID、涉及文件和变更原因 |
 
 </details>
+
+### 最小工作流
+
+1. 选中任务后执行 **Add Context Annotation**，补充约束或不变量。
+2. 执行 **Start Agent Session**，再通过 **Write Agent Annotations** 记录本轮 review 注释。
+3. 执行 **Export AI Context**，生成统一上下文包交给下一个 agent。
 
 ---
 
@@ -260,11 +328,14 @@ TaskVision 使用四个独立样式通道：
 
 ```
 src/
-├── extension.js       # 主入口
-├── tree.js            # 树视图
-├── taskState.js       # 状态模型
-├── taskMetaStore.js   # 元数据存储
-└── aiContext.js       # AI 导出
+├── extension.js          # 主入口与命令
+├── tree.js               # 树视图与节点展示
+├── taskState.js          # 状态模型
+├── taskMetaStore.js      # 任务元数据与 stable 索引
+├── contextStore.js       # 上下文卡片 sidecar
+├── changeSessionStore.js # 会话 sidecar
+├── annotationParser.js   # `tv:` 指令解析
+└── aiContext.js          # 统一 AI 上下文导出
 ```
 
 ---

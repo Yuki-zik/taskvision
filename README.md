@@ -10,7 +10,7 @@
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/version-2.0.1-3B82F6?style=flat-square" alt="Version 2.0.1" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/tests-92%20passing-22C55E?style=flat-square" alt="92 passing tests" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/tests-100%20passing-22C55E?style=flat-square" alt="100 passing tests" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
 </p>
 
@@ -47,14 +47,17 @@ code --install-extension A-Znk.taskvision
 - Highlight TODO-style tags and markdown checkboxes in source comments
 - Show tasks in tree, flat list, or tags-only view
 - Parse inline states: `[todo]`, `[blocked]`, `[review]` ...
-- Store priority & notes in `.taskvision/tasks-meta.json`
+- Distinguish `task`, `context`, and `review` annotations in the tree
+- Store stable IDs, priority, notes, and context refs in `.taskvision/tasks-meta.json`
 
 </td>
 <td width="50%">
 
 **AI Integration**
 - Export `ai-context.md`, `ai-context.json`, `ai-status-report.md`
-- Let external AI tools update status by editing source comments
+- Persist context cards in `context-index.json`
+- Persist planning/review sessions in `change-sessions/*.json`
+- Let external AI tools write source annotations and reconcile them through official commands
 - Exclude generated context from scans to prevent self-references
 - Compatible with Claude Code, Codex, and any Markdown/JSON consumer
 
@@ -93,23 +96,58 @@ TaskVision supports these built-in task states:
 
 ---
 
+## AI Collaboration Syntax
+
+TaskVision supports extra inline directives after the tag / status pair:
+
+```ts
+// TODO [todo] [tv:id=task.auth-refresh.c3f12a] fix refresh concurrency
+// NOTE [idea] [tv:id=ctx.auth-refresh.8a91de] [tv:ctx=invariant] refresh must stay single-flight
+// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.auth-refresh.c3f12a] [tv:review=verify] verify retry flow
+```
+
+Three source annotation classes are recognized:
+
+| Class | Typical form | Purpose |
+| :--- | :--- | :--- |
+| `task` | `TODO/FIXME/[ ]/[x] + [tv:id]` | Work item tracked in task state flow |
+| `context` | `NOTE [idea] + [tv:ctx=...]` | Human or AI-authored constraint / invariant / decision |
+| `review` | `NOTE [review] + [tv:session=...] + [tv:review=...]` | Session-scoped AI review or follow-up note |
+
+Supported `tv:` directives:
+
+| Directive | Meaning |
+| :--- | :--- |
+| `[tv:id=...]` | Stable ID for a task or context anchor |
+| `[tv:ctx=...]` | Context kind: `must-read`, `constraint`, `invariant`, `decision`, ... |
+| `[tv:task=...]` | Task stable ID(s) linked to a context or review note |
+| `[tv:review=...]` | Review kind: `changed`, `why`, `risk`, `verify`, `blocked`, `followup` |
+| `[tv:session=...]` | Active planning / review / implementation session ID |
+
+---
+
 ## Tree Workflow
 
-TaskVision supports a full task workflow directly from the tree:
+TaskVision supports a full task + AI collaboration workflow directly from the tree:
 
 | Action | What it does |
 | :--- | :--- |
 | **Set Task Status** | Rewrites the inline `[status]` token in source |
 | **Set Task Priority** | Stores priority in `.taskvision/tasks-meta.json` |
 | **Edit Task Note** | Stores extra context for summaries and handoff |
+| **Add Context Annotation** | Inserts a `NOTE [idea] [tv:ctx=...] ...` context anchor above the current line |
+| **Start Agent Session** | Creates or switches the active workspace session used by AI review notes |
+| **Write Agent Annotations** | Inserts `NOTE [review] [tv:session=...] [tv:review=...] ...` above the current line |
+| **Sync Data Model** | Reconciles source annotations, sidecar JSON stores, and exported AI context |
 | **Add Missing Inline Statuses** | Backfills status tokens for visible tasks without one |
 | **Filter By Status** | Filters the tree by one or more states |
 | **Clear Status Filter** | Resets the state filter |
 
 > [!NOTE]
 > - Bulk backfill works on the current visible scope.
-> - When triggered from a context menu (folder / file / tag / todo), only that subtree is affected.
+> - When triggered from a context menu (folder / file / tag / task / context / review), only that subtree is affected.
 > - Generated AI files are ignored by scans, so opening them will not pollute the tree.
+> - Task nodes show task metadata, context nodes show `ctx:<kind>`, and review nodes show `review:<kind>`.
 
 ---
 
@@ -119,12 +157,36 @@ TaskVision exports a stable handoff bundle for any external coding assistant:
 
 ```
 .taskvision/
-├── ai-context.md           # Human-readable task list
-├── ai-context.json         # Machine-readable task data
-└── ai-status-report.md     # Status change summary
+├── ai-context.md                 # Human-readable unified context bundle
+├── ai-context.json               # Machine-readable unified context bundle
+├── ai-status-report.md           # Task status change summary
+├── tasks-meta.json               # Task metadata and stable ID index
+├── context-index.json            # Context cards linked to source anchors
+└── change-sessions/
+    └── sess.<date>.<actor>.<n>.json
 ```
 
-**Exported data includes:** workspace root, export scope, allowed statuses & priorities, task IDs, file paths, lines, status, priority, notes, source excerpts, and workflow rules.
+`ai-context.json` v2 includes:
+
+- `tasks`: exported task nodes with stable IDs, priority, notes, and linked context refs
+- `contexts`: related context cards from `context-index.json`
+- `openSessions`: open planning/review sessions from `change-sessions/`
+- `readOrder`: the recommended AI reading order
+
+Minimal shape:
+
+```json
+{
+  "version": 2,
+  "generatedAt": "2026-03-08T12:34:56.000Z",
+  "workspaceRoot": "/workspace",
+  "scope": "visible-tree",
+  "tasks": [],
+  "contexts": [],
+  "openSessions": [],
+  "readOrder": []
+}
+```
 
 <details>
 <summary><strong>Recommended AI Contract</strong></summary>
@@ -133,12 +195,18 @@ TaskVision exports a stable handoff bundle for any external coding assistant:
 
 | Rule | Description |
 | :--- | :--- |
-| Edit source only | Only modify inline status tokens in source comments |
+| Use official sync | Change source annotations, then run `Sync Data Model` or `Export AI Context` |
 | Prefer `review` | Use `review` over `done` when verification is incomplete |
-| Hands off metadata | Do not edit `.taskvision/tasks-meta.json` directly |
-| Report changes | Report which task IDs changed and why |
+| Hands off sidecars | Do not edit `.taskvision/*.json` directly unless TaskVision generated the change |
+| Report changes | Report which stable task or session IDs changed and why |
 
 </details>
+
+### Minimal Workflows
+
+1. Add or select a task, then run **Add Context Annotation** to attach a constraint or invariant.
+2. Run **Start Agent Session**, then use **Write Agent Annotations** to capture review notes with a live session ID.
+3. Run **Export AI Context** to rebuild sidecars and produce a unified bundle for the next agent.
 
 ---
 
@@ -262,11 +330,14 @@ Workspace settings in <code>.vscode/settings.json</code> override global setting
 
 ```
 src/
-├── extension.js       # Main extension entry
-├── tree.js            # Tree provider
-├── taskState.js       # Task state model
-├── taskMetaStore.js   # Task metadata store
-└── aiContext.js       # AI export renderer
+├── extension.js         # Main extension entry and commands
+├── tree.js              # Tree provider and node presentation
+├── taskState.js         # Task state model
+├── taskMetaStore.js     # Task metadata store + stable index
+├── contextStore.js      # Context card sidecar store
+├── changeSessionStore.js# Session sidecar store
+├── annotationParser.js  # `tv:` directive parser
+└── aiContext.js         # Unified AI context renderer
 ```
 
 ---

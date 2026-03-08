@@ -19,6 +19,9 @@ var searchResults = require('./searchResults.js');
 var settingsMigration = require('./settingsMigration.js');
 var taskState = require('./taskState.js');
 var taskMetaStore = require('./taskMetaStore.js');
+var contextStore = require('./contextStore.js');
+var changeSessionStore = require('./changeSessionStore.js');
+var annotationParser = require('./annotationParser.js');
 var aiContext = require('./aiContext.js');
 
 var searchList = [];
@@ -971,6 +974,293 @@ function activate(context) {
         return 'all-tasks';
     }
 
+    function dedupeStrings(values) {
+        return Array.from(new Set((values || []).map(function (value) {
+            return String(value || '').trim();
+        }).filter(Boolean)));
+    }
+
+    function isTaskAnnotationNode(node) {
+        return node &&
+            node.type === 'todo' &&
+            node.annotationKind !== 'context' &&
+            node.annotationKind !== 'review';
+    }
+
+    function isContextAnnotationNode(node) {
+        return node && node.type === 'todo' && node.annotationKind === 'context';
+    }
+
+    function isReviewAnnotationNode(node) {
+        return node && node.type === 'todo' && node.annotationKind === 'review';
+    }
+
+    function getNodesForRoot(rootPath) {
+        return (provider ? provider.getAllTodoNodes() : []).filter(function (node) {
+            return (node.rootPath || getWorkspaceRootForFile(node.fsPath)) === rootPath;
+        });
+    }
+
+    function collectRootPaths(nodes) {
+        var seen = {};
+        (nodes || []).forEach(function (node) {
+            var rootPath = node && (node.rootPath || getWorkspaceRootForFile(node.fsPath));
+            if (rootPath) {
+                seen[rootPath] = true;
+            }
+        });
+        return Object.keys(seen);
+    }
+
+    function deriveStableIdForNode(node) {
+        if (!node) {
+            return undefined;
+        }
+
+        if (node.stableId) {
+            return node.stableId;
+        }
+
+        if (isTaskAnnotationNode(node)) {
+            return utils.createTaskStableId(node.rootPath, node.fsPath, node.actualTag || node.tag, node.after || node.label, node.subTag);
+        }
+
+        return utils.createContextStableId(node.rootPath, node.fsPath, node.after || node.label, node.contextKind || node.reviewKind || node.status, node.line + 1);
+    }
+
+    function buildDirectivePatchForNode(node, stableId) {
+        return {
+            stableId: stableId,
+            contextKind: node.contextKind,
+            taskRefs: node.taskRefs,
+            reviewKind: node.reviewKind,
+            sessionId: node.sessionId
+        };
+    }
+
+    function ensureStableIdsInSource(nodes) {
+        var candidates = (nodes || []).filter(function (node) {
+            return node &&
+                node.rootPath &&
+                node.actualTag &&
+                (isTaskAnnotationNode(node) || isContextAnnotationNode(node)) &&
+                !node.explicitStableId;
+        });
+
+        if (candidates.length === 0) {
+            return Promise.resolve(nodes || []);
+        }
+
+        var documentUris = {};
+        candidates.forEach(function (node) {
+            var targetUri = node.uri ? node.uri : vscode.Uri.file(node.fsPath);
+            if (targetUri && targetUri.scheme === 'file') {
+                documentUris[targetUri.toString()] = targetUri;
+            }
+        });
+
+        return Promise.all(Object.keys(documentUris).map(function (key) {
+            return vscode.workspace.openTextDocument(documentUris[key]);
+        })).then(function (documents) {
+            var documentsByUri = {};
+            var edit = new vscode.WorkspaceEdit();
+            var changed = 0;
+
+            documents.forEach(function (document) {
+                documentsByUri[document.uri.toString()] = document;
+            });
+
+            candidates.forEach(function (node) {
+                var targetUri = node.uri ? node.uri : vscode.Uri.file(node.fsPath);
+                var document = documentsByUri[targetUri.toString()];
+                var stableId = deriveStableIdForNode(node);
+
+                if (!document || !stableId) {
+                    return;
+                }
+
+                var line = document.lineAt(node.line);
+                var updatedLine = utils.upsertTvDirectivesInLine(line.text, node, buildDirectivePatchForNode(node, stableId));
+                if (!updatedLine || updatedLine === line.text) {
+                    return;
+                }
+
+                edit.replace(document.uri, line.range, updatedLine);
+                node.stableId = stableId;
+                node.explicitStableId = stableId;
+                changed++;
+            });
+
+            if (changed === 0) {
+                return nodes || [];
+            }
+
+            return vscode.workspace.applyEdit(edit).then(function (applied) {
+                if (!applied) {
+                    throw new Error('VS Code rejected TaskVision stable ID edits');
+                }
+
+                documents.forEach(function (document) {
+                    openDocuments[document.uri.toString()] = document;
+                    refreshFile(document);
+                });
+
+                return collectRootPaths(nodes).reduce(function (all, rootPath) {
+                    return all.concat(getNodesForRoot(rootPath));
+                }, []);
+            });
+        });
+    }
+
+    function syncRootData(rootPath, scopeLabel, options) {
+        var syncOptions = options || {};
+        var updatedAt = syncOptions.updatedAt || new Date().toISOString();
+        var actor = syncOptions.actor || 'user';
+        var outputDir = config.aiContextOutputDir();
+
+        return ensureStableIdsInSource(getNodesForRoot(rootPath)).then(function () {
+            var rootNodes = getNodesForRoot(rootPath);
+            var taskNodes = rootNodes.filter(isTaskAnnotationNode);
+            var contextNodes = rootNodes.filter(isContextAnnotationNode);
+            var reviewNodes = rootNodes.filter(isReviewAnnotationNode);
+            var taskContextRefs = {};
+            var groupedContexts = {};
+            var groupedSessions = {};
+
+            taskNodes.forEach(function (node) {
+                var stableId = deriveStableIdForNode(node);
+                taskMetaStore.ensureTaskStableId(rootPath, node.taskId, stableId, actor, updatedAt, outputDir);
+                taskMetaStore.updateTask(rootPath, node.taskId, {
+                    stableId: stableId,
+                    file: node.fsPath,
+                    line: node.line + 1,
+                    lastActor: actor,
+                    updatedAt: updatedAt
+                }, outputDir);
+                node.stableId = stableId;
+            });
+
+            contextNodes.forEach(function (node) {
+                var contextId = deriveStableIdForNode(node);
+                var existing = groupedContexts[contextId] || contextStore.getContext(rootPath, contextId, outputDir) || {};
+                var summary = node.after || node.label || '';
+
+                if (!groupedContexts[contextId]) {
+                    groupedContexts[contextId] = {
+                        contextId: contextId,
+                        kind: node.contextKind,
+                        title: existing.title || summary,
+                        summary: summary,
+                        body: existing.body || summary,
+                        taskRefs: [],
+                        anchors: [],
+                        updatedBy: actor,
+                        updatedAt: updatedAt,
+                        freshness: existing.freshness || 'active'
+                    };
+                }
+
+                groupedContexts[contextId].taskRefs = dedupeStrings(groupedContexts[contextId].taskRefs.concat(node.taskRefs || existing.taskRefs || []));
+                groupedContexts[contextId].anchors.push({
+                    file: path.relative(rootPath, node.fsPath).replace(/\\/g, '/'),
+                    line: node.line + 1,
+                    tag: node.actualTag || node.tag
+                });
+
+                groupedContexts[contextId].taskRefs.forEach(function (taskRef) {
+                    if (!taskContextRefs[taskRef]) {
+                        taskContextRefs[taskRef] = [];
+                    }
+                    taskContextRefs[taskRef].push(contextId);
+                });
+            });
+
+            Object.keys(groupedContexts).forEach(function (contextId) {
+                var context = groupedContexts[contextId];
+                contextStore.upsertContext(rootPath, contextId, {
+                    kind: context.kind,
+                    title: context.title,
+                    summary: context.summary,
+                    body: context.body,
+                    taskRefs: context.taskRefs,
+                    replaceTaskRefs: true,
+                    anchors: context.anchors,
+                    replaceAnchors: true,
+                    updatedBy: context.updatedBy,
+                    updatedAt: context.updatedAt,
+                    freshness: context.freshness
+                }, outputDir);
+            });
+
+            Object.keys(taskContextRefs).forEach(function (taskRef) {
+                taskMetaStore.addTaskContextRefs(rootPath, taskRef, taskContextRefs[taskRef], actor, updatedAt, outputDir);
+            });
+
+            taskNodes.forEach(function (node) {
+                node.contextRefs = dedupeStrings((node.contextRefs || []).concat(taskContextRefs[node.stableId] || []));
+            });
+
+            reviewNodes.forEach(function (node) {
+                if (!node.sessionId) {
+                    return;
+                }
+
+                if (!groupedSessions[node.sessionId]) {
+                    var existingSession = changeSessionStore.getSession(rootPath, node.sessionId, outputDir);
+                    groupedSessions[node.sessionId] = {
+                        sessionId: node.sessionId,
+                        sessionType: existingSession ? existingSession.sessionType : 'review',
+                        actor: existingSession ? existingSession.actor : 'agent',
+                        status: existingSession ? existingSession.status : 'open',
+                        createdAt: existingSession ? existingSession.createdAt : updatedAt,
+                        updatedAt: updatedAt,
+                        summary: existingSession && existingSession.summary ? existingSession.summary : 'Source annotations imported from review comments.',
+                        taskRefs: [],
+                        annotations: []
+                    };
+                }
+
+                groupedSessions[node.sessionId].taskRefs = dedupeStrings(groupedSessions[node.sessionId].taskRefs.concat(node.taskRefs || []));
+                groupedSessions[node.sessionId].annotations.push({
+                    kind: node.reviewKind || 'followup',
+                    file: path.relative(rootPath, node.fsPath).replace(/\\/g, '/'),
+                    line: node.line + 1,
+                    stableId: node.stableId,
+                    sourceComment: true,
+                    reviewState: 'unread',
+                    text: node.after || node.label || ''
+                });
+            });
+
+            Object.keys(groupedSessions).forEach(function (sessionId) {
+                changeSessionStore.syncSessionAnnotations(rootPath, sessionId, groupedSessions[sessionId], groupedSessions[sessionId].annotations, outputDir);
+            });
+
+            if (syncOptions.rebuildContext !== false) {
+                aiContext.writeContextFiles(rootPath, scopeLabel || 'visible-tree', rootNodes, updatedAt, outputDir);
+            }
+
+            return rootNodes;
+        });
+    }
+
+    function syncRoots(rootPaths, scopeLabel, options) {
+        var results = {};
+        var sequence = Promise.resolve();
+
+        (rootPaths || []).forEach(function (rootPath) {
+            sequence = sequence.then(function () {
+                return syncRootData(rootPath, scopeLabel, options).then(function (nodes) {
+                    results[rootPath] = nodes;
+                });
+            });
+        });
+
+        return sequence.then(function () {
+            return results;
+        });
+    }
+
     function refreshAiStatusReports() {
         var tasksByRoot = {};
         var allTasks = provider ? provider.getAllTodoNodes() : [];
@@ -1000,6 +1290,311 @@ function activate(context) {
                 }
             });
         }
+    }
+
+    function getCurrentAgentSessionMap() {
+        return context.workspaceState.get('currentAgentSessions', {});
+    }
+
+    function getCurrentSessionIdForRoot(rootPath) {
+        var sessions = getCurrentAgentSessionMap();
+        return rootPath ? sessions[rootPath] : undefined;
+    }
+
+    function setCurrentSessionIdForRoot(rootPath, sessionId) {
+        if (!rootPath) {
+            return Promise.resolve();
+        }
+
+        var sessions = getCurrentAgentSessionMap();
+        if (sessionId) {
+            sessions[rootPath] = sessionId;
+        }
+        else {
+            delete sessions[rootPath];
+        }
+        return context.workspaceState.update('currentAgentSessions', sessions);
+    }
+
+    function resolveCommandRootPath(node) {
+        if (node && node.rootPath) {
+            return node.rootPath;
+        }
+
+        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document) {
+            return getWorkspaceRootForFile(vscode.window.activeTextEditor.document.fileName);
+        }
+
+        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+            return vscode.workspace.workspaceFolders[0].uri.fsPath;
+        }
+
+        return undefined;
+    }
+
+    function ensureReviewSession(rootPath, actor, summary) {
+        var outputDir = config.aiContextOutputDir();
+        var currentSessionId = getCurrentSessionIdForRoot(rootPath);
+        var existing = currentSessionId ? changeSessionStore.getSession(rootPath, currentSessionId, outputDir) : undefined;
+        if (existing && existing.sessionType === 'review') {
+            return Promise.resolve(existing);
+        }
+
+        var updatedAt = new Date().toISOString();
+        var sessionId = changeSessionStore.createSessionId(rootPath, actor || 'agent', outputDir, updatedAt);
+        var session = {
+            sessionId: sessionId,
+            sessionType: 'review',
+            actor: actor || 'agent',
+            status: 'open',
+            createdAt: updatedAt,
+            updatedAt: updatedAt,
+            summary: summary || 'Session started from TaskVision',
+            taskRefs: [],
+            annotations: []
+        };
+
+        changeSessionStore.upsertSession(rootPath, session, outputDir);
+        return setCurrentSessionIdForRoot(rootPath, sessionId).then(function () {
+            return session;
+        });
+    }
+
+    function insertAnnotationLine(document, lineNumber, annotationLine) {
+        var lineStart = document.lineAt(lineNumber).range.start;
+        var edit = new vscode.WorkspaceEdit();
+        edit.insert(document.uri, lineStart, annotationLine + '\n');
+
+        return vscode.workspace.applyEdit(edit).then(function (applied) {
+            if (!applied) {
+                throw new Error('VS Code rejected the annotation edit');
+            }
+
+            openDocuments[document.uri.toString()] = document;
+            refreshFile(document);
+        });
+    }
+
+    function syncDataModel(node) {
+        var rootPaths;
+        var scopeLabel = buildTaskScopeLabel(node);
+
+        if (node && node.rootPath) {
+            rootPaths = [node.rootPath];
+        }
+        else {
+            rootPaths = (vscode.workspace.workspaceFolders || []).filter(function (folder) {
+                return folder.uri && folder.uri.scheme === 'file';
+            }).map(function (folder) {
+                return folder.uri.fsPath;
+            });
+        }
+
+        if (!rootPaths || rootPaths.length === 0) {
+            vscode.window.showWarningMessage('TaskVision: No workspace root is available for data sync.');
+            return;
+        }
+
+        syncRoots(rootPaths, scopeLabel, {
+            actor: 'user',
+            rebuildContext: true
+        }).then(function () {
+            refreshAiStatusReports();
+            refreshTree();
+            vscode.window.showInformationMessage('TaskVision: Data model synced for ' + rootPaths.length + ' workspace(s).');
+        }).catch(function (error) {
+            vscode.window.showErrorMessage('TaskVision: ' + error.message);
+        });
+    }
+
+    function addContextAnnotation(node) {
+        var editor = vscode.window.activeTextEditor;
+        var rootPath = resolveCommandRootPath(node);
+
+        if (!editor || !rootPath) {
+            vscode.window.showWarningMessage('TaskVision: An active workspace editor is required to add a context annotation.');
+            return;
+        }
+
+        var selectedTaskRefs = [];
+        if (isTaskAnnotationNode(node)) {
+            selectedTaskRefs = [deriveStableIdForNode(node)];
+        }
+
+        var currentSessionId = getCurrentSessionIdForRoot(rootPath);
+        var lineNumber = editor.selection.active.line;
+        var lineText = editor.document.lineAt(lineNumber).text;
+
+        var kindItems = annotationParser.CONTEXT_KINDS.map(function (kind) {
+            return { label: kind, value: kind };
+        });
+
+        vscode.window.showQuickPick(kindItems, {
+            placeHolder: 'Choose a context kind'
+        }).then(function (selectedKind) {
+            if (!selectedKind) {
+                return;
+            }
+
+            vscode.window.showInputBox({
+                prompt: 'Context summary',
+                placeHolder: 'Explain the invariant, constraint, decision, or pitfall'
+            }).then(function (summary) {
+                if (!summary) {
+                    return;
+                }
+
+                var contextId = utils.createContextStableId(rootPath, editor.document.fileName, summary, selectedKind.value, lineNumber + 1);
+                var annotationLine = utils.buildAnnotationComment(
+                    editor.document.fileName,
+                    lineText,
+                    'NOTE',
+                    'idea',
+                    {
+                        stableId: contextId,
+                        contextKind: selectedKind.value,
+                        taskRefs: selectedTaskRefs,
+                        sessionId: currentSessionId
+                    },
+                    summary
+                );
+
+                insertAnnotationLine(editor.document, lineNumber, annotationLine).then(function () {
+                    return syncRoots([rootPath], 'editor:' + editor.document.fileName, {
+                        actor: 'user',
+                        rebuildContext: true
+                    });
+                }).then(function () {
+                    refreshTree();
+                    vscode.window.showInformationMessage('TaskVision: Added context annotation `' + contextId + '`.');
+                }).catch(function (error) {
+                    vscode.window.showErrorMessage('TaskVision: ' + error.message);
+                });
+            });
+        });
+    }
+
+    function startAgentSession(node) {
+        var rootPath = resolveCommandRootPath(node);
+        if (!rootPath) {
+            vscode.window.showWarningMessage('TaskVision: No workspace root is available to start an agent session.');
+            return;
+        }
+
+        var sessionItems = annotationParser.SESSION_TYPES.map(function (sessionType) {
+            return { label: sessionType, value: sessionType };
+        });
+
+        vscode.window.showQuickPick(sessionItems, {
+            placeHolder: 'Choose an agent session type'
+        }).then(function (selectedType) {
+            if (!selectedType) {
+                return;
+            }
+
+            vscode.window.showInputBox({
+                prompt: 'Session actor',
+                value: 'agent',
+                placeHolder: 'e.g. codex, claude, agent'
+            }).then(function (actor) {
+                if (!actor) {
+                    return;
+                }
+
+                vscode.window.showInputBox({
+                    prompt: 'Session summary',
+                    placeHolder: 'Optional summary for the session'
+                }).then(function (summary) {
+                    var updatedAt = new Date().toISOString();
+                    var sessionId = changeSessionStore.createSessionId(rootPath, actor, config.aiContextOutputDir(), updatedAt);
+                    var taskRefs = isTaskAnnotationNode(node) ? [deriveStableIdForNode(node)] : [];
+                    var session = {
+                        sessionId: sessionId,
+                        sessionType: selectedType.value,
+                        actor: actor,
+                        status: 'open',
+                        createdAt: updatedAt,
+                        updatedAt: updatedAt,
+                        summary: summary || '',
+                        taskRefs: taskRefs,
+                        annotations: []
+                    };
+
+                    if (taskRefs.length > 0 && node && node.taskId) {
+                        taskMetaStore.ensureTaskStableId(rootPath, node.taskId, taskRefs[0], 'user', updatedAt, config.aiContextOutputDir());
+                    }
+
+                    changeSessionStore.upsertSession(rootPath, session, config.aiContextOutputDir());
+                    setCurrentSessionIdForRoot(rootPath, sessionId).then(function () {
+                        refreshTree();
+                        vscode.window.showInformationMessage('TaskVision: Started agent session `' + sessionId + '`.');
+                    });
+                });
+            });
+        });
+    }
+
+    function writeAgentAnnotations(node) {
+        var editor = vscode.window.activeTextEditor;
+        var rootPath = resolveCommandRootPath(node);
+
+        if (!editor || !rootPath) {
+            vscode.window.showWarningMessage('TaskVision: An active workspace editor is required to write agent annotations.');
+            return;
+        }
+
+        ensureReviewSession(rootPath, 'agent', 'Review annotations started from TaskVision').then(function (session) {
+            var lineNumber = editor.selection.active.line;
+            var lineText = editor.document.lineAt(lineNumber).text;
+            var taskRefs = isTaskAnnotationNode(node) ? [deriveStableIdForNode(node)] : [];
+            var reviewItems = annotationParser.REVIEW_KINDS.map(function (kind) {
+                return { label: kind, value: kind };
+            });
+
+            vscode.window.showQuickPick(reviewItems, {
+                placeHolder: 'Choose an agent review annotation kind'
+            }).then(function (selectedKind) {
+                if (!selectedKind) {
+                    return;
+                }
+
+                vscode.window.showInputBox({
+                    prompt: 'Annotation text',
+                    placeHolder: 'Describe the risk, verification step, or follow-up'
+                }).then(function (annotationText) {
+                    if (!annotationText) {
+                        return;
+                    }
+
+                    var annotationLine = utils.buildAnnotationComment(
+                        editor.document.fileName,
+                        lineText,
+                        'NOTE',
+                        'review',
+                        {
+                            sessionId: session.sessionId,
+                            taskRefs: taskRefs,
+                            reviewKind: selectedKind.value
+                        },
+                        annotationText
+                    );
+
+                    insertAnnotationLine(editor.document, lineNumber, annotationLine).then(function () {
+                        return syncRoots([rootPath], 'editor:' + editor.document.fileName, {
+                            actor: 'agent',
+                            rebuildContext: true
+                        });
+                    }).then(function () {
+                        refreshTree();
+                        vscode.window.showInformationMessage('TaskVision: Added `' + selectedKind.value + '` annotation to session `' + session.sessionId + '`.');
+                    }).catch(function (error) {
+                        vscode.window.showErrorMessage('TaskVision: ' + error.message);
+                    });
+                });
+            });
+        }).catch(function (error) {
+            vscode.window.showErrorMessage('TaskVision: ' + error.message);
+        });
     }
 
     function editTaskStatusInSource(node, newStatus) {
@@ -1032,6 +1627,7 @@ function activate(context) {
         var candidates = (tasks || []).filter(function (task) {
             return task &&
                 task.type === 'todo' &&
+                isTaskAnnotationNode(task) &&
                 task.actualTag &&
                 task.hasExplicitStatus !== true &&
                 task.isStatusNode !== true;
@@ -1139,7 +1735,7 @@ function activate(context) {
             };
         });
 
-        if (!node || node.type !== 'todo' || node.isExtraLine === true || !node.actualTag) {
+        if (!node || node.type !== 'todo' || node.isExtraLine === true || !node.actualTag || !isTaskAnnotationNode(node)) {
             vscode.window.showWarningMessage('TaskVision: Only primary task comments can change inline status.');
             return;
         }
@@ -1158,7 +1754,7 @@ function activate(context) {
     }
 
     function setTaskPriority(node) {
-        if (!node || node.type !== 'todo' || !node.taskId || !node.rootPath) {
+        if (!node || node.type !== 'todo' || !node.taskId || !node.rootPath || !isTaskAnnotationNode(node)) {
             vscode.window.showWarningMessage('TaskVision: Task priority can only be stored for workspace files.');
             return;
         }
@@ -1197,7 +1793,7 @@ function activate(context) {
     }
 
     function editTaskNote(node) {
-        if (!node || node.type !== 'todo' || !node.taskId || !node.rootPath) {
+        if (!node || node.type !== 'todo' || !node.taskId || !node.rootPath || !isTaskAnnotationNode(node)) {
             vscode.window.showWarningMessage('TaskVision: Task notes can only be stored for workspace files.');
             return;
         }
@@ -1277,7 +1873,7 @@ function activate(context) {
     }
 
     function exportAiContext(node) {
-        var tasks = node ? provider.getVisibleTodoNodes(node) :
+        var nodes = node ? provider.getVisibleTodoNodes(node) :
             (config.shouldRespectCurrentFiltersForAiContext() ? provider.getVisibleTodoNodes() : provider.getAllTodoNodes());
         var grouped = {};
         var createdPaths = [];
@@ -1285,8 +1881,8 @@ function activate(context) {
         var generatedAt = new Date().toISOString();
         var scopeLabel = buildTaskScopeLabel(node);
 
-        tasks.forEach(function (task) {
-            var rootPath = task.rootPath || getWorkspaceRootForFile(task.fsPath);
+        nodes.forEach(function (entry) {
+            var rootPath = entry.rootPath || getWorkspaceRootForFile(entry.fsPath);
             if (!rootPath) {
                 skipped++;
                 return;
@@ -1295,36 +1891,43 @@ function activate(context) {
             if (!grouped[rootPath]) {
                 grouped[rootPath] = [];
             }
-            grouped[rootPath].push(task);
+            grouped[rootPath].push(entry);
         });
 
-        Object.keys(grouped).forEach(function (rootPath) {
-            var paths = aiContext.writeContextFiles(
-                rootPath,
-                scopeLabel,
-                grouped[rootPath],
-                generatedAt,
-                config.aiContextOutputDir()
-            );
-            taskMetaStore.markTasksExported(rootPath, grouped[rootPath], generatedAt, config.aiContextOutputDir());
-            aiContext.writeStatusReport(rootPath, provider.getAllTodoNodes().filter(function (task) {
-                return (task.rootPath || getWorkspaceRootForFile(task.fsPath)) === rootPath;
-            }), generatedAt, config.aiContextOutputDir());
-            createdPaths.push(paths.markdown);
+        syncRoots(Object.keys(grouped), scopeLabel, {
+            actor: 'user',
+            rebuildContext: false,
+            updatedAt: generatedAt
+        }).then(function (syncedRoots) {
+            Object.keys(grouped).forEach(function (rootPath) {
+                var rootNodes = syncedRoots[rootPath] || grouped[rootPath];
+                var paths = aiContext.writeContextFiles(
+                    rootPath,
+                    scopeLabel,
+                    rootNodes,
+                    generatedAt,
+                    config.aiContextOutputDir()
+                );
+                taskMetaStore.markTasksExported(rootPath, rootNodes.filter(isTaskAnnotationNode), generatedAt, config.aiContextOutputDir());
+                aiContext.writeStatusReport(rootPath, getNodesForRoot(rootPath), generatedAt, config.aiContextOutputDir());
+                createdPaths.push(paths.markdown);
+            });
+
+            if (createdPaths.length === 0) {
+                vscode.window.showWarningMessage('TaskVision: No workspace-backed annotations were available to export.');
+                return;
+            }
+
+            vscode.workspace.openTextDocument(vscode.Uri.file(createdPaths[0])).then(function (document) {
+                vscode.window.showTextDocument(document, { preview: true });
+            });
+
+            if (skipped > 0) {
+                vscode.window.showInformationMessage('TaskVision: Exported AI context for ' + createdPaths.length + ' workspace(s); skipped ' + skipped + ' annotation(s) outside the workspace.');
+            }
+        }).catch(function (error) {
+            vscode.window.showErrorMessage('TaskVision: ' + error.message);
         });
-
-        if (createdPaths.length === 0) {
-            vscode.window.showWarningMessage('TaskVision: No workspace-backed tasks were available to export.');
-            return;
-        }
-
-        vscode.workspace.openTextDocument(vscode.Uri.file(createdPaths[0])).then(function (document) {
-            vscode.window.showTextDocument(document, { preview: true });
-        });
-
-        if (skipped > 0) {
-            vscode.window.showInformationMessage('TaskVision: Exported AI context for ' + createdPaths.length + ' workspace(s); skipped ' + skipped + ' task(s) outside the workspace.');
-        }
     }
 
     function openAiStatusReport(node) {
@@ -1479,6 +2082,10 @@ function activate(context) {
 
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.exportAiContext', exportAiContext));
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.openAiStatusReport', openAiStatusReport));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.syncDataModel', syncDataModel));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.addContextAnnotation', addContextAnnotation));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.startAgentSession', startAgentSession));
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.writeAgentAnnotations', writeAgentAnnotations));
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.addMissingTaskStatuses', addMissingTaskStatuses));
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.setTaskStatus', setTaskStatus));
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.setTaskPriority', setTaskPriority));

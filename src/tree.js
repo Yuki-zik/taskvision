@@ -33,6 +33,18 @@ var isTodoNode = function (e) {
     return e.type === TODO;
 };
 
+var isTaskAnnotationNode = function (e) {
+    return isTodoNode(e) && e.annotationKind !== 'context' && e.annotationKind !== 'review';
+};
+
+var isContextAnnotationNode = function (e) {
+    return isTodoNode(e) && e.annotationKind === 'context';
+};
+
+var isReviewAnnotationNode = function (e) {
+    return isTodoNode(e) && e.annotationKind === 'review';
+};
+
 var isPathNode = function (e) {
     return e.type === PATH;
 };
@@ -213,6 +225,14 @@ function buildTodoLabel(extracted, result) {
 }
 
 function renderTodoDisplayLabel(node) {
+    if (isContextAnnotationNode(node)) {
+        return "[ctx:" + (node.contextKind || 'context') + "] " + (node.after || node.label) + (node.pathLabel ? (" " + node.pathLabel) : "");
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        return "[review:" + (node.reviewKind || 'note') + "] " + (node.after || node.label) + (node.pathLabel ? (" " + node.pathLabel) : "");
+    }
+
     var label = node.label;
     var format = config.labelFormat();
 
@@ -232,6 +252,104 @@ function renderTodoDisplayLabel(node) {
     return label + (node.pathLabel ? (" " + node.pathLabel) : "");
 }
 
+function shortStableId(stableId) {
+    if (!stableId) {
+        return '';
+    }
+
+    var parts = String(stableId).split('.');
+    if (parts.length >= 3) {
+        return parts[0] + '.' + parts[parts.length - 1];
+    }
+
+    return String(stableId);
+}
+
+function shortSessionId(sessionId) {
+    if (!sessionId) {
+        return '';
+    }
+
+    var parts = String(sessionId).split('.');
+    if (parts.length >= 4) {
+        return parts[2] + '.' + parts[3];
+    }
+
+    return String(sessionId);
+}
+
+function getAnnotationIcon(node) {
+    if (isContextAnnotationNode(node)) {
+        return new vscode.ThemeIcon('note');
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        switch (node.reviewKind) {
+            case 'verify':
+                return new vscode.ThemeIcon('beaker');
+            case 'risk':
+                return new vscode.ThemeIcon('warning');
+            case 'blocked':
+                return new vscode.ThemeIcon('debug-pause');
+            case 'changed':
+                return new vscode.ThemeIcon('diff');
+            case 'why':
+                return new vscode.ThemeIcon('info');
+            case 'followup':
+            default:
+                return new vscode.ThemeIcon('comment');
+        }
+    }
+
+    return undefined;
+}
+
+function getAnnotationDescription(node) {
+    if (isTaskAnnotationNode(node)) {
+        if (Array.isArray(node.contextRefs) && node.contextRefs.length > 0) {
+            return 'ctx:' + node.contextRefs.length;
+        }
+
+        return shortStableId(node.stableId);
+    }
+
+    if (isContextAnnotationNode(node)) {
+        return (Array.isArray(node.taskRefs) && node.taskRefs.length > 0) ? ('task:' + node.taskRefs.length) : 'ctx';
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        return shortSessionId(node.sessionId);
+    }
+
+    return undefined;
+}
+
+function getAnnotationTooltip(node) {
+    if (isTaskAnnotationNode(node)) {
+        return utils.formatLabel(config.tooltipFormat(), node) + (node.stableId ? ("\nStable ID: " + node.stableId) : '');
+    }
+
+    if (isContextAnnotationNode(node)) {
+        return [
+            'Context: ' + (node.contextKind || 'context'),
+            node.stableId ? ('Stable ID: ' + node.stableId) : '',
+            node.taskRefs && node.taskRefs.length > 0 ? ('Task refs: ' + node.taskRefs.join(', ')) : '',
+            node.after || node.label || ''
+        ].filter(Boolean).join('\n');
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        return [
+            'Review: ' + (node.reviewKind || 'note'),
+            node.sessionId ? ('Session: ' + node.sessionId) : '',
+            node.taskRefs && node.taskRefs.length > 0 ? ('Task refs: ' + node.taskRefs.join(', ')) : '',
+            node.after || node.label || ''
+        ].filter(Boolean).join('\n');
+    }
+
+    return undefined;
+}
+
 function createTodoNode(result, rootNode) {
     var id = (buildCounter * 1000000) + nodeCounter++;
     var joined = result.match.substr(result.column - 1);
@@ -248,6 +366,34 @@ function createTodoNode(result, rootNode) {
     var rootPath = getWorkspaceRootForFile(result.uri.fsPath) || (rootNode && rootNode.fsPath ? rootNode.fsPath : undefined);
     var taskId = utils.createTaskId(rootPath, result.uri.fsPath, extracted.tag, extracted.withoutTag, extracted.subTag);
     var meta = taskMetaStore.getTaskMetadata(rootPath, taskId, config.defaultTaskPriority(), config.aiContextOutputDir());
+    var annotationKind = extracted.annotationKind || 'task';
+    var stableId = extracted.stableId;
+    var contextRefs = [];
+    var priority = meta.priority;
+    var note = meta.note;
+    var lastActor = meta.lastActor;
+    var updatedAt = meta.updatedAt;
+
+    if (annotationKind === 'task') {
+        stableId = stableId || meta.stableId || utils.createTaskStableId(rootPath, result.uri.fsPath, extracted.tag, extracted.after || extracted.withoutTag, extracted.subTag);
+        contextRefs = meta.contextRefs || [];
+    }
+    else if (annotationKind === 'context') {
+        stableId = stableId || utils.createContextStableId(rootPath, result.uri.fsPath, extracted.after || extracted.withoutTag, extracted.contextKind, result.line);
+        priority = undefined;
+        note = '';
+        lastActor = undefined;
+        updatedAt = undefined;
+        taskId = undefined;
+    }
+    else if (annotationKind === 'review') {
+        stableId = stableId || utils.createContextStableId(rootPath, result.uri.fsPath, extracted.after || extracted.withoutTag, extracted.reviewKind || 'review', result.line);
+        priority = undefined;
+        note = '';
+        lastActor = undefined;
+        updatedAt = undefined;
+        taskId = undefined;
+    }
 
     var todo = {
         type: TODO,
@@ -267,13 +413,22 @@ function createTodoNode(result, rootNode) {
         extraLines: [],
         status: extracted.status,
         hasExplicitStatus: extracted.hasExplicitStatus === true,
-        priority: meta.priority,
-        note: meta.note,
-        lastActor: meta.lastActor,
-        updatedAt: meta.updatedAt,
+        priority: priority,
+        note: note,
+        lastActor: lastActor,
+        updatedAt: updatedAt,
         taskId: taskId,
         rootPath: rootPath,
-        sourceOfTruth: extracted.sourceOfTruth || 'inline'
+        sourceOfTruth: extracted.sourceOfTruth || 'inline',
+        stableId: stableId,
+        explicitStableId: extracted.stableId,
+        annotationKind: annotationKind,
+        contextKind: extracted.contextKind,
+        reviewKind: extracted.reviewKind,
+        sessionId: extracted.sessionId,
+        taskRefs: extracted.taskRefs || [],
+        contextRefs: contextRefs,
+        tvDirectives: extracted.tvDirectives || {}
     };
 
     if (result.extraLines) {
@@ -394,7 +549,7 @@ function locateTreeChildNode(rootNode, pathElements, tag, subTag) {
 
 function countTags(child, tagCounts, forStatusBar, fileFilter) {
     function countTag(node) {
-        if (isTodoNode(node)) {
+        if (isTaskAnnotationNode(node)) {
             var tag = node.tag ? node.tag : "TODO";
             if (isVisible(node) && (!fileFilter || fileFilter === node.fsPath)) {
                 var hide = false;
@@ -425,6 +580,39 @@ function countTags(child, tagCounts, forStatusBar, fileFilter) {
 function countChildTags(children, tagCounts, forStatusBar, fileFilter) {
     children.map(function (child) { return countTags(child, tagCounts, forStatusBar, fileFilter); });
     return tagCounts;
+}
+
+function buildSessionStatusNode(context) {
+    var sessions = context.workspaceState.get('currentAgentSessions', {});
+    var roots = Object.keys(sessions || {}).filter(function (rootPath) {
+        return sessions[rootPath];
+    });
+
+    if (roots.length === 0) {
+        return undefined;
+    }
+
+    var tooltip = roots.map(function (rootPath) {
+        return path.basename(rootPath) + ': ' + sessions[rootPath];
+    }).join('\n');
+
+    if (roots.length === 1) {
+        return {
+            label: "Agent session: " + shortSessionId(sessions[roots[0]]),
+            tooltip: tooltip,
+            notExported: true,
+            isStatusNode: true,
+            icon: "debug-start"
+        };
+    }
+
+    return {
+        label: "Agent sessions: " + roots.length + " active",
+        tooltip: tooltip,
+        notExported: true,
+        isStatusNode: true,
+        icon: "debug-start"
+    };
 }
 
 function normaliseStatusFilter(statuses) {
@@ -525,6 +713,11 @@ class TreeNodeProvider {
                 result.unshift(filterStatusNode);
             }
 
+            var sessionStatusNode = buildSessionStatusNode(this._context);
+            if (sessionStatusNode) {
+                result.unshift(sessionStatusNode);
+            }
+
             if (config.shouldShowScanModeInTree()) {
                 var scanMode = config.scanMode();
                 if (scanMode === 'workspace') {
@@ -594,8 +787,7 @@ class TreeNodeProvider {
             }
 
             if (isTodoNode(treeItem.node)) {
-                treeItem.tooltip = config.tooltipFormat();
-                treeItem.tooltip = utils.formatLabel(config.tooltipFormat(), node);
+                treeItem.tooltip = getAnnotationTooltip(node) || utils.formatLabel(config.tooltipFormat(), node);
             }
             else {
                 treeItem.tooltip = treeItem.fsPath;
@@ -656,13 +848,17 @@ class TreeNodeProvider {
                     treeItem.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
                 }
 
-                if (config.shouldHideIconsWhenGroupedByTag() !== true || (config.shouldGroupByTag() !== true && config.shouldGroupBySubTag() !== true)) {
-                    if (node.isExtraLine !== true) {
+                if (node.isExtraLine !== true) {
+                    var annotationIcon = getAnnotationIcon(node);
+                    if (annotationIcon) {
+                        treeItem.iconPath = annotationIcon;
+                    }
+                    else if (config.shouldHideIconsWhenGroupedByTag() !== true || (config.shouldGroupByTag() !== true && config.shouldGroupBySubTag() !== true)) {
                         treeItem.iconPath = icons.getIcon(this._context, node.tag ? node.tag : node.label, this._debug);
                     }
-                    else {
-                        treeItem.iconPath = "no-icon";
-                    }
+                }
+                else {
+                    treeItem.iconPath = "no-icon";
                 }
 
                 var revealBehaviour = vscode.workspace.getConfiguration('taskvision.general').get('revealBehaviour');
@@ -688,6 +884,7 @@ class TreeNodeProvider {
                         { selection: todoSelection }
                     ]
                 };
+                treeItem.description = getAnnotationDescription(node);
             }
         }
         else {
@@ -710,8 +907,14 @@ class TreeNodeProvider {
         else if (node.isRootTagNode === true) {
             treeItem.contextValue = "tag";
         }
-        else if (node.type === TODO) {
-            treeItem.contextValue = "todo";
+        else if (isTaskAnnotationNode(node)) {
+            treeItem.contextValue = "task";
+        }
+        else if (isContextAnnotationNode(node)) {
+            treeItem.contextValue = "context";
+        }
+        else if (isReviewAnnotationNode(node)) {
+            treeItem.contextValue = "review";
         }
         else if (!node.isWorkspaceNode && !node.isStatusNode && node.subTag === undefined) {
             treeItem.contextValue = "file";

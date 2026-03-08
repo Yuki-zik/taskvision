@@ -1,5 +1,6 @@
 var utils = require('../src/utils.js');
 var taskState = require('../src/taskState.js');
+var annotationParser = require('../src/annotationParser.js');
 var stubs = require('./stubs.js');
 
 QUnit.test("taskState.parseInlineStatus recognises valid inline states", function (assert) {
@@ -58,4 +59,51 @@ QUnit.test("utils.replaceTaskStatusInLine replaces or inserts inline status toke
 
     assert.equal(withExisting, "// TODO [review] fix cache");
     assert.equal(withoutExisting, "// TODO [blocked]: fix cache");
+});
+
+QUnit.test("utils.extractTag parses TaskVision directives", function (assert) {
+    var testConfig = stubs.getTestConfig();
+    testConfig.tagList = ["TODO", "NOTE"];
+    utils.init(testConfig);
+
+    var task = utils.extractTag("// TODO [todo] [tv:id=task.auth-refresh.c3f12a] fix refresh");
+    var context = utils.extractTag("// NOTE [idea] [tv:id=ctx.auth-refresh.8a91de] [tv:ctx=invariant] refresh must stay single-flight");
+    var review = utils.extractTag("// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.auth-refresh.c3f12a] [tv:review=verify] verify retry flow");
+
+    assert.equal(task.stableId, "task.auth-refresh.c3f12a");
+    assert.equal(task.annotationKind, "task");
+    assert.equal(context.contextKind, "invariant");
+    assert.equal(context.annotationKind, "context");
+    assert.deepEqual(review.taskRefs, ["task.auth-refresh.c3f12a"]);
+    assert.equal(review.reviewKind, "verify");
+    assert.equal(review.annotationKind, "review");
+});
+
+QUnit.test("utils.upsertTvDirectivesInLine inserts TaskVision directives after status", function (assert) {
+    var testConfig = stubs.getTestConfig();
+    testConfig.tagList = ["TODO"];
+    utils.init(testConfig);
+
+    var updated = utils.upsertTvDirectivesInLine("// TODO [todo] fix cache", {
+        actualTag: "TODO",
+        column: 4
+    }, {
+        stableId: "task.cache.123abc"
+    });
+
+    assert.equal(updated, "// TODO [todo] [tv:id=task.cache.123abc] fix cache");
+});
+
+QUnit.test("annotationParser builds directive tokens in stable order", function (assert) {
+    assert.deepEqual(annotationParser.buildDirectiveTokens({
+        stableId: "ctx.auth-refresh.8a91de",
+        contextKind: "invariant",
+        taskRefs: ["task.auth-refresh.c3f12a"],
+        sessionId: "sess.20260308.codex.001"
+    }), [
+        "[tv:id=ctx.auth-refresh.8a91de]",
+        "[tv:ctx=invariant]",
+        "[tv:task=task.auth-refresh.c3f12a]",
+        "[tv:session=sess.20260308.codex.001]"
+    ]);
 });
