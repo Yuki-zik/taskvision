@@ -274,6 +274,7 @@ TaskVision 使用四个独立样式通道：
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
+    "glowType": "tag",
     "glassType": "whole-line",
     "fontType": "tag"
   }

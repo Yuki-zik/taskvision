@@ -193,7 +193,11 @@ function escapeTagForRegex(tag) {
         return "\\[\\s*\\]";
     }
 
-    return tag.replace(/\\/g, '\\\\').replace(/[|{}()[\]^$+*?.-]/g, '\\$&');
+    return escapeLiteralForRegex(tag);
+}
+
+function escapeLiteralForRegex(text) {
+    return String(text).replace(/\\/g, '\\\\').replace(/[|{}()[\]^$+*?.-]/g, '\\$&');
 }
 
 function parseTagTail(rightOfTagText, flags) {
@@ -307,6 +311,9 @@ function extractTag(text, matchOffset) {
     if (tagMatch === null && c.regex.trim() !== "") {
         var regex = new RegExp(c.regex, flags);
         var match = regex.exec(text);
+        if (match === null) {
+            match = new RegExp(escapeLiteralForRegex(c.regex), flags).exec(text);
+        }
         if (match !== null) {
             tagMatch = true;
             originalTag = match[0];
