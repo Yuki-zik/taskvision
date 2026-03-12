@@ -77,10 +77,10 @@ TaskVision 内置以下状态：
 | `paused` | 暂时搁置 | `idea` | 想法或观察，还未进入正式任务流 |
 
 ```ts
-// TODO [todo]    重构缓存失效逻辑
-// TODO [blocked] 等待 API schema
-// TODO [review]  重试流程已改完，等待 QA
-// NOTE [idea]    可以拆分 parser 和 renderer
+// TODO [todo] [tv:id=task.task.19d80a] 重构缓存失效逻辑
+// TODO [blocked] [tv:id=task.api-schema.9950a8] 等待 API schema
+// TODO [review] [tv:id=task.qa.371dc2] 重试流程已改完，等待 QA
+// NOTE [idea] [tv:id=task.parser-renderer.f4916c] 可以拆分 parser 和 renderer
 ```
 
 **兼容规则：**
@@ -283,11 +283,24 @@ TaskVision 使用四个独立样式通道：
 然后写一些这样的注释试试：
 
 ```ts
-// TODO [todo] 发布新版 onboarding
-// TODO [blocked] 等法务文案
-// TODO [review] 快捷键逻辑已改完
-// NOTE [idea] 可以拆成 command layer 和 render layer
+// TODO [todo] [tv:id=task.onboarding.7e4666] 发布新版 onboarding
+// TODO [blocked] [tv:id=task.task.3be64c] 等法务文案
+// TODO [review] [tv:id=task.task.11d4d6] 快捷键逻辑已改完
+// NOTE [idea] [tv:id=task.command-layer-render-lay.3e95c7] 可以拆成 command layer 和 render layer
 ```
+
+### 分通道亮度控制
+
+高亮是多层叠加出来的，你现在可以分别调文字、辉光、玻璃背景和玻璃边框：
+
+```jsonc
+"taskvision.highlights.foregroundOpacity": 90,
+"taskvision.highlights.glowOpacity": 45,
+"taskvision.highlights.glassOpacity": 12,
+"taskvision.highlights.glassBorderOpacity": 30
+```
+
+这些键也可以写在 `taskvision.highlights.customHighlight` 的单个标签配置里。旧的 `opacity` 仍然保留，但现在只是 `glassOpacity` 的兼容别名。
 
 ---
 

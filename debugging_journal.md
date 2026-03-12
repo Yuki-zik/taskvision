@@ -56,10 +56,10 @@
 用户启动扩展后，调试控制台输出：
 
 ```
-[TaskVision] Match #1: raw="# TODO" tag="TODO" type="whole-line"
+[TaskVision] Match #1: raw="# TODO [todo]" tag="TODO" type="whole-line"
 
-[TaskVision] Match #2: raw="# XXX" tag="XXX" type="whole-line"
-[TaskVision] Match #3: raw="# FIXME" tag="FIXME" type="whole-line"
+[TaskVision] Match #2: raw="# XXX [todo]" tag="XXX" type="whole-line"
+[TaskVision] Match #3: raw="# FIXME [todo]" tag="FIXME" type="whole-line"
 [TaskVision] Total matches: 4
 [TaskVision] Tags with decorations: TODO, XXX, FIXME
 [TaskVision] highlighting FAILED: attributes.getOpacity is not a function
@@ -120,8 +120,8 @@ module.exports.getBorderRadius = getBorderRadius;
 ```javascript
 // 修复前 — 一个失败，全部失败
 Object.keys(documentHighlights).forEach(function (tag) {
-    var decoration = getDecoration(tag);    // XXX 在这里抛出异常
-    editor.setDecorations(decoration, ...); // FIXME 永远不会被执行
+    var decoration = getDecoration(tag);    // XXX [todo] 在这里抛出异常
+    editor.setDecorations(decoration, ...); // FIXME [todo] 永远不会被执行
 });
 ```
 
@@ -146,11 +146,11 @@ Object.keys(documentHighlights).forEach(function (tag) {
 
 但用户发来截图：
 
-- ✅ `# TODO` — 蓝色整行背景 + gutter 图标
+- ✅ `# TODO [todo]` — 蓝色整行背景 + gutter 图标
 - ✅ `# [x]` — 绿色整行背景 + gutter 图标
-- ❌ `# FIXME` — **无任何效果**
-- ❌ `# XXX` — **无任何效果**
-- ❌ `# BUG`、`# HACK`、`# NOTE` — 全部**无效果**
+- ❌ `# FIXME [todo]` — **无任何效果**
+- ❌ `# XXX [todo]` — **无任何效果**
+- ❌ `# BUG [todo]`、`# HACK`、`# NOTE` — 全部**无效果**
 
 **代码说 "Applied"，VS Code 说 "看不到"。** 问题从代码错误变成了**渲染层面的静默失败**。
 

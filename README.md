@@ -79,10 +79,10 @@ TaskVision supports these built-in task states:
 | `paused` | Intentionally deferred | `idea` | Observation or future direction |
 
 ```ts
-// TODO [todo]    refactor cache invalidation
-// TODO [blocked] waiting for the API schema
-// TODO [review]  retry flow rewritten, pending QA
-// NOTE [idea]    split parser and renderer
+// TODO [todo] [tv:id=task.refactor-cache-invalidat.13c895] refactor cache invalidation
+// TODO [blocked] [tv:id=task.waiting-for-the-api-sche.34bfd1] waiting for the API schema
+// TODO [review] [tv:id=task.retry-flow-rewritten-pen.abfec3] retry flow rewritten, pending QA
+// NOTE [idea] [tv:id=task.split-parser-and-rendere.b13966] split parser and renderer
 ```
 
 **Compatibility rules:**
@@ -285,11 +285,24 @@ Add a minimal setup to `settings.json`:
 Then try these comments:
 
 ```ts
-// TODO [todo] ship the new onboarding
-// TODO [blocked] waiting for legal copy
-// TODO [review] shortcut handler updated
-// NOTE [idea] split command and render layers
+// TODO [todo] [tv:id=task.ship-the-new-onboarding.cdff7a] ship the new onboarding
+// TODO [blocked] [tv:id=task.waiting-for-legal-copy.7cb8c0] waiting for legal copy
+// TODO [review] [tv:id=task.shortcut-handler-updated.d073a3] shortcut handler updated
+// NOTE [idea] [tv:id=task.split-command-and-render.96ab70] split command and render layers
 ```
+
+### Per-channel brightness
+
+Highlight rendering is layered. You can tune text, glow, glass fill, and glass border independently:
+
+```jsonc
+"taskvision.highlights.foregroundOpacity": 90,
+"taskvision.highlights.glowOpacity": 45,
+"taskvision.highlights.glassOpacity": 12,
+"taskvision.highlights.glassBorderOpacity": 30
+```
+
+The same keys also work per tag inside `taskvision.highlights.customHighlight`. Legacy `opacity` is still supported as an alias for `glassOpacity`.
 
 ---
 

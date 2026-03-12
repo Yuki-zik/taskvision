@@ -20,10 +20,10 @@ utils.init(mockConfig);
 console.log('--- Testing Issue 1: [ ] and [x] highlighting ---');
 
 const text = `
-TODO: Standard todo
-[ ] Unchecked item
+TODO [todo]: Standard todo
+[ ] [todo] Unchecked item
 [x] Checked item
-[ ]Mixed with text
+[ ] [todo]Mixed with text
 [x]Mixed with text
 `;
 

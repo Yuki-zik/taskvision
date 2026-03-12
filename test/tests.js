@@ -150,7 +150,7 @@ QUnit.test("utils.extractTag returns text from before and after the tag", functi
     var testConfig = stubs.getTestConfig();
     utils.init(testConfig);
 
-    result = utils.extractTag("                before = text; // TODO stuff  ", 32);
+    result = utils.extractTag("                before = text; // TODO [todo] stuff  ", 32);
     assert.equal(result.withoutTag, "stuff");
     assert.equal(result.before, "before = text;");
     assert.equal(result.after, "stuff");
@@ -172,7 +172,7 @@ QUnit.test("utils.extractTag returns entire text if regex is empty", function (a
     testConfig.regexSource = "";
     utils.init(testConfig);
 
-    var input = "                before = text;       // XXX  stuff  ";
+    var input = "                before = text;       // XXX [todo]  stuff  ";
     result = utils.extractTag(input, 1);
 
     assert.equal(result.withoutTag, input);
@@ -182,10 +182,10 @@ QUnit.test("utils.extractTag returns entire text if regex is empty", function (a
 
 QUnit.test("utils.extractTag returns expected result if regex does not contain $TAGS", function (assert) {
     var testConfig = stubs.getTestConfig();
-    testConfig.regexSource = "// TODO";
+    testConfig.regexSource = "// TODO [todo]";
     utils.init(testConfig);
 
-    result = utils.extractTag("                before = text; // TODO stuff  ", 1);
+    result = utils.extractTag("                before = text; // TODO [todo] stuff  ", 1);
     assert.equal(result.withoutTag, " stuff  ");
     assert.equal(result.before, "                before = text; ");
     assert.equal(result.after, " stuff  ");
@@ -218,7 +218,7 @@ QUnit.test("utils.extractTag supports markdown checkbox variants with spaces", f
     assert.equal(checked.tag, "[x]");
     assert.equal(checked.withoutTag, "done");
 
-    var unchecked = utils.extractTag("// [ ] todo");
+    var unchecked = utils.extractTag("// [ ] [todo] todo");
     assert.equal(unchecked.tag, "[ ]");
     assert.equal(unchecked.withoutTag, "todo");
 });

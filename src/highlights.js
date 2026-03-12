@@ -101,10 +101,45 @@ function getOpacity(tag) {
     return opacity;
 }
 
-function getRulerOpacity(tag) {
-    var opacity = attributes.getOpacity(tag);
+function getForegroundOpacity(tag) {
+    var opacity = attributes.getAttribute(tag, 'foregroundOpacity', undefined);
     if (opacity === undefined) {
-        opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('opacity');
+        opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('foregroundOpacity');
+    }
+    return opacity;
+}
+
+function getGlowOpacity(tag) {
+    var opacity = attributes.getAttribute(tag, 'glowOpacity', undefined);
+    if (opacity === undefined) {
+        opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('glowOpacity');
+    }
+    return opacity;
+}
+
+function getGlassOpacity(tag) {
+    var opacity = attributes.getAttribute(tag, 'glassOpacity', undefined);
+    if (opacity === undefined) {
+        opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('glassOpacity');
+    }
+    if (opacity === undefined) {
+        opacity = getOpacity(tag);
+    }
+    return opacity;
+}
+
+function getGlassBorderOpacity(tag) {
+    var opacity = attributes.getAttribute(tag, 'glassBorderOpacity', undefined);
+    if (opacity === undefined) {
+        opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('glassBorderOpacity');
+    }
+    return opacity;
+}
+
+function getRulerOpacity(tag) {
+    var opacity = attributes.getAttribute(tag, 'rulerOpacity', undefined);
+    if (opacity === undefined) {
+        opacity = getGlassOpacity(tag);
     }
     return opacity;
 }
@@ -216,7 +251,10 @@ function getTagPlan(tag) {
     var foregroundColour = attributes.getForeground(tag);
     var backgroundColour = attributes.getBackground(tag);
 
-    var opacity = getOpacity(tag);
+    var foregroundOpacity = getForegroundOpacity(tag);
+    var glowOpacity = getGlowOpacity(tag);
+    var glassOpacity = getGlassOpacity(tag);
+    var glassBorderOpacity = getGlassBorderOpacity(tag);
 
     var lightForegroundColour = resolveThemeColour(foregroundColour, 'editor.foreground');
     var darkForegroundColour = resolveThemeColour(foregroundColour, 'editor.foreground');
@@ -225,14 +263,14 @@ function getTagPlan(tag) {
 
     var schemeName = attributes.getScheme(tag);
     var hasGlass = schemeName === 'glass' || schemeName === 'neon+glass';
-    var defaultOpacity = hasGlass ? 15 : undefined;
-    var finalOpacity = opacity !== undefined ? opacity : defaultOpacity;
+    var defaultGlassOpacity = hasGlass ? 15 : undefined;
+    var finalGlassOpacity = glassOpacity !== undefined ? glassOpacity : defaultGlassOpacity;
 
     if (lightBackgroundColour !== undefined) {
-        lightBackgroundColour = applyOpacity(lightBackgroundColour, finalOpacity);
+        lightBackgroundColour = applyOpacity(lightBackgroundColour, finalGlassOpacity);
     }
     if (darkBackgroundColour !== undefined) {
-        darkBackgroundColour = applyOpacity(darkBackgroundColour, finalOpacity);
+        darkBackgroundColour = applyOpacity(darkBackgroundColour, finalGlassOpacity);
     }
 
     if (lightForegroundColour === undefined && utils.isHexColour(lightBackgroundColour)) {
@@ -247,11 +285,24 @@ function getTagPlan(tag) {
     var textDecoration = getTextDecoration(tag);
 
     var baseColor = resolveSchemeBaseColor(tag, foregroundColour, backgroundColour);
-    var schemePreset = schemes.getPreset(schemeName, baseColor, baseColor);
+    var schemePreset = schemes.getPreset(schemeName, baseColor, baseColor, {
+        glowOpacity: glowOpacity,
+        glassOpacity: finalGlassOpacity,
+        glassBorderOpacity: glassBorderOpacity
+    });
 
     if (schemeName && (foregroundColour === undefined || foregroundColour.toUpperCase() === '#FFFFFF' || foregroundColour.toUpperCase() === '#FFF')) {
         lightForegroundColour = schemePreset.lightColor;
         darkForegroundColour = schemePreset.darkColor;
+    }
+
+    if (foregroundOpacity !== undefined) {
+        if (lightForegroundColour !== undefined) {
+            lightForegroundColour = applyOpacity(lightForegroundColour, foregroundOpacity);
+        }
+        if (darkForegroundColour !== undefined) {
+            darkForegroundColour = applyOpacity(darkForegroundColour, foregroundOpacity);
+        }
     }
 
     var channels = highlightChannels.buildChannels({

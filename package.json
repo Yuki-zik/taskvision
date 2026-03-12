@@ -966,7 +966,24 @@
                                     "format": "color-hex"
                                 },
                                 "opacity": {
-                                    "type": "number"
+                                    "type": "number",
+                                    "description": "Legacy alias for glassOpacity."
+                                },
+                                "foregroundOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for foreground color channel. Accepts 0-1 or 0-100."
+                                },
+                                "glowOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                                },
+                                "glassOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for glass background channel. Accepts 0-1 or 0-100."
+                                },
+                                "glassBorderOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for glass border channel. Accepts 0-1 or 0-100."
                                 },
                                 "fontWeight": {
                                     "type": "string"
@@ -1124,7 +1141,24 @@
                                 "format": "color-hex"
                             },
                             "opacity": {
-                                "type": "number"
+                                "type": "number",
+                                "description": "Legacy alias for glassOpacity."
+                            },
+                            "foregroundOpacity": {
+                                "type": "number",
+                                "description": "Alpha for foreground color channel. Accepts 0-1 or 0-100."
+                            },
+                            "glowOpacity": {
+                                "type": "number",
+                                "description": "Alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                            },
+                            "glassOpacity": {
+                                "type": "number",
+                                "description": "Alpha for glass background channel. Accepts 0-1 or 0-100."
+                            },
+                            "glassBorderOpacity": {
+                                "type": "number",
+                                "description": "Alpha for glass border channel. Accepts 0-1 or 0-100."
                             },
                             "fontWeight": {
                                 "type": "string"
@@ -1301,6 +1335,26 @@
                         },
                         "markdownDescription": "%taskvision.configuration.highlights.backgroundColourScheme.markdownDescription%",
                         "type": "array"
+                    },
+                    "taskvision.highlights.opacity": {
+                        "type": "number",
+                        "description": "Legacy global alias for glassOpacity."
+                    },
+                    "taskvision.highlights.foregroundOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for foreground color channel. Accepts 0-1 or 0-100."
+                    },
+                    "taskvision.highlights.glowOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                    },
+                    "taskvision.highlights.glassOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for glass background channel. Accepts 0-1 or 0-100."
+                    },
+                    "taskvision.highlights.glassBorderOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for glass border channel. Accepts 0-1 or 0-100."
                     }
                 }
             },

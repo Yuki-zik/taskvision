@@ -29,7 +29,7 @@ QUnit.test("utils.extractTag maps checkbox tags to default statuses", function (
     testConfig.tagList = ["[ ]", "[x]"];
     utils.init(testConfig);
 
-    var open = utils.extractTag("// [ ] finish validation");
+    var open = utils.extractTag("// [ ] [todo] finish validation");
     var done = utils.extractTag("// [x] shipped");
 
     assert.equal(open.status, "todo");
@@ -52,7 +52,7 @@ QUnit.test("utils.replaceTaskStatusInLine replaces or inserts inline status toke
         column: 4
     }, "review");
 
-    var withoutExisting = utils.replaceTaskStatusInLine("// TODO: fix cache", {
+    var withoutExisting = utils.replaceTaskStatusInLine("// TODO [todo]: fix cache", {
         actualTag: "TODO",
         column: 4
     }, "blocked");

@@ -9,6 +9,11 @@
 
 ## Session Summary
 
-- `timeline.md`: did not exist before this session; initialized.
-- `tasks.md`: initialized from scratch in this session.
-- Active focus: keep root-level agent instructions aligned with `agent/` governance docs.
+- Active focus: 已完成多通道高亮亮度拆分，为文字、辉光、玻璃背景和玻璃边框提供独立透明度控制，并保留旧 `opacity` 作为 `glassOpacity` 兼容别名。
+- Verification: `npx qunit test/schemes.tests.js test/highlights.tests.js test/styleComposer.tests.js`，`npm run webpack`
+
+## Active Session Task
+
+| Priority | Task | Status | Owner | Due |
+| --- | --- | --- | --- | --- |
+| P1 | 梳理高亮组件的视觉职责，并实现按背景、辉光、文字分离亮度控制的最小方案 | ✅ Completed | AI | 2026-03-12 |

@@ -19,7 +19,7 @@ var mockConfig = {
     backgroundColourScheme: () => [],
     foregroundColourScheme: () => [],
     tags: () => ["TODO"],
-    regex: () => ({ regex: "(// TODO)" }),
+    regex: () => ({ regex: "(// TODO [todo])" }),
     subTagRegex: () => "^:(.*)",
     tagGroup: () => undefined
 };
