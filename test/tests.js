@@ -409,7 +409,7 @@ QUnit.test("utils.createFolderGlob creates expected globs", function (assert) {
 });
 
 QUnit.test("utils.createFolderGlob handles Windows root paths under simulated win32", function (assert) {
-    if (process.platform === 'win32') {
+\    if (process.platform === 'win32') {
         assert.equal(utils.createFolderGlob("c:\\Users\\name\\workspace\\project\\folder\\subfolder", "c:\\Users\\name\\workspace\\project", "/**/*"), "**/project/folder/subfolder/**/*");
         assert.equal(utils.createFolderGlob("c:\\folder", "c:\\", "/**/*"), "**/folder/**/*");
         return;
