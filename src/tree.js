@@ -6,10 +6,13 @@ var path = require("path");
 var utils = require('./utils.js');
 var icons = require('./icons.js');
 var config = require('./config.js');
+var taskState = require('./taskState.js');
+var taskMetaStore = require('./taskMetaStore.js');
 
 var workspaceFolders;
 var nodes = [];
 var currentFilter;
+var currentStatusFilter;
 
 const PATH = "path";
 const TODO = "todo";
@@ -20,6 +23,7 @@ var nodeCounter = 1;
 var expandedNodes = {};
 
 var treeHasSubTags = false;
+var DEFAULT_LABEL_FORMAT = "${tag} ${after}";
 
 var isVisible = function (e) {
     return e.visible === true && e.hidden !== true;
@@ -27,6 +31,18 @@ var isVisible = function (e) {
 
 var isTodoNode = function (e) {
     return e.type === TODO;
+};
+
+var isTaskAnnotationNode = function (e) {
+    return isTodoNode(e) && e.annotationKind !== 'context' && e.annotationKind !== 'review';
+};
+
+var isContextAnnotationNode = function (e) {
+    return isTodoNode(e) && e.annotationKind === 'context';
+};
+
+var isReviewAnnotationNode = function (e) {
+    return isTodoNode(e) && e.annotationKind === 'review';
 };
 
 var isPathNode = function (e) {
@@ -173,16 +189,27 @@ function createSubTagNode(subTag) {
     };
 }
 
-function createTodoNode(result) {
-    var id = (buildCounter * 1000000) + nodeCounter++;
-    var joined = result.match.substr(result.column - 1);
-    if (result.extraLines) {
-        result.extraLines.map(function (extraLine) {
-            joined += "\n" + extraLine.match;
-        });
-    }
-    var text = utils.removeBlockComments(joined, result.uri.fsPath);
-    var extracted = utils.extractTag(text, result.column);
+function getWorkspaceRootForFile(filename) {
+    var result;
+
+    (workspaceFolders || []).forEach(function (folder) {
+        if (!folder.uri || folder.uri.scheme !== 'file') {
+            return;
+        }
+
+        var folderPath = folder.uri.fsPath;
+        var relative = path.relative(folderPath, filename);
+        if (relative === '' || (relative && relative.indexOf('..') !== 0 && path.isAbsolute(relative) === false)) {
+            if (!result || folderPath.length > result.length) {
+                result = folderPath;
+            }
+        }
+    });
+
+    return result;
+}
+
+function buildTodoLabel(extracted, result) {
     var label = (extracted.withoutTag && extracted.withoutTag.length > 0) ? extracted.withoutTag : "line " + result.line;
 
     if (config.shouldGroupByTag() !== true) {
@@ -194,7 +221,179 @@ function createTodoNode(result) {
         }
     }
 
+    return label;
+}
+
+function renderTodoDisplayLabel(node) {
+    if (isContextAnnotationNode(node)) {
+        return "[ctx:" + (node.contextKind || 'context') + "] " + (node.after || node.label) + (node.pathLabel ? (" " + node.pathLabel) : "");
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        return "[review:" + (node.reviewKind || 'note') + "] " + (node.after || node.label) + (node.pathLabel ? (" " + node.pathLabel) : "");
+    }
+
+    var label = node.label;
+    var format = config.labelFormat();
+
+    if (format !== "" && (node.extraLines === undefined || node.extraLines.length === 0)) {
+        label = utils.formatLabel(format, node);
+        if (config.shouldShowStatusPrefix() &&
+            node.status &&
+            format.indexOf("${status}") === -1 &&
+            format === DEFAULT_LABEL_FORMAT) {
+            label = "[" + node.status + "] " + label;
+        }
+    }
+    else if (config.shouldShowStatusPrefix() && node.status && node.isExtraLine !== true) {
+        label = "[" + node.status + "] " + label;
+    }
+
+    return label + (node.pathLabel ? (" " + node.pathLabel) : "");
+}
+
+function shortStableId(stableId) {
+    if (!stableId) {
+        return '';
+    }
+
+    var parts = String(stableId).split('.');
+    if (parts.length >= 3) {
+        return parts[0] + '.' + parts[parts.length - 1];
+    }
+
+    return String(stableId);
+}
+
+function shortSessionId(sessionId) {
+    if (!sessionId) {
+        return '';
+    }
+
+    var parts = String(sessionId).split('.');
+    if (parts.length >= 4) {
+        return parts[2] + '.' + parts[3];
+    }
+
+    return String(sessionId);
+}
+
+function getAnnotationIcon(node) {
+    if (isContextAnnotationNode(node)) {
+        return new vscode.ThemeIcon('note');
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        switch (node.reviewKind) {
+            case 'verify':
+                return new vscode.ThemeIcon('beaker');
+            case 'risk':
+                return new vscode.ThemeIcon('warning');
+            case 'blocked':
+                return new vscode.ThemeIcon('debug-pause');
+            case 'changed':
+                return new vscode.ThemeIcon('diff');
+            case 'why':
+                return new vscode.ThemeIcon('info');
+            case 'followup':
+            default:
+                return new vscode.ThemeIcon('comment');
+        }
+    }
+
+    return undefined;
+}
+
+function getAnnotationDescription(node) {
+    if (isTaskAnnotationNode(node)) {
+        if (Array.isArray(node.contextRefs) && node.contextRefs.length > 0) {
+            return 'ctx:' + node.contextRefs.length;
+        }
+
+        return shortStableId(node.stableId);
+    }
+
+    if (isContextAnnotationNode(node)) {
+        return (Array.isArray(node.taskRefs) && node.taskRefs.length > 0) ? ('task:' + node.taskRefs.length) : 'ctx';
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        return shortSessionId(node.sessionId);
+    }
+
+    return undefined;
+}
+
+function getAnnotationTooltip(node) {
+    if (isTaskAnnotationNode(node)) {
+        return utils.formatLabel(config.tooltipFormat(), node) + (node.stableId ? ("\nStable ID: " + node.stableId) : '');
+    }
+
+    if (isContextAnnotationNode(node)) {
+        return [
+            'Context: ' + (node.contextKind || 'context'),
+            node.stableId ? ('Stable ID: ' + node.stableId) : '',
+            node.taskRefs && node.taskRefs.length > 0 ? ('Task refs: ' + node.taskRefs.join(', ')) : '',
+            node.after || node.label || ''
+        ].filter(Boolean).join('\n');
+    }
+
+    if (isReviewAnnotationNode(node)) {
+        return [
+            'Review: ' + (node.reviewKind || 'note'),
+            node.sessionId ? ('Session: ' + node.sessionId) : '',
+            node.taskRefs && node.taskRefs.length > 0 ? ('Task refs: ' + node.taskRefs.join(', ')) : '',
+            node.after || node.label || ''
+        ].filter(Boolean).join('\n');
+    }
+
+    return undefined;
+}
+
+function createTodoNode(result, rootNode) {
+    var id = (buildCounter * 1000000) + nodeCounter++;
+    var joined = result.match.substr(result.column - 1);
+    if (result.extraLines) {
+        result.extraLines.map(function (extraLine) {
+            joined += "\n" + extraLine.match;
+        });
+    }
+    var text = utils.removeBlockComments(joined, result.uri.fsPath);
+    var extracted = utils.extractTag(text, result.column);
+    var label = buildTodoLabel(extracted, result);
+
     var tagGroup = config.tagGroup(extracted.tag);
+    var rootPath = getWorkspaceRootForFile(result.uri.fsPath) || (rootNode && rootNode.fsPath ? rootNode.fsPath : undefined);
+    var taskId = utils.createTaskId(rootPath, result.uri.fsPath, extracted.tag, extracted.withoutTag, extracted.subTag);
+    var meta = taskMetaStore.getTaskMetadata(rootPath, taskId, config.defaultTaskPriority(), config.aiContextOutputDir());
+    var annotationKind = extracted.annotationKind || 'task';
+    var stableId = extracted.stableId;
+    var contextRefs = [];
+    var priority = meta.priority;
+    var note = meta.note;
+    var lastActor = meta.lastActor;
+    var updatedAt = meta.updatedAt;
+
+    if (annotationKind === 'task') {
+        stableId = stableId || meta.stableId || utils.createTaskStableId(rootPath, result.uri.fsPath, extracted.tag, extracted.after || extracted.withoutTag, extracted.subTag);
+        contextRefs = meta.contextRefs || [];
+    }
+    else if (annotationKind === 'context') {
+        stableId = stableId || utils.createContextStableId(rootPath, result.uri.fsPath, extracted.after || extracted.withoutTag, extracted.contextKind, result.line);
+        priority = undefined;
+        note = '';
+        lastActor = undefined;
+        updatedAt = undefined;
+        taskId = undefined;
+    }
+    else if (annotationKind === 'review') {
+        stableId = stableId || utils.createContextStableId(rootPath, result.uri.fsPath, extracted.after || extracted.withoutTag, extracted.reviewKind || 'review', result.line);
+        priority = undefined;
+        note = '';
+        lastActor = undefined;
+        updatedAt = undefined;
+        taskId = undefined;
+    }
 
     var todo = {
         type: TODO,
@@ -211,7 +410,25 @@ function createTodoNode(result) {
         before: extracted.before ? extracted.before.trim() : "",
         id: id,
         visible: true,
-        extraLines: []
+        extraLines: [],
+        status: extracted.status,
+        hasExplicitStatus: extracted.hasExplicitStatus === true,
+        priority: priority,
+        note: note,
+        lastActor: lastActor,
+        updatedAt: updatedAt,
+        taskId: taskId,
+        rootPath: rootPath,
+        sourceOfTruth: extracted.sourceOfTruth || 'inline',
+        stableId: stableId,
+        explicitStableId: extracted.stableId,
+        annotationKind: annotationKind,
+        contextKind: extracted.contextKind,
+        reviewKind: extracted.reviewKind,
+        sessionId: extracted.sessionId,
+        taskRefs: extracted.taskRefs || [],
+        contextRefs: contextRefs,
+        tvDirectives: extracted.tvDirectives || {}
     };
 
     if (result.extraLines) {
@@ -223,7 +440,7 @@ function createTodoNode(result) {
             if (extraLine.match) {
                 var extraLineMatch = extraLine.match.trim();
                 if (extraLineMatch && extraLineMatch != todo.tag) {
-                    var extraLineNode = createTodoNode(extraLine);
+                    var extraLineNode = createTodoNode(extraLine, rootNode);
                     extraLineNode.isExtraLine = true;
                     todo.extraLines.push(extraLineNode);
                 }
@@ -332,7 +549,7 @@ function locateTreeChildNode(rootNode, pathElements, tag, subTag) {
 
 function countTags(child, tagCounts, forStatusBar, fileFilter) {
     function countTag(node) {
-        if (isTodoNode(node)) {
+        if (isTaskAnnotationNode(node)) {
             var tag = node.tag ? node.tag : "TODO";
             if (isVisible(node) && (!fileFilter || fileFilter === node.fsPath)) {
                 var hide = false;
@@ -363,6 +580,55 @@ function countTags(child, tagCounts, forStatusBar, fileFilter) {
 function countChildTags(children, tagCounts, forStatusBar, fileFilter) {
     children.map(function (child) { return countTags(child, tagCounts, forStatusBar, fileFilter); });
     return tagCounts;
+}
+
+function buildSessionStatusNode(context) {
+    var sessions = context.workspaceState.get('currentAgentSessions', {});
+    var roots = Object.keys(sessions || {}).filter(function (rootPath) {
+        return sessions[rootPath];
+    });
+
+    if (roots.length === 0) {
+        return undefined;
+    }
+
+    var tooltip = roots.map(function (rootPath) {
+        return path.basename(rootPath) + ': ' + sessions[rootPath];
+    }).join('\n');
+
+    if (roots.length === 1) {
+        return {
+            label: "Agent session: " + shortSessionId(sessions[roots[0]]),
+            tooltip: tooltip,
+            notExported: true,
+            isStatusNode: true,
+            icon: "debug-start"
+        };
+    }
+
+    return {
+        label: "Agent sessions: " + roots.length + " active",
+        tooltip: tooltip,
+        notExported: true,
+        isStatusNode: true,
+        icon: "debug-start"
+    };
+}
+
+function normaliseStatusFilter(statuses) {
+    if (!Array.isArray(statuses)) {
+        return undefined;
+    }
+
+    var normalised = statuses.map(function (status) {
+        return taskState.normaliseStatus(status);
+    }).filter(Boolean);
+
+    if (normalised.length === 0) {
+        return undefined;
+    }
+
+    return Array.from(new Set(normalised));
 }
 
 function addWorkspaceFolders() {
@@ -413,6 +679,11 @@ class TreeNodeProvider {
                 totalFilters++;
             }
 
+            if (currentStatusFilter && currentStatusFilter.length > 0) {
+                tooltip += "Status Filter: " + currentStatusFilter.join(", ") + "\n";
+                totalFilters++;
+            }
+
             if (includeGlobs.length + excludeGlobs.length > 0) {
                 includeGlobs.map(function (glob) {
                     tooltip += "Include: " + glob + "\n";
@@ -440,6 +711,11 @@ class TreeNodeProvider {
 
             if (filterStatusNode.label !== "") {
                 result.unshift(filterStatusNode);
+            }
+
+            var sessionStatusNode = buildSessionStatusNode(this._context);
+            if (sessionStatusNode) {
+                result.unshift(sessionStatusNode);
             }
 
             if (config.shouldShowScanModeInTree()) {
@@ -493,7 +769,7 @@ class TreeNodeProvider {
     getTreeItem(node) {
         var treeItem;
         try {
-            treeItem = new vscode.TreeItem(node.label + (node.pathLabel ? (" " + node.pathLabel) : ""));
+            treeItem = new vscode.TreeItem(isTodoNode(node) ? renderTodoDisplayLabel(node) : node.label + (node.pathLabel ? (" " + node.pathLabel) : ""));
         }
         catch (e) {
             console.log("Failed to create tree item: " + e);
@@ -511,8 +787,7 @@ class TreeNodeProvider {
             }
 
             if (isTodoNode(treeItem.node)) {
-                treeItem.tooltip = config.tooltipFormat();
-                treeItem.tooltip = utils.formatLabel(config.tooltipFormat(), node);
+                treeItem.tooltip = getAnnotationTooltip(node) || utils.formatLabel(config.tooltipFormat(), node);
             }
             else {
                 treeItem.tooltip = treeItem.fsPath;
@@ -573,18 +848,17 @@ class TreeNodeProvider {
                     treeItem.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
                 }
 
-                if (config.shouldHideIconsWhenGroupedByTag() !== true || (config.shouldGroupByTag() !== true && config.shouldGroupBySubTag() !== true)) {
-                    if (node.isExtraLine !== true) {
+                if (node.isExtraLine !== true) {
+                    var annotationIcon = getAnnotationIcon(node);
+                    if (annotationIcon) {
+                        treeItem.iconPath = annotationIcon;
+                    }
+                    else if (config.shouldHideIconsWhenGroupedByTag() !== true || (config.shouldGroupByTag() !== true && config.shouldGroupBySubTag() !== true)) {
                         treeItem.iconPath = icons.getIcon(this._context, node.tag ? node.tag : node.label, this._debug);
                     }
-                    else {
-                        treeItem.iconPath = "no-icon";
-                    }
                 }
-
-                var format = config.labelFormat();
-                if (format !== "" && (node.extraLines === undefined || node.extraLines.length === 0)) {
-                    treeItem.label = utils.formatLabel(format, node) + (node.pathLabel ? (" " + node.pathLabel) : "");
+                else {
+                    treeItem.iconPath = "no-icon";
                 }
 
                 var revealBehaviour = vscode.workspace.getConfiguration('taskvision.general').get('revealBehaviour');
@@ -610,6 +884,7 @@ class TreeNodeProvider {
                         { selection: todoSelection }
                     ]
                 };
+                treeItem.description = getAnnotationDescription(node);
             }
         }
         else {
@@ -632,8 +907,14 @@ class TreeNodeProvider {
         else if (node.isRootTagNode === true) {
             treeItem.contextValue = "tag";
         }
-        else if (node.type === TODO) {
-            treeItem.contextValue = "todo";
+        else if (isTaskAnnotationNode(node)) {
+            treeItem.contextValue = "task";
+        }
+        else if (isContextAnnotationNode(node)) {
+            treeItem.contextValue = "context";
+        }
+        else if (isReviewAnnotationNode(node)) {
+            treeItem.contextValue = "review";
         }
         else if (!node.isWorkspaceNode && !node.isStatusNode && node.subTag === undefined) {
             treeItem.contextValue = "file";
@@ -674,24 +955,25 @@ class TreeNodeProvider {
         this._onDidChangeTreeData.fire();
     }
 
-    filter(text, children) {
-        var matcher = new RegExp(text, config.showFilterCaseSensitive() ? "" : "i");
+    applyFilters(children) {
+        var matcher = currentFilter ? new RegExp(currentFilter, config.showFilterCaseSensitive() ? "" : "i") : undefined;
 
         if (children === undefined) {
-            currentFilter = text;
             children = nodes;
         }
+
         children.forEach(child => {
             if (child.type === TODO) {
-                var match = matcher.test(child.label);
-                child.visible = !text || match;
+                var textMatch = !matcher || matcher.test(child.label);
+                var statusMatch = !currentStatusFilter || currentStatusFilter.indexOf(taskState.normaliseStatus(child.status)) !== -1;
+                child.visible = textMatch && statusMatch;
             }
 
             if (child.nodes !== undefined) {
-                this.filter(text, child.nodes);
+                this.applyFilters(child.nodes);
             }
             if (child.extraLines !== undefined) {
-                this.filter(text, child.extraLines);
+                this.applyFilters(child.extraLines);
             }
             if ((child.nodes && child.nodes.length > 0) || (child.extraLines && child.extraLines.length > 0)) {
                 var visibleNodes = child.nodes ? child.nodes.filter(isVisible).length : 0;
@@ -701,21 +983,40 @@ class TreeNodeProvider {
         });
     }
 
-    clearTreeFilter(children) {
-        currentFilter = undefined;
-
+    filter(text, children) {
         if (children === undefined) {
+            currentFilter = text;
             children = nodes;
         }
-        children.forEach(function (child) {
-            child.visible = true;
-            if (child.nodes !== undefined) {
-                this.clearTreeFilter(child.nodes);
-            }
-            if (child.extraLines !== undefined) {
-                this.clearTreeFilter(child.extraLines);
-            }
-        }, this);
+
+        this.applyFilters(children);
+    }
+
+    clearTreeFilter(children) {
+        if (children === undefined) {
+            currentFilter = undefined;
+            children = nodes;
+        }
+
+        this.applyFilters(children);
+    }
+
+    filterByStatus(statuses, children) {
+        if (children === undefined) {
+            currentStatusFilter = normaliseStatusFilter(statuses);
+            children = nodes;
+        }
+
+        this.applyFilters(children);
+    }
+
+    clearStatusFilter(children) {
+        if (children === undefined) {
+            currentStatusFilter = undefined;
+            children = nodes;
+        }
+
+        this.applyFilters(children);
     }
 
     add(result) {
@@ -726,7 +1027,7 @@ class TreeNodeProvider {
         var fullPath = result.uri.scheme === 'file' ? result.uri.fsPath : path.join(result.uri.authority, result.uri.fsPath);
 
         var rootNode = locateWorkspaceNode(fullPath);
-        var todoNode = createTodoNode(result);
+        var todoNode = createTodoNode(result, rootNode);
 
         if (config.shouldHideFromTree(todoNode.tag ? todoNode.tag : todoNode.label)) {
             todoNode.hidden = true;
@@ -938,8 +1239,8 @@ class TreeNodeProvider {
                     itemLabel = child.fsPath + " " + itemLabel;
                 }
                 parent[itemLabel] = (format !== "") ?
-                    utils.formatLabel(format, child) + (child.pathLabel ? (" " + child.pathLabel) : "") :
-                    child.label;
+                    renderTodoDisplayLabel(child) :
+                    renderTodoDisplayLabel(child);
             }
         }, this);
         return parent;
@@ -965,6 +1266,54 @@ class TreeNodeProvider {
 
     hasSubTags() {
         return treeHasSubTags;
+    }
+
+    getStatusFilter() {
+        return currentStatusFilter ? currentStatusFilter.slice() : [];
+    }
+
+    collectTodoNodes(children, visibleOnly, collected) {
+        if (children === undefined) {
+            children = nodes;
+        }
+        if (collected === undefined) {
+            collected = [];
+        }
+
+        children.forEach(function (child) {
+            if (child.isStatusNode) {
+                return;
+            }
+
+            if (isTodoNode(child) && (!visibleOnly || isVisible(child))) {
+                collected.push(child);
+            }
+
+            if (child.nodes !== undefined) {
+                this.collectTodoNodes(child.nodes, visibleOnly, collected);
+            }
+            if (child.extraLines !== undefined) {
+                this.collectTodoNodes(child.extraLines, visibleOnly, collected);
+            }
+        }, this);
+
+        return collected;
+    }
+
+    getVisibleTodoNodes(node) {
+        if (node && isTodoNode(node)) {
+            return [node].concat(node.extraLines ? this.collectTodoNodes(node.extraLines, true, []) : []);
+        }
+
+        if (node) {
+            return this.collectTodoNodes(this.getChildren(node) || [], true, []);
+        }
+
+        return this.collectTodoNodes(nodes, true, []);
+    }
+
+    getAllTodoNodes() {
+        return this.collectTodoNodes(nodes, false, []);
     }
 
     sort(children) {

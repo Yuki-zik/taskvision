@@ -28,14 +28,38 @@ function withAlpha(color, percentage) {
     return color;
 }
 
-function getGlowShadow(color) {
-    return '0 0 5px ' + color + ', 0 0 10px ' + color + ', 0 0 15px ' + color + ', 0 0 20px ' + color + ', 0 0 30px ' + color;
+function normalizeOpacity(opacity, fallback) {
+    if (opacity === undefined || opacity === null || opacity === '') {
+        return fallback;
+    }
+
+    return opacity <= 1 ? opacity * 100 : opacity;
 }
 
-function getPreset(schemeName, lightBaseColor, darkBaseColor) {
+function withOptionalAlpha(color, opacity, fallback) {
+    var percentage = normalizeOpacity(opacity, fallback);
+
+    if (percentage === undefined || percentage === 100) {
+        return color;
+    }
+
+    return withAlpha(color, percentage);
+}
+
+function getGlowShadow(color, opacity) {
+    var shadowColor = withOptionalAlpha(color, opacity, 100);
+    return '0 0 5px ' + shadowColor + ', 0 0 10px ' + shadowColor + ', 0 0 15px ' + shadowColor + ', 0 0 20px ' + shadowColor + ', 0 0 30px ' + shadowColor;
+}
+
+function getPreset(schemeName, lightBaseColor, darkBaseColor, channelOptions) {
+    channelOptions = channelOptions || {};
+
     var defaultAccent = '#42A5F5';
     var lightColor = resolveColor(lightBaseColor, defaultAccent);
     var darkColor = resolveColor(darkBaseColor, lightColor);
+    var glowOpacity = normalizeOpacity(channelOptions.glowOpacity, 100);
+    var glassOpacity = normalizeOpacity(channelOptions.glassOpacity, 15);
+    var glassBorderOpacity = normalizeOpacity(channelOptions.glassBorderOpacity, 60);
 
     var hasGlow = schemeName === 'neon' || schemeName === 'neon+glass';
     var hasGlass = schemeName === 'glass' || schemeName === 'neon+glass';
@@ -44,18 +68,18 @@ function getPreset(schemeName, lightBaseColor, darkBaseColor) {
         lightColor: lightColor,
         darkColor: darkColor,
         glow: hasGlow ? {
-            light: { textShadow: getGlowShadow(lightColor) },
-            dark: { textShadow: getGlowShadow(darkColor) }
+            light: { textShadow: getGlowShadow(lightColor, glowOpacity) },
+            dark: { textShadow: getGlowShadow(darkColor, glowOpacity) }
         } : undefined,
         glass: hasGlass ? {
             borderRadius: '6px',
             light: {
-                backgroundColor: withAlpha(lightColor, 15),
-                border: '1px solid ' + withAlpha(lightColor, 60)
+                backgroundColor: withAlpha(lightColor, glassOpacity),
+                border: '1px solid ' + withAlpha(lightColor, glassBorderOpacity)
             },
             dark: {
-                backgroundColor: withAlpha(darkColor, 15),
-                border: '1px solid ' + withAlpha(darkColor, 60)
+                backgroundColor: withAlpha(darkColor, glassOpacity),
+                border: '1px solid ' + withAlpha(darkColor, glassBorderOpacity)
             }
         } : undefined
     };

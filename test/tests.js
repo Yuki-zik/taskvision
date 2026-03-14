@@ -150,7 +150,7 @@ QUnit.test("utils.extractTag returns text from before and after the tag", functi
     var testConfig = stubs.getTestConfig();
     utils.init(testConfig);
 
-    result = utils.extractTag("                before = text; // TODO stuff  ", 32);
+    result = utils.extractTag("                before = text; // TODO [todo] stuff  ", 32);
     assert.equal(result.withoutTag, "stuff");
     assert.equal(result.before, "before = text;");
     assert.equal(result.after, "stuff");
@@ -172,7 +172,7 @@ QUnit.test("utils.extractTag returns entire text if regex is empty", function (a
     testConfig.regexSource = "";
     utils.init(testConfig);
 
-    var input = "                before = text;       // XXX  stuff  ";
+    var input = "                before = text;       // XXX [todo]  stuff  ";
     result = utils.extractTag(input, 1);
 
     assert.equal(result.withoutTag, input);
@@ -182,10 +182,10 @@ QUnit.test("utils.extractTag returns entire text if regex is empty", function (a
 
 QUnit.test("utils.extractTag returns expected result if regex does not contain $TAGS", function (assert) {
     var testConfig = stubs.getTestConfig();
-    testConfig.regexSource = "// TODO";
+    testConfig.regexSource = "// TODO [todo]";
     utils.init(testConfig);
 
-    result = utils.extractTag("                before = text; // TODO stuff  ", 1);
+    result = utils.extractTag("                before = text; // TODO [todo] stuff  ", 1);
     assert.equal(result.withoutTag, " stuff  ");
     assert.equal(result.before, "                before = text; ");
     assert.equal(result.after, " stuff  ");
@@ -218,7 +218,7 @@ QUnit.test("utils.extractTag supports markdown checkbox variants with spaces", f
     assert.equal(checked.tag, "[x]");
     assert.equal(checked.withoutTag, "done");
 
-    var unchecked = utils.extractTag("// [ ] todo");
+    var unchecked = utils.extractTag("// [ ] [todo] todo");
     assert.equal(unchecked.tag, "[ ]");
     assert.equal(unchecked.withoutTag, "todo");
 });
@@ -405,6 +405,26 @@ QUnit.test("utils.createFolderGlob creates expected globs", function (assert) {
     else {
         assert.equal(utils.createFolderGlob("/Users/name/workspace/project/folder/subfolder", "/Users/name/workspace/project", "/**/*"), "/Users/name/workspace/project/folder/subfolder/**/*");
         assert.equal(utils.createFolderGlob("/Users/name/workspace/project/folder/subfolder", "/Users/name/workspace/project", "/**//*"), "/Users/name/workspace/project/folder/subfolder/**/*");
+    }
+});
+
+QUnit.test("utils.createFolderGlob handles Windows root paths under simulated win32", function (assert) {
+    if (process.platform === 'win32') {
+        assert.equal(utils.createFolderGlob("c:\\Users\\name\\workspace\\project\\folder\\subfolder", "c:\\Users\\name\\workspace\\project", "/**/*"), "**/project/folder/subfolder/**/*");
+        assert.equal(utils.createFolderGlob("c:\\folder", "c:\\", "/**/*"), "**/folder/**/*");
+        return;
+    }
+
+    var originalPlatform = process.platform;
+
+    try {
+        Object.defineProperty(process, 'platform', { value: 'win32' });
+
+        assert.equal(utils.createFolderGlob("c:\\Users\\name\\workspace\\project\\folder\\subfolder", "c:\\Users\\name\\workspace\\project", "/**/*"), "**/project/folder/subfolder/**/*");
+        assert.equal(utils.createFolderGlob("c:\\folder", "c:\\", "/**/*"), "**/folder/**/*");
+    }
+    finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform });
     }
 });
 

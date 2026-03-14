@@ -258,6 +258,26 @@ function shouldShowActivityBarBadge()
     return vscode.workspace.getConfiguration( 'taskvision.general' ).showActivityBarBadge;
 }
 
+function shouldShowStatusPrefix()
+{
+    return vscode.workspace.getConfiguration( 'taskvision.tree' ).get( 'showStatusPrefix', true );
+}
+
+function defaultTaskPriority()
+{
+    return vscode.workspace.getConfiguration( 'taskvision.tasks' ).get( 'defaultPriority', 'normal' );
+}
+
+function aiContextOutputDir()
+{
+    return vscode.workspace.getConfiguration( 'taskvision.aiContext' ).get( 'outputDir', '.taskvision' );
+}
+
+function shouldRespectCurrentFiltersForAiContext()
+{
+    return vscode.workspace.getConfiguration( 'taskvision.aiContext' ).get( 'respectCurrentFilters', true );
+}
+
 module.exports.init = init;
 module.exports.shouldGroupByTag = shouldGroupByTag;
 module.exports.shouldGroupBySubTag = shouldGroupBySubTag;
@@ -299,3 +319,7 @@ module.exports.customHighlight = customHighlight;
 module.exports.subTagClickUrl = subTagClickUrl;
 module.exports.shouldShowIconsInsteadOfTagsInStatusBar = shouldShowIconsInsteadOfTagsInStatusBar;
 module.exports.shouldShowActivityBarBadge = shouldShowActivityBarBadge;
+module.exports.shouldShowStatusPrefix = shouldShowStatusPrefix;
+module.exports.defaultTaskPriority = defaultTaskPriority;
+module.exports.aiContextOutputDir = aiContextOutputDir;
+module.exports.shouldRespectCurrentFiltersForAiContext = shouldRespectCurrentFiltersForAiContext;

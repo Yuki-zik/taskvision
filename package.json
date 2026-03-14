@@ -63,6 +63,26 @@
                     "group": "navigation@1"
                 },
                 {
+                    "command": "taskvision.syncDataModel",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@1.05"
+                },
+                {
+                    "command": "taskvision.exportAiContext",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@1.1"
+                },
+                {
+                    "command": "taskvision.openAiStatusReport",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@1.2"
+                },
+                {
+                    "command": "taskvision.addMissingTaskStatuses",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@1.3"
+                },
+                {
                     "command": "taskvision.reveal",
                     "when": "view =~ /taskvision/ && taskvision-tags-only == false && taskvision-show-reveal-button == true",
                     "group": "navigation@2"
@@ -133,6 +153,16 @@
                     "group": "navigation@7"
                 },
                 {
+                    "command": "taskvision.filterByStatus",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@7.1"
+                },
+                {
+                    "command": "taskvision.filterStatusClear",
+                    "when": "view =~ /taskvision/ && taskvision-status-filter-active",
+                    "group": "navigation@7.2"
+                },
+                {
                     "command": "taskvision.refresh",
                     "when": "view =~ /taskvision/ && taskvision-show-refresh-button == true",
                     "group": "navigation@8"
@@ -158,6 +188,16 @@
                     "command": "taskvision.filterClear",
                     "when": "view =~ /taskvision/ && taskvision-global-filter-active",
                     "group": "1-filters@2"
+                },
+                {
+                    "command": "taskvision.filterByStatus",
+                    "when": "view =~ /taskvision/",
+                    "group": "1-filters@2.1"
+                },
+                {
+                    "command": "taskvision.filterStatusClear",
+                    "when": "view =~ /taskvision/ && taskvision-status-filter-active",
+                    "group": "1-filters@2.2"
                 },
                 {
                     "command": "taskvision.excludeThisFolder",
@@ -200,14 +240,54 @@
                     "group": "2-toggles"
                 },
                 {
+                    "command": "taskvision.setTaskStatus",
+                    "when": "view =~ /taskvision/ && viewItem == task",
+                    "group": "3-status@1"
+                },
+                {
+                    "command": "taskvision.setTaskPriority",
+                    "when": "view =~ /taskvision/ && viewItem == task",
+                    "group": "3-status@2"
+                },
+                {
+                    "command": "taskvision.editTaskNote",
+                    "when": "view =~ /taskvision/ && viewItem == task",
+                    "group": "3-status@3"
+                },
+                {
+                    "command": "taskvision.addContextAnnotation",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|context|folder|file|tag)$/",
+                    "group": "3-status@4"
+                },
+                {
+                    "command": "taskvision.startAgentSession",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|context|review|folder|file|tag)$/",
+                    "group": "3-status@5"
+                },
+                {
+                    "command": "taskvision.writeAgentAnnotations",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|review)$/",
+                    "group": "3-status@6"
+                },
+                {
+                    "command": "taskvision.syncDataModel",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(task|context|review|folder|file|tag)$/",
+                    "group": "3-status@7"
+                },
+                {
+                    "command": "taskvision.addMissingTaskStatuses",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(folder|file|tag|task)$/",
+                    "group": "3-status@8"
+                },
+                {
                     "command": "taskvision.customizeAppearance",
-                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|todo)$/",
-                    "group": "3-scheme@1"
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|task|context|review)$/",
+                    "group": "4-scheme@1"
                 },
                 {
                     "command": "taskvision.setScheme",
-                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|todo)$/",
-                    "group": "3-scheme@2"
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(tag|task|context|review)$/",
+                    "group": "4-scheme@2"
                 },
                 {
                     "command": "taskvision.toggleCompactFolders",
@@ -285,9 +365,14 @@
                     "group": "5-misc1"
                 },
                 {
+                    "command": "taskvision.exportAiContext",
+                    "when": "view =~ /taskvision/ && viewItem =~ /^(folder|file|tag|task|context|review)$/",
+                    "group": "5-misc2"
+                },
+                {
                     "command": "taskvision.reveal",
                     "when": "view =~/taskvision/",
-                    "group": "6-misc2"
+                    "group": "6-misc1"
                 }
             ],
             "commandPalette": [
@@ -361,6 +446,18 @@
                 "icon": "$(clear-all)"
             },
             {
+                "command": "taskvision.filterByStatus",
+                "title": "Filter By Status",
+                "category": "%taskvision.command.category%",
+                "icon": "$(checklist)"
+            },
+            {
+                "command": "taskvision.filterStatusClear",
+                "title": "Clear Status Filter",
+                "category": "%taskvision.command.category%",
+                "icon": "$(clear-all)"
+            },
+            {
                 "command": "taskvision.groupByTag",
                 "title": "%taskvision.command.groupByTag.title%",
                 "category": "%taskvision.command.category%",
@@ -423,6 +520,48 @@
                 "title": "%taskvision.command.exportTree.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(save)"
+            },
+            {
+                "command": "taskvision.exportAiContext",
+                "title": "Export AI Context",
+                "category": "%taskvision.command.category%",
+                "icon": "$(save)"
+            },
+            {
+                "command": "taskvision.openAiStatusReport",
+                "title": "Open AI Status Report",
+                "category": "%taskvision.command.category%",
+                "icon": "$(report)"
+            },
+            {
+                "command": "taskvision.syncDataModel",
+                "title": "Sync Data Model",
+                "category": "%taskvision.command.category%",
+                "icon": "$(sync)"
+            },
+            {
+                "command": "taskvision.addContextAnnotation",
+                "title": "Add Context Annotation",
+                "category": "%taskvision.command.category%",
+                "icon": "$(note)"
+            },
+            {
+                "command": "taskvision.startAgentSession",
+                "title": "Start Agent Session",
+                "category": "%taskvision.command.category%",
+                "icon": "$(debug-start)"
+            },
+            {
+                "command": "taskvision.writeAgentAnnotations",
+                "title": "Write Agent Annotations",
+                "category": "%taskvision.command.category%",
+                "icon": "$(comment)"
+            },
+            {
+                "command": "taskvision.addMissingTaskStatuses",
+                "title": "Add Missing Inline Statuses",
+                "category": "%taskvision.command.category%",
+                "icon": "$(symbol-enum)"
             },
             {
                 "command": "taskvision.showOnlyThisFolder",
@@ -506,6 +645,24 @@
                 "command": "taskvision.revealInFile",
                 "title": "%taskvision.command.revealInFile.title%",
                 "category": "%taskvision.command.category%"
+            },
+            {
+                "command": "taskvision.setTaskStatus",
+                "title": "Set Task Status",
+                "category": "%taskvision.command.category%",
+                "icon": "$(checklist)"
+            },
+            {
+                "command": "taskvision.setTaskPriority",
+                "title": "Set Task Priority",
+                "category": "%taskvision.command.category%",
+                "icon": "$(arrow-up)"
+            },
+            {
+                "command": "taskvision.editTaskNote",
+                "title": "Edit Task Note",
+                "category": "%taskvision.command.category%",
+                "icon": "$(note)"
             },
             {
                 "command": "taskvision.setScheme",
@@ -766,6 +923,19 @@
                                 "colorType": "text",
                                 "fontType": "tag"
                             },
+                            "[ x]": {
+                                "glowType": "tag",
+                                "glassType": "whole-line",
+                                "background": "#81C784",
+                                "gutterIcon": true,
+                                "icon": "issue-closed",
+                                "iconColour": "#81C784",
+                                "rulerColour": "#81C784",
+                                "fontWeight": "bold",
+                                "scheme": "neon+glass",
+                                "colorType": "text",
+                                "fontType": "tag"
+                            },
                             "NOTE": {
                                 "glowType": "tag",
                                 "glassType": "whole-line",
@@ -796,7 +966,24 @@
                                     "format": "color-hex"
                                 },
                                 "opacity": {
-                                    "type": "number"
+                                    "type": "number",
+                                    "description": "Legacy alias for glassOpacity."
+                                },
+                                "foregroundOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for foreground color channel. Accepts 0-1 or 0-100."
+                                },
+                                "glowOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                                },
+                                "glassOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for glass background channel. Accepts 0-1 or 0-100."
+                                },
+                                "glassBorderOpacity": {
+                                    "type": "number",
+                                    "description": "Alpha for glass border channel. Accepts 0-1 or 0-100."
                                 },
                                 "fontWeight": {
                                     "type": "string"
@@ -954,7 +1141,24 @@
                                 "format": "color-hex"
                             },
                             "opacity": {
-                                "type": "number"
+                                "type": "number",
+                                "description": "Legacy alias for glassOpacity."
+                            },
+                            "foregroundOpacity": {
+                                "type": "number",
+                                "description": "Alpha for foreground color channel. Accepts 0-1 or 0-100."
+                            },
+                            "glowOpacity": {
+                                "type": "number",
+                                "description": "Alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                            },
+                            "glassOpacity": {
+                                "type": "number",
+                                "description": "Alpha for glass background channel. Accepts 0-1 or 0-100."
+                            },
+                            "glassBorderOpacity": {
+                                "type": "number",
+                                "description": "Alpha for glass border channel. Accepts 0-1 or 0-100."
                             },
                             "fontWeight": {
                                 "type": "string"
@@ -1131,6 +1335,26 @@
                         },
                         "markdownDescription": "%taskvision.configuration.highlights.backgroundColourScheme.markdownDescription%",
                         "type": "array"
+                    },
+                    "taskvision.highlights.opacity": {
+                        "type": "number",
+                        "description": "Legacy global alias for glassOpacity."
+                    },
+                    "taskvision.highlights.foregroundOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for foreground color channel. Accepts 0-1 or 0-100."
+                    },
+                    "taskvision.highlights.glowOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                    },
+                    "taskvision.highlights.glassOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for glass background channel. Accepts 0-1 or 0-100."
+                    },
+                    "taskvision.highlights.glassBorderOpacity": {
+                        "type": "number",
+                        "description": "Default alpha for glass border channel. Accepts 0-1 or 0-100."
                     }
                 }
             },
@@ -1344,6 +1568,11 @@
                         "markdownDescription": "%taskvision.configuration.tree.tooltipFormat.markdownDescription%",
                         "type": "string"
                     },
+                    "taskvision.tree.showStatusPrefix": {
+                        "default": true,
+                        "markdownDescription": "Prefix default task labels with the inline task status when `${status}` is not already used.",
+                        "type": "boolean"
+                    },
                     "taskvision.tree.trackFile": {
                         "default": false,
                         "markdownDescription": "%taskvision.configuration.tree.trackFile.markdownDescription%",
@@ -1399,6 +1628,42 @@
                     "taskvision.tree.buttons.export": {
                         "default": false,
                         "markdownDescription": "%taskvision.configuration.tree.buttons.export.markdownDescription%",
+                        "type": "boolean"
+                    }
+                }
+            },
+            {
+                "title": "Task States",
+                "order": 5.1,
+                "type": "object",
+                "properties": {
+                    "taskvision.tasks.defaultPriority": {
+                        "default": "normal",
+                        "enum": [
+                            "critical",
+                            "high",
+                            "normal",
+                            "low",
+                            "trivial"
+                        ],
+                        "markdownDescription": "Default priority stored in `.taskvision/tasks-meta.json` for task comments without explicit metadata.",
+                        "type": "string"
+                    }
+                }
+            },
+            {
+                "title": "AI Context",
+                "order": 5.2,
+                "type": "object",
+                "properties": {
+                    "taskvision.aiContext.outputDir": {
+                        "default": ".taskvision",
+                        "markdownDescription": "Workspace-relative directory used for AI context files and task sidecar metadata.",
+                        "type": "string"
+                    },
+                    "taskvision.aiContext.respectCurrentFilters": {
+                        "default": true,
+                        "markdownDescription": "When enabled, exporting AI context from the view title only includes currently visible tasks after tree filters are applied.",
                         "type": "boolean"
                     }
                 }

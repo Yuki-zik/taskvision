@@ -23,6 +23,24 @@ QUnit.test('package schema exposes four independent channel scopes', function (a
     });
 });
 
+QUnit.test('package schema exposes per-channel opacity controls', function (assert) {
+    var pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    var props = pkg.contributes.configuration[1].properties;
+    var customProps = props['taskvision.highlights.customHighlight'].additionalProperties.properties;
+    var defaultProps = props['taskvision.highlights.defaultHighlight'].properties;
+
+    ['foregroundOpacity', 'glowOpacity', 'glassOpacity', 'glassBorderOpacity'].forEach(function (key) {
+        assert.ok(customProps[key] !== undefined, 'customHighlight has ' + key);
+        assert.ok(defaultProps[key] !== undefined, 'defaultHighlight has ' + key);
+    });
+
+    assert.ok(props['taskvision.highlights.foregroundOpacity'] !== undefined);
+    assert.ok(props['taskvision.highlights.glowOpacity'] !== undefined);
+    assert.ok(props['taskvision.highlights.glassOpacity'] !== undefined);
+    assert.ok(props['taskvision.highlights.glassBorderOpacity'] !== undefined);
+    assert.ok(props['taskvision.highlights.opacity'] !== undefined);
+});
+
 QUnit.test('package defaults use decoupled four-channel semantics for key tags', function (assert) {
     var pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     var props = pkg.contributes.configuration[1].properties;
@@ -50,6 +68,21 @@ QUnit.test('schemes.getPreset keeps glow and glass as independent style presets'
     var both = schemes.getPreset('neon+glass', '#112233', '#445566');
     assert.ok(both.glow);
     assert.ok(both.glass);
+});
+
+QUnit.test('schemes.getPreset applies per-channel opacity controls independently', function (assert) {
+    var preset = schemes.getPreset('neon+glass', '#112233', '#445566', {
+        glowOpacity: 40,
+        glassOpacity: 10,
+        glassBorderOpacity: 25
+    });
+
+    assert.strictEqual(preset.glass.light.backgroundColor, 'rgba(17,34,51,0.1)');
+    assert.strictEqual(preset.glass.dark.backgroundColor, 'rgba(68,85,102,0.1)');
+    assert.strictEqual(preset.glass.light.border, '1px solid rgba(17,34,51,0.25)');
+    assert.strictEqual(preset.glass.dark.border, '1px solid rgba(68,85,102,0.25)');
+    assert.ok(preset.glow.light.textShadow.indexOf('rgba(17,34,51,0.4)') !== -1);
+    assert.ok(preset.glow.dark.textShadow.indexOf('rgba(68,85,102,0.4)') !== -1);
 });
 
 QUnit.test('schemes.applyScheme does not force font weight or scope side effects', function (assert) {

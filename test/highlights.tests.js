@@ -32,3 +32,14 @@ QUnit.test('highlights composes text channels with segment bucketing', function 
     assert.ok(source.indexOf('styleComposer.composeTextStyle') !== -1);
     assert.ok(source.indexOf('rangeResolver.resolveRangeOffsets') !== -1);
 });
+
+QUnit.test('highlights resolves per-channel opacity helpers before building schemes', function (assert) {
+    var source = fs.readFileSync('src/highlights.js', 'utf8');
+    assert.ok(source.indexOf('function getForegroundOpacity(') !== -1);
+    assert.ok(source.indexOf('function getGlowOpacity(') !== -1);
+    assert.ok(source.indexOf('function getGlassOpacity(') !== -1);
+    assert.ok(source.indexOf('function getGlassBorderOpacity(') !== -1);
+    assert.ok(source.indexOf('glowOpacity: glowOpacity') !== -1);
+    assert.ok(source.indexOf('glassOpacity: finalGlassOpacity') !== -1);
+    assert.ok(source.indexOf('glassBorderOpacity: glassBorderOpacity') !== -1);
+});

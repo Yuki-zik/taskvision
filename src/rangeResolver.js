@@ -134,7 +134,7 @@ function resolveRangeOffsets(rangeType, context) {
             pushRange(ranges, lineStart, lineEnd);
             break;
         case 'whole-line':
-            pushRange(ranges, lineStart, lineEnd);
+            pushRange(ranges, tagStart !== undefined ? tagStart : lineStart, commentEnd !== undefined ? commentEnd : lineEnd);
             break;
         case 'tag':
         default:

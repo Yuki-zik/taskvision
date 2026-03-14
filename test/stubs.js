@@ -8,6 +8,7 @@ var testConfig = {
     useColourScheme: false,
     foregroundColours: [],
     backgroundColours: [],
+    defaultTaskPriorityValue: "normal",
 };
 
 testConfig.regex = function()
@@ -59,6 +60,11 @@ testConfig.foregroundColourScheme = function()
 testConfig.backgroundColourScheme = function()
 {
     return this.backgroundColours;
+};
+
+testConfig.defaultTaskPriority = function()
+{
+    return this.defaultTaskPriorityValue;
 };
 
 function getTestConfig()
