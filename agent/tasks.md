@@ -9,11 +9,11 @@
 
 ## Session Summary
 
-- Active focus: 已补上另一处 Windows 专属测试断言问题；`aiContext` 测试不再用 `path.join()` 比较被实现标准化为 `/` 的相对路径。
-- Verification: `npm test`，`npm run webpack`，`rg -n "assert\\.(equal|strictEqual).*path\\.join\\(|path\\.join\\(.*assert" test -S`，`git diff --check -- test/aiContext.tests.js test/tests.js agent/tasks.md agent/timeline.md`
+- Active focus: 已定位并修复提交后 CL/CI 失败；根因是 `test/tests.js` 新增测试前误入了一个反斜杠，导致 QUnit 在加载测试文件时直接抛出 `SyntaxError`。
+- Verification: `npm test`，`npm run webpack`，`git diff --check -- test/tests.js agent/tasks.md`，`curl -s 'https://api.github.com/repos/Yuki-zik/taskvision/actions/runs?per_page=5' | node -e '...'`，`curl -s 'https://api.github.com/repos/Yuki-zik/taskvision/actions/runs/23086432988/jobs' | node -e '...'`
 
 ## Active Session Task
 
 | Priority | Task | Status | Owner | Due |
 | --- | --- | --- | --- | --- |
-| P1 | 解决 GitHub Actions Windows runner 上剩余的跨平台断言失败问题 | ✅ Completed | AI | 2026-03-14 |
+| P1 | 排查并修复提交后的 CL/CI 失败 | ✅ Completed | AI | 2026-03-14 |
