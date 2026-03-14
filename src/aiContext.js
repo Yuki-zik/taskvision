@@ -44,6 +44,14 @@ function toRelativePath(rootPath, filePath) {
     return relative.replace(/\\/g, '/');
 }
 
+function normaliseComparablePath(filePath) {
+    if (!filePath) {
+        return '';
+    }
+
+    return String(filePath).replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
 function getSourceExcerpt(task) {
     if (!task || !task.fsPath || fs.existsSync(task.fsPath) !== true) {
         return '';
@@ -164,7 +172,7 @@ function collectRelevantContexts(rootPath, nodes, outputDir) {
             return;
         }
 
-        files[toRelativePath(rootPath, node.fsPath)] = true;
+        files[normaliseComparablePath(toRelativePath(rootPath, node.fsPath))] = true;
 
         if (node.annotationKind === 'context' && node.stableId) {
             explicitContextIds[node.stableId] = true;
@@ -186,7 +194,7 @@ function collectRelevantContexts(rootPath, nodes, outputDir) {
         }
 
         return (context.anchors || []).some(function (anchor) {
-            return files[anchor.file] === true;
+            return files[normaliseComparablePath(anchor.file)] === true;
         });
     });
 }
