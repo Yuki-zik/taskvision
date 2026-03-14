@@ -408,6 +408,20 @@ QUnit.test("utils.createFolderGlob creates expected globs", function (assert) {
     }
 });
 
+QUnit.test("utils.createFolderGlob handles Windows root paths under simulated win32", function (assert) {
+    var originalPlatform = process.platform;
+
+    try {
+        Object.defineProperty(process, 'platform', { value: 'win32' });
+
+        assert.equal(utils.createFolderGlob("c:\\Users\\name\\workspace\\project\\folder\\subfolder", "c:\\Users\\name\\workspace\\project", "/**/*"), "**/project/folder/subfolder/**/*");
+        assert.equal(utils.createFolderGlob("c:\\folder", "c:\\", "/**/*"), "**/folder/**/*");
+    }
+    finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+});
+
 QUnit.test("utils.removeBlockComments supports jsonc", function (assert) {
     assert.equal(utils.removeBlockComments("/* a */", "x.jsonc"), " a ");
 });

@@ -718,14 +718,19 @@ function buildAnnotationComment(fileName, baseLineText, tag, status, directives,
 
 function createFolderGlob(folderPath, rootPath, filter) {
     if (process.platform === 'win32') {
-        var fp = folderPath.replace(/\\/g, '/');
-        var rp = rootPath.replace(/\\/g, '/');
+        var relative = path.win32.relative(rootPath, folderPath).replace(/\\/g, '/');
+        var rootName = path.win32.basename(rootPath).replace(/\\/g, '/');
+        var globPath = relative;
 
-        if (fp.indexOf(rp) === 0) {
-            fp = fp.substring(path.dirname(rp).length);
+        if (rootName) {
+            globPath = relative ? (rootName + '/' + relative) : rootName;
         }
 
-        return ("**/" + fp + filter).replace(/\/\//g, '/');
+        if (!globPath) {
+            globPath = folderPath.replace(/\\/g, '/').replace(/^[A-Za-z]:\/?/, '');
+        }
+
+        return ("**/" + globPath + filter).replace(/\/\//g, '/');
     }
 
     return (folderPath + filter).replace(/\/\//g, '/');

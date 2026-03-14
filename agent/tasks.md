@@ -9,11 +9,11 @@
 
 ## Session Summary
 
-- Active focus: 已修复 CI 中 `npm test` 的失败；`utils.extractTag` 现在在 regex 不含 `$TAGS` 且正则未命中时会回退到字面量匹配，兼容旧测试与旧配置。
-- Verification: `npm test`，`npm run webpack`，`git diff --check -- src/utils.js agent/tasks.md agent/timeline.md`
+- Active focus: 已修复剩余的 Windows 专属 CI 失败；`createFolderGlob` 改为基于 `path.win32.relative` 处理根路径场景，并新增模拟 `win32` 的跨平台回归测试。
+- Verification: `npm test`，`npm run webpack`，`git diff --check -- src/utils.js test/tests.js agent/tasks.md agent/timeline.md`
 
 ## Active Session Task
 
 | Priority | Task | Status | Owner | Due |
 | --- | --- | --- | --- | --- |
-| P1 | 修复 CI 中 `utils.extractTag` 的全量测试失败，恢复 `npm test` 通过 | ✅ Completed | AI | 2026-03-12 |
+| P1 | 修复 CI 中剩余的 Windows 专属测试失败，恢复三平台 `npm test` 一致性 | ✅ Completed | AI | 2026-03-12 |
