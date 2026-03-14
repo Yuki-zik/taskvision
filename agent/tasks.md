@@ -9,11 +9,11 @@
 
 ## Session Summary
 
-- Active focus: 已修复剩余的 Windows 专属 CI 失败；`createFolderGlob` 改为基于 `path.win32.relative` 处理根路径场景，并新增模拟 `win32` 的跨平台回归测试。
-- Verification: `npm test`，`npm run webpack`，`git diff --check -- src/utils.js test/tests.js agent/tasks.md agent/timeline.md`
+- Active focus: 已定位并修正“本地绿、GitHub Windows 红”的差异；问题来自模拟 `win32` 的测试在真实 Windows runner 上仍强行 monkeypatch `process.platform`。
+- Verification: `npm test`，`npm run webpack`，`git diff --check -- test/tests.js agent/tasks.md agent/timeline.md`
 
 ## Active Session Task
 
 | Priority | Task | Status | Owner | Due |
 | --- | --- | --- | --- | --- |
-| P1 | 修复 CI 中剩余的 Windows 专属测试失败，恢复三平台 `npm test` 一致性 | ✅ Completed | AI | 2026-03-12 |
+| P1 | 解决最新提交在 GitHub Actions Windows runner 上仍失败的问题 | ✅ Completed | AI | 2026-03-14 |
