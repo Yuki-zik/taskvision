@@ -9,11 +9,11 @@
 
 ## Session Summary
 
-- Active focus: 已定位并修正“本地绿、GitHub Windows 红”的差异；问题来自模拟 `win32` 的测试在真实 Windows runner 上仍强行 monkeypatch `process.platform`。
-- Verification: `npm test`，`npm run webpack`，`git diff --check -- test/tests.js agent/tasks.md agent/timeline.md`
+- Active focus: 已补上另一处 Windows 专属测试断言问题；`aiContext` 测试不再用 `path.join()` 比较被实现标准化为 `/` 的相对路径。
+- Verification: `npm test`，`npm run webpack`，`rg -n "assert\\.(equal|strictEqual).*path\\.join\\(|path\\.join\\(.*assert" test -S`，`git diff --check -- test/aiContext.tests.js test/tests.js agent/tasks.md agent/timeline.md`
 
 ## Active Session Task
 
 | Priority | Task | Status | Owner | Due |
 | --- | --- | --- | --- | --- |
-| P1 | 解决最新提交在 GitHub Actions Windows runner 上仍失败的问题 | ✅ Completed | AI | 2026-03-14 |
+| P1 | 解决 GitHub Actions Windows runner 上剩余的跨平台断言失败问题 | ✅ Completed | AI | 2026-03-14 |

@@ -120,7 +120,7 @@ QUnit.test("aiContext writes markdown/json files and reports status changes", fu
         assert.ok(markdown.indexOf('## Context Cards') !== -1);
         assert.ok(markdown.indexOf('## Open Sessions') !== -1);
         assert.equal(json.version, 2);
-        assert.equal(json.tasks[0].file, path.join('src', 'cache.js'));
+        assert.equal(json.tasks[0].file, 'src/cache.js');
         assert.equal(json.tasks[0].stableId, 'task.cache.123abc');
         assert.ok(json.tasks[0].sourceExcerpt.indexOf('> 2 | // TODO [todo] fix cache invalidation') !== -1);
         assert.equal(json.contexts[0].contextId, 'ctx.cache.456def');
