@@ -12,5 +12,5 @@ lines.forEach((line, i) => {
     if (hadBrace) {
         out.push(`${i + 1}: ${open}   | ${line.trim()}`);
     }
-});
+}); 
 fs.writeFileSync('brace_trace.txt', out.join('\n'), 'utf8');

@@ -466,7 +466,7 @@ function buildTextSegments(channelRanges, channelStyles) {
             boundaries.push(range.start);
             boundaries.push(range.end);
         });
-    });
+    }); 
 
     boundaries = Array.from(new Set(boundaries)).sort(function (a, b) {
         return a - b;
