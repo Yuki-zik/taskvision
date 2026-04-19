@@ -4,10 +4,10 @@ This repository uses `agent/` as the governance source for project state, audit 
 
 ## Required Session Workflow
 
-1. Start every session by reading:
-   - `agent/project.md`
-   - `agent/tasks.md`
-   - `agent/timeline.md`
+1. Start every session with a context-efficient read:
+   - `agent/tasks.md`: active task + next step only
+   - `agent/timeline.md`: newest 3-5 entries only (top of file)
+   - `agent/project.md`: read on demand only when constraints/architecture are unclear
 2. Summarize the current state before making changes.
 3. Update `agent/tasks.md` for the active task.
 4. If the work is architectural, broad, or changes public behavior significantly, stop and wait for explicit human approval.
@@ -22,9 +22,23 @@ This repository uses `agent/` as the governance source for project state, audit 
 - Project overview and architecture: `agent/project.md`
 - Current tasks and status: `agent/tasks.md`
 - Audit trail: `agent/timeline.md`
-- Detailed AI operating guide: `agent/agents.md`
+- Detailed AI operating guide: root `AGENTS.md` (single source of truth)
 
-If this file conflicts with `agent/agents.md`, align behavior to `agent/agents.md` and then update this file.
+Use a sliding-window policy by default: do not load full `agent/` history unless the newest window is insufficient for a safe decision.
+
+## Parallel Subagent Policy
+
+- Parallelize independent work by default: exploration, docs lookup, test triage, and disjoint code slices.
+- Assign explicit ownership per subagent; avoid overlapping write sets.
+- Keep critical-path convergence in the main agent.
+- Choose subagent reasoning effort by complexity:
+  - `low`: retrieval, summarization, straightforward checks
+  - `medium`: routine implementation with clear acceptance criteria
+  - `high`: cross-module fixes, tricky regressions, ambiguous failures
+  - `xhigh`: architecture/security decisions with high uncertainty (default)
+- Start with the lowest viable effort and escalate only when evidence quality is insufficient.
+
+`agent/agents.md` is deprecated. If any historical note conflicts, align behavior to root `AGENTS.md`.
 
 ## Always
 
