@@ -3,11 +3,11 @@
 
 'use strict';
 
-var fs = require('fs');
 var path = require('path');
 
 var taskMetaStore = require('./taskMetaStore.js');
 var annotationParser = require('./annotationParser.js');
+var jsonStore = require('./jsonStore.js');
 
 var STORE_VERSION = 1;
 var STORE_FILE_NAME = 'context-index.json';
@@ -24,16 +24,6 @@ function getStorePath(rootPath, outputDir) {
     }
 
     return path.join(folder, STORE_FILE_NAME);
-}
-
-function ensureFolder(folderPath) {
-    if (!folderPath) {
-        return;
-    }
-
-    if (fs.existsSync(folderPath) !== true) {
-        fs.mkdirSync(folderPath, { recursive: true });
-    }
 }
 
 function uniqueStrings(values) {
@@ -93,19 +83,16 @@ function loadStore(rootPath, outputDir) {
     }
 
     var store = createEmptyStore();
-    if (fs.existsSync(key) === true) {
-        try {
-            var parsed = JSON.parse(fs.readFileSync(key, 'utf8'));
-            if (parsed && typeof parsed === 'object') {
-                store.version = parsed.version || STORE_VERSION;
-                Object.keys(parsed.contexts || {}).forEach(function (contextId) {
-                    store.contexts[contextId] = normaliseContextEntry(parsed.contexts[contextId]);
-                });
-            }
-        }
-        catch (e) {
-            store = createEmptyStore();
-        }
+    var parsed = jsonStore.readJsonFile(key);
+    if (parsed && typeof parsed === 'object') {
+        store.version = parsed.version || STORE_VERSION;
+        Object.keys(parsed.contexts || {}).forEach(function (contextId) {
+            store.contexts[contextId] = normaliseContextEntry(parsed.contexts[contextId]);
+        });
+    }
+
+    if (!key) {
+        return store;
     }
 
     cache[key] = store;
@@ -118,11 +105,19 @@ function saveStore(rootPath, outputDir) {
     }
 
     var storePath = getStorePath(rootPath, outputDir);
+    if (!storePath) {
+        return undefined;
+    }
+
     var store = loadStore(rootPath, outputDir);
 
-    ensureFolder(path.dirname(storePath));
-    fs.writeFileSync(storePath, JSON.stringify(store, null, 2) + '\n');
-    return storePath;
+    try {
+        return jsonStore.writeJsonFile(storePath, store);
+    }
+    catch (e) {
+        delete cache[storePath];
+        throw e;
+    }
 }
 
 function getContext(rootPath, contextId, outputDir) {

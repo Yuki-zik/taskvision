@@ -2404,18 +2404,27 @@ function activate(context) {
                         return;
                     }
 
-                    var updateConfig = function (key, val) {
+                    var updateConfigValues = function (values) {
                         var cfg = vscode.workspace.getConfiguration('taskvision.highlights');
                         var updated = JSON.parse(JSON.stringify(cfg.get('customHighlight', {})));
                         if (!updated[node.tag]) {
                             updated[node.tag] = {};
                         }
-                        if (val === undefined) {
-                            delete updated[node.tag][key];
-                        } else {
-                            updated[node.tag][key] = val;
-                        }
-                        cfg.update('customHighlight', updated, customHighlightTarget);
+                        Object.keys(values).forEach(function (key) {
+                            var val = values[key];
+                            if (val === undefined) {
+                                delete updated[node.tag][key];
+                            } else {
+                                updated[node.tag][key] = val;
+                            }
+                        });
+                        return cfg.update('customHighlight', updated, customHighlightTarget);
+                    };
+
+                    var updateConfig = function (key, val) {
+                        var values = {};
+                        values[key] = val;
+                        return updateConfigValues(values);
                     };
 
                     var scopeValues = [
@@ -2614,8 +2623,7 @@ function activate(context) {
                             placeHolder: 'Choose font style for ' + node.tag
                         }).then(function (font) {
                             if (font) {
-                                updateConfig('fontWeight', font.fontWeight);
-                                updateConfig('fontStyle', font.fontStyle);
+                                updateConfigValues({ fontWeight: font.fontWeight, fontStyle: font.fontStyle });
                             }
                         });
                     }
@@ -2869,14 +2877,15 @@ function activate(context) {
             if (e.affectsConfiguration("taskvision") ||
                 e.affectsConfiguration('files.exclude') ||
                 e.affectsConfiguration('explorer.compactFolders')) {
-                if (e.affectsConfiguration("taskvision.regex.regex")) {
-                    return;
-                }
-
                 if (e.affectsConfiguration("taskvision.highlights.enabled") ||
                     e.affectsConfiguration("taskvision.highlights.useColourScheme") ||
                     e.affectsConfiguration("taskvision.highlights.foregroundColourScheme") ||
                     e.affectsConfiguration("taskvision.highlights.backgroundColourScheme") ||
+                    e.affectsConfiguration("taskvision.highlights.opacity") ||
+                    e.affectsConfiguration("taskvision.highlights.foregroundOpacity") ||
+                    e.affectsConfiguration("taskvision.highlights.glowOpacity") ||
+                    e.affectsConfiguration("taskvision.highlights.glassOpacity") ||
+                    e.affectsConfiguration("taskvision.highlights.glassBorderOpacity") ||
                     e.affectsConfiguration("taskvision.highlights.defaultHighlight") ||
                     e.affectsConfiguration("taskvision.highlights.customHighlight")) {
                     highlights.clearCache();

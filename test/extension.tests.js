@@ -29,6 +29,68 @@ QUnit.test('extension exposes independent color/glow/glass/font scope controls',
     assert.ok(source.indexOf("updateConfig('fontType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);") !== -1);
 });
 
+QUnit.test('extension refreshes when regex and global opacity settings change', function (assert) {
+    var source = fs.readFileSync('src/extension.js', 'utf8');
+
+    assert.ok(source.indexOf('if (e.affectsConfiguration("taskvision.regex.regex")) {\n                    return;\n                }') === -1);
+    assert.ok(source.indexOf('e.affectsConfiguration("taskvision.highlights.foregroundOpacity")') !== -1);
+    assert.ok(source.indexOf('e.affectsConfiguration("taskvision.highlights.glowOpacity")') !== -1);
+    assert.ok(source.indexOf('e.affectsConfiguration("taskvision.highlights.glassOpacity")') !== -1);
+    assert.ok(source.indexOf('e.affectsConfiguration("taskvision.highlights.glassBorderOpacity")') !== -1);
+});
+
+QUnit.test('extension updates font appearance in a single customHighlight write', function (assert) {
+    var source = fs.readFileSync('src/extension.js', 'utf8');
+
+    assert.ok(source.indexOf('var updateConfigValues = function (values)') !== -1);
+    assert.ok(source.indexOf("updateConfig('fontWeight', font.fontWeight);\n                                updateConfig('fontStyle', font.fontStyle);") === -1);
+    assert.ok(source.indexOf('updateConfigValues({ fontWeight: font.fontWeight, fontStyle: font.fontStyle });') !== -1);
+});
+
+QUnit.test('extension source accepts built-in taskvision icons during validation', function (assert) {
+    var source = fs.readFileSync('src/icons.js', 'utf8');
+
+    assert.ok(source.indexOf("!octicons[icon] && icon !== 'taskvision' && icon !== 'taskvision-filled'") !== -1);
+});
+
+QUnit.test('package localizes contributed command titles', function (assert) {
+    var packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    var english = JSON.parse(fs.readFileSync('package.nls.json', 'utf8'));
+    var zhCn = JSON.parse(fs.readFileSync('package.nls.zh-cn.json', 'utf8'));
+    var commandIds = [
+        'taskvision.filterByStatus',
+        'taskvision.filterStatusClear',
+        'taskvision.exportAiContext',
+        'taskvision.openAiStatusReport',
+        'taskvision.syncDataModel',
+        'taskvision.addContextAnnotation',
+        'taskvision.startAgentSession',
+        'taskvision.writeAgentAnnotations',
+        'taskvision.addMissingTaskStatuses',
+        'taskvision.setTaskStatus',
+        'taskvision.setTaskPriority',
+        'taskvision.editTaskNote'
+    ];
+
+    commandIds.forEach(function (commandId) {
+        var command = packageJson.contributes.commands.find(function (candidate) {
+            return candidate.command === commandId;
+        });
+        var key = command.title.replace(/^%|%$/g, '');
+
+        assert.ok(/^%taskvision\.command\..+\.title%$/.test(command.title), commandId + ' title uses an NLS key');
+        assert.ok(english[key] !== undefined, key + ' exists in package.nls.json');
+        assert.ok(zhCn[key] !== undefined, key + ' exists in package.nls.zh-cn.json');
+    });
+});
+
+QUnit.test('buildCodiconNames fails instead of overwriting codicons with a minimal fallback', function (assert) {
+    var source = fs.readFileSync('buildCodiconNames.js', 'utf8');
+
+    assert.ok(source.indexOf('process.exitCode = 1') !== -1);
+    assert.ok(source.indexOf('writeMinimalFile') === -1);
+});
+
 QUnit.test('package contributes icons for AI context and status tree commands', function (assert) {
     var packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     var commands = packageJson.contributes.commands;

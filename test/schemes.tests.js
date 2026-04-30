@@ -41,6 +41,27 @@ QUnit.test('package schema exposes per-channel opacity controls', function (asse
     assert.ok(props['taskvision.highlights.opacity'] !== undefined);
 });
 
+QUnit.test('package schema keeps AI context output directory workspace-relative', function (assert) {
+    var pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    var configSection = pkg.contributes.configuration.find(function (section) {
+        return section.properties && section.properties['taskvision.aiContext.outputDir'];
+    });
+    var props = configSection.properties;
+    var outputDir = props['taskvision.aiContext.outputDir'];
+
+    assert.equal(outputDir.pattern, '^(?!([A-Za-z]:|/|\\\\|.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$))).+');
+    assert.equal(outputDir.default, '.taskvision');
+});
+
+QUnit.test('package and config agree on built-in file excludes enum value', function (assert) {
+    var pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    var props = pkg.contributes.configuration[2].properties;
+    var source = fs.readFileSync('src/config.js', 'utf8');
+
+    assert.ok(props['taskvision.filtering.useBuiltInExcludes'].enum.indexOf('file excludes') !== -1);
+    assert.ok(source.indexOf('useBuiltInExcludes === "file excludes"') !== -1);
+});
+
 QUnit.test('package defaults use decoupled four-channel semantics for key tags', function (assert) {
     var pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     var props = pkg.contributes.configuration[1].properties;

@@ -11,9 +11,8 @@ https.get(url, (res) => {
     let data = '';
 
     if (res.statusCode !== 200) {
-        console.error(`Failed to fetch codicons: Status Code ${res.statusCode}`);
-        // Fallback or exit? For now, let's just create a minimal valid file to allow build to pass
-        writeMinimalFile();
+        failBuild(`Failed to fetch codicons: Status Code ${res.statusCode}`);
+        res.resume();
         return;
     }
 
@@ -30,19 +29,15 @@ https.get(url, (res) => {
             fs.writeFileSync(outputFile, fileContent);
             console.log(`Successfully wrote ${keys.length} codicon names to ${outputFile}`);
         } catch (e) {
-            console.error('Error parsing JSON:', e.message);
-            writeMinimalFile();
+            failBuild('Error parsing JSON: ' + e.message);
         }
     });
 
 }).on('error', (err) => {
-    console.error('Error fetching codicons:', err.message);
-    writeMinimalFile();
+    failBuild('Error fetching codicons: ' + err.message);
 });
 
-function writeMinimalFile() {
-    console.log('Writing minimal codiconNames.js due to fetch failure.');
-    // Write a minimal valid file so the extension can still build
-    const minimalContent = "module.exports = ['add', 'alert', 'check', 'close', 'edit', 'gear', 'info', 'issue-opened', 'issue-closed', 'list-tree', 'lock', 'pass', 'play', 'refresh', 'search', 'trash', 'warning', 'workspace-trusted'];\n";
-    fs.writeFileSync(outputFile, minimalContent);
+function failBuild(message) {
+    console.error(message);
+    process.exitCode = 1;
 }

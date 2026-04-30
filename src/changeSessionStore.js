@@ -8,22 +8,13 @@ var path = require('path');
 
 var taskMetaStore = require('./taskMetaStore.js');
 var annotationParser = require('./annotationParser.js');
+var jsonStore = require('./jsonStore.js');
 
 var STORE_VERSION = 1;
 var cache = {};
 
 function resetCache() {
     cache = {};
-}
-
-function ensureFolder(folderPath) {
-    if (!folderPath) {
-        return;
-    }
-
-    if (fs.existsSync(folderPath) !== true) {
-        fs.mkdirSync(folderPath, { recursive: true });
-    }
 }
 
 function getSessionsFolder(rootPath, outputDir) {
@@ -87,13 +78,9 @@ function loadSession(rootPath, sessionId, outputDir) {
     }
 
     var session;
-    if (fs.existsSync(sessionPath) === true) {
-        try {
-            session = normaliseSession(JSON.parse(fs.readFileSync(sessionPath, 'utf8')));
-        }
-        catch (e) {
-            session = undefined;
-        }
+    var parsed = jsonStore.readJsonFile(sessionPath);
+    if (parsed) {
+        session = normaliseSession(parsed);
     }
 
     cache[sessionPath] = session;
@@ -106,9 +93,12 @@ function saveSession(rootPath, session, outputDir) {
     }
 
     var sessionPath = getSessionPath(rootPath, session.sessionId, outputDir);
+    if (!sessionPath) {
+        return undefined;
+    }
+
     var normalised = normaliseSession(session);
-    ensureFolder(path.dirname(sessionPath));
-    fs.writeFileSync(sessionPath, JSON.stringify(normalised, null, 2) + '\n');
+    jsonStore.writeJsonFile(sessionPath, normalised);
     cache[sessionPath] = normalised;
     return sessionPath;
 }

@@ -51,6 +51,7 @@
                 {
                     "id": "taskvision-view",
                     "name": "%taskvision.container.name%",
+                    "icon": "resources/taskvision-container.svg",
                     "when": "!taskvision-is-empty"
                 }
             ]
@@ -447,13 +448,13 @@
             },
             {
                 "command": "taskvision.filterByStatus",
-                "title": "Filter By Status",
+                "title": "%taskvision.command.filterByStatus.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(checklist)"
             },
             {
                 "command": "taskvision.filterStatusClear",
-                "title": "Clear Status Filter",
+                "title": "%taskvision.command.filterStatusClear.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(clear-all)"
             },
@@ -523,43 +524,43 @@
             },
             {
                 "command": "taskvision.exportAiContext",
-                "title": "Export AI Context",
+                "title": "%taskvision.command.exportAiContext.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(save)"
             },
             {
                 "command": "taskvision.openAiStatusReport",
-                "title": "Open AI Status Report",
+                "title": "%taskvision.command.openAiStatusReport.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(report)"
             },
             {
                 "command": "taskvision.syncDataModel",
-                "title": "Sync Data Model",
+                "title": "%taskvision.command.syncDataModel.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(sync)"
             },
             {
                 "command": "taskvision.addContextAnnotation",
-                "title": "Add Context Annotation",
+                "title": "%taskvision.command.addContextAnnotation.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(note)"
             },
             {
                 "command": "taskvision.startAgentSession",
-                "title": "Start Agent Session",
+                "title": "%taskvision.command.startAgentSession.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(debug-start)"
             },
             {
                 "command": "taskvision.writeAgentAnnotations",
-                "title": "Write Agent Annotations",
+                "title": "%taskvision.command.writeAgentAnnotations.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(comment)"
             },
             {
                 "command": "taskvision.addMissingTaskStatuses",
-                "title": "Add Missing Inline Statuses",
+                "title": "%taskvision.command.addMissingTaskStatuses.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(symbol-enum)"
             },
@@ -648,19 +649,19 @@
             },
             {
                 "command": "taskvision.setTaskStatus",
-                "title": "Set Task Status",
+                "title": "%taskvision.command.setTaskStatus.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(checklist)"
             },
             {
                 "command": "taskvision.setTaskPriority",
-                "title": "Set Task Priority",
+                "title": "%taskvision.command.setTaskPriority.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(arrow-up)"
             },
             {
                 "command": "taskvision.editTaskNote",
-                "title": "Edit Task Note",
+                "title": "%taskvision.command.editTaskNote.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(note)"
             },
@@ -1634,7 +1635,7 @@
             },
             {
                 "title": "Task States",
-                "order": 5.1,
+                "order": 6,
                 "type": "object",
                 "properties": {
                     "taskvision.tasks.defaultPriority": {
@@ -1653,12 +1654,14 @@
             },
             {
                 "title": "AI Context",
-                "order": 5.2,
+                "order": 7,
                 "type": "object",
                 "properties": {
                     "taskvision.aiContext.outputDir": {
                         "default": ".taskvision",
                         "markdownDescription": "Workspace-relative directory used for AI context files and task sidecar metadata.",
+                        "pattern": "^(?!([A-Za-z]:|/|\\\\|.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$))).+",
+                        "patternErrorMessage": "Use a workspace-relative folder that does not contain parent-directory segments.",
                         "type": "string"
                     },
                     "taskvision.aiContext.respectCurrentFilters": {
@@ -1670,7 +1673,7 @@
             },
             {
                 "title": "%taskvision.configuration.regex%",
-                "order": 6,
+                "order": 8,
                 "type": "object",
                 "properties": {
                     "taskvision.regex.regex": {
@@ -1709,7 +1712,7 @@
             },
             {
                 "title": "%taskvision.configuration.ripgrep%",
-                "order": 7,
+                "order": 9,
                 "type": "object",
                 "properties": {
                     "taskvision.ripgrep.ripgrepMaxBuffer": {

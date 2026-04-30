@@ -44,6 +44,22 @@ QUnit.test("taskMetaStore identifies generated output folders", function (assert
     }
 });
 
+QUnit.test("taskMetaStore keeps AI output folders inside the workspace", function (assert) {
+    var root = makeTempRoot();
+    var absoluteOutside = path.join(os.tmpdir(), 'taskvision-outside');
+
+    try {
+        assert.equal(taskMetaStore.getOutputFolder(root, absoluteOutside), undefined);
+        assert.equal(taskMetaStore.getOutputFolder(root, '../outside'), undefined);
+        assert.equal(taskMetaStore.getOutputRelativeGlob(root, '../outside'), undefined);
+        assert.equal(taskMetaStore.getStorePath(root, '../outside'), undefined);
+        assert.notOk(taskMetaStore.isOutputPath(root, path.join(root, '..', 'outside', 'ai-context.md'), '../outside'));
+    }
+    finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
 QUnit.test("aiContext writes markdown/json files and reports status changes", function (assert) {
     var root = makeTempRoot();
     var sourceFile = path.join(root, 'src', 'cache.js');

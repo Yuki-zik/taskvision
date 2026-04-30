@@ -3,8 +3,8 @@
 
 'use strict';
 
-var fs = require('fs');
 var path = require('path');
+var jsonStore = require('./jsonStore.js');
 
 var STORE_VERSION = 2;
 var STORE_FILE_NAME = 'tasks-meta.json';
@@ -14,18 +14,33 @@ function resetCache() {
     cache = {};
 }
 
+function isWindowsAbsolutePath(filePath) {
+    return /^[A-Za-z]:[\\/]/.test(filePath) || /^\\\\/.test(filePath);
+}
+
+function isOutsideRoot(relativePath) {
+    return relativePath === '..' || relativePath.indexOf('..' + path.sep) === 0 || path.isAbsolute(relativePath);
+}
+
 function getOutputFolder(rootPath, outputDir) {
     var normalisedOutputDir = typeof outputDir === 'string' && outputDir.trim() !== '' ? outputDir.trim() : '.taskvision';
 
-    if (path.isAbsolute(normalisedOutputDir)) {
-        return path.normalize(normalisedOutputDir);
+    if (path.isAbsolute(normalisedOutputDir) || isWindowsAbsolutePath(normalisedOutputDir)) {
+        return undefined;
     }
 
     if (!rootPath) {
         return undefined;
     }
 
-    return path.join(rootPath, normalisedOutputDir);
+    var outputFolder = path.resolve(rootPath, normalisedOutputDir);
+    var relative = path.relative(rootPath, outputFolder);
+
+    if (isOutsideRoot(relative)) {
+        return undefined;
+    }
+
+    return outputFolder;
 }
 
 function getOutputRelativeGlob(rootPath, outputDir) {
@@ -35,7 +50,7 @@ function getOutputRelativeGlob(rootPath, outputDir) {
     }
 
     var relative = path.relative(rootPath, outputFolder);
-    if (!relative || relative.indexOf('..') === 0 || path.isAbsolute(relative)) {
+    if (!relative || isOutsideRoot(relative)) {
         return undefined;
     }
 
@@ -53,7 +68,7 @@ function isOutputPath(rootPath, filePath, outputDir) {
     }
 
     var relative = path.relative(outputFolder, filePath);
-    return relative === '' || (relative.indexOf('..') !== 0 && path.isAbsolute(relative) === false);
+    return relative === '' || isOutsideRoot(relative) === false;
 }
 
 function getStorePath(rootPath, outputDir) {
@@ -63,16 +78,6 @@ function getStorePath(rootPath, outputDir) {
     }
 
     return path.join(folder, STORE_FILE_NAME);
-}
-
-function ensureFolder(folderPath) {
-    if (!folderPath) {
-        return;
-    }
-
-    if (fs.existsSync(folderPath) !== true) {
-        fs.mkdirSync(folderPath, { recursive: true });
-    }
 }
 
 function uniqueStrings(values) {
@@ -134,20 +139,17 @@ function loadStore(rootPath, outputDir) {
     }
 
     var store = createEmptyStore();
-    if (fs.existsSync(key) === true) {
-        try {
-            var parsed = JSON.parse(fs.readFileSync(key, 'utf8'));
-            if (parsed && typeof parsed === 'object') {
-                store.version = parsed.version || STORE_VERSION;
-                Object.keys(parsed.tasks || {}).forEach(function (taskId) {
-                    store.tasks[taskId] = normaliseTaskEntry(parsed.tasks[taskId]);
-                });
-                store.stableIndex = parsed.stableIndex || {};
-            }
-        }
-        catch (e) {
-            store = createEmptyStore();
-        }
+    var parsed = jsonStore.readJsonFile(key);
+    if (parsed && typeof parsed === 'object') {
+        store.version = parsed.version || STORE_VERSION;
+        Object.keys(parsed.tasks || {}).forEach(function (taskId) {
+            store.tasks[taskId] = normaliseTaskEntry(parsed.tasks[taskId]);
+        });
+        store.stableIndex = parsed.stableIndex || {};
+    }
+
+    if (!key) {
+        return store;
     }
 
     rebuildStableIndex(store);
@@ -161,12 +163,20 @@ function saveStore(rootPath, outputDir) {
     }
 
     var storePath = getStorePath(rootPath, outputDir);
+    if (!storePath) {
+        return undefined;
+    }
+
     var store = loadStore(rootPath, outputDir);
 
     rebuildStableIndex(store);
-    ensureFolder(path.dirname(storePath));
-    fs.writeFileSync(storePath, JSON.stringify(store, null, 2) + '\n');
-    return storePath;
+    try {
+        return jsonStore.writeJsonFile(storePath, store);
+    }
+    catch (e) {
+        delete cache[storePath];
+        throw e;
+    }
 }
 
 function resolveLegacyTaskId(store, taskIdOrStableId) {
