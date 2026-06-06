@@ -65,7 +65,7 @@ TaskVision is a VS Code extension that turns TODO-style source comments into str
 ## Current Quality Baseline
 
 - Test command: `npm test`
-- Latest verified result: `92 passing`, `0 failed` on `2026-03-08`
+- Latest verified result: `145 passing`, `0 failed` on `2026-06-05`
 - Build commands: `npm run webpack`, `npm run webpack-dev`
 
 ## Maintenance Notes

@@ -10,6 +10,7 @@ var taskState = require('./taskState.js');
 var taskMetaStore = require('./taskMetaStore.js');
 var contextStore = require('./contextStore.js');
 var changeSessionStore = require('./changeSessionStore.js');
+var jsonStore = require('./jsonStore.js');
 
 function ensureFolder(folderPath) {
     if (folderPath && fs.existsSync(folderPath) !== true) {
@@ -37,7 +38,7 @@ function toRelativePath(rootPath, filePath) {
     }
 
     var relative = path.relative(rootPath, filePath);
-    if (!relative || relative.indexOf('..') === 0) {
+    if (!relative || relative.indexOf('..') === 0 || path.isAbsolute(relative)) {
         return filePath;
     }
 
@@ -213,7 +214,10 @@ function collectOpenSessions(rootPath, nodes, outputDir) {
         }
     });
 
-    return changeSessionStore.getOpenSessions(rootPath, outputDir, taskStableIds).filter(function (session) {
+    // Fetch all open sessions and apply the combined filter here so that
+    // sessions referenced explicitly by sessionId are not pre-filtered away
+    // by the taskRef intersection inside getOpenSessions.
+    return changeSessionStore.getOpenSessions(rootPath, outputDir, []).filter(function (session) {
         return explicitSessionIds[session.sessionId] === true || taskStableIds.length === 0 || (session.taskRefs || []).some(function (taskRef) {
             return taskStableIds.indexOf(taskRef) !== -1;
         });
@@ -442,8 +446,9 @@ function writeContextFiles(rootPath, scope, nodes, generatedAt, outputDir) {
     var paths = getOutputPaths(rootPath, outputDir);
     ensureFolder(paths.folder);
 
-    fs.writeFileSync(paths.markdown, buildMarkdown(rootPath, scope, nodes, generatedAt, outputDir) + '\n');
-    fs.writeFileSync(paths.json, JSON.stringify(buildJson(rootPath, scope, nodes, generatedAt, outputDir), null, 2) + '\n');
+    // Writes routed through jsonStore for atomic temp+rename (avoids half-written handoff files).
+    jsonStore.writeTextFile(paths.markdown, buildMarkdown(rootPath, scope, nodes, generatedAt, outputDir) + '\n');
+    jsonStore.writeJsonFile(paths.json, buildJson(rootPath, scope, nodes, generatedAt, outputDir));
 
     return paths;
 }
@@ -534,7 +539,7 @@ function writeStatusReport(rootPath, nodes, generatedAt, outputDir) {
 
     var paths = getOutputPaths(rootPath, outputDir);
     ensureFolder(paths.folder);
-    fs.writeFileSync(paths.report, buildStatusReport(rootPath, nodes, generatedAt, outputDir) + '\n');
+    jsonStore.writeTextFile(paths.report, buildStatusReport(rootPath, nodes, generatedAt, outputDir) + '\n');
     return paths.report;
 }
 

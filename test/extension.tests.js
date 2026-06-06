@@ -147,3 +147,47 @@ QUnit.test('tree source differentiates task/context/review labels and context va
     assert.ok(source.indexOf('return new vscode.ThemeIcon(\'warning\');') !== -1);
     assert.ok(source.indexOf('label: "Agent session: " + shortSessionId(sessions[roots[0]])') !== -1);
 });
+
+QUnit.test('extension applies on-demand stable ID tracking policy', function (assert) {
+    var source = fs.readFileSync('src/extension.js', 'utf8');
+
+    assert.ok(source.indexOf('function shouldEnsureStableIdForNode(node, options, referencedStableIds)') !== -1);
+    assert.ok(source.indexOf('if (ensureOptions.forceStableIds === true)') !== -1);
+    assert.ok(source.indexOf('return status !== \'todo\' && status !== \'idea\';') !== -1);
+    assert.ok(source.indexOf('var initialRootNodes = getSyncNodesForRoot(rootPath, syncOptions);') !== -1);
+    assert.ok(source.indexOf('ensureStableIdsInSource(initialRootNodes, {\n                forceStableIds: syncOptions.forceStableIds === true\n            })') !== -1);
+    assert.ok(source.indexOf('forceStableIds: true') !== -1);
+});
+
+QUnit.test('extension limits forced stable IDs to the AI export scope', function (assert) {
+    var source = fs.readFileSync('src/extension.js', 'utf8');
+
+    assert.ok(source.indexOf('function getSyncNodesForRoot(rootPath, syncOptions)') !== -1);
+    assert.ok(source.indexOf('Array.isArray(options.scopeNodes)') !== -1);
+    assert.ok(source.indexOf('scopeNodesByRoot: grouped') !== -1);
+    assert.ok(source.indexOf('var rootNodes = getSyncNodesForRoot(rootPath, syncOptions);') !== -1);
+});
+
+QUnit.test('extension writes AI status report before updating export baseline', function (assert) {
+    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var exportStart = source.indexOf('function exportAiContext(node)');
+    var markIndex = source.indexOf('taskMetaStore.markTasksExported', exportStart);
+    var reportIndex = source.indexOf('aiContext.writeStatusReport', exportStart);
+
+    assert.ok(exportStart !== -1, 'exportAiContext exists');
+    assert.ok(reportIndex !== -1, 'export writes status report');
+    assert.ok(markIndex !== -1, 'export marks tasks exported');
+    assert.ok(reportIndex < markIndex, 'status report is written before baseline is updated');
+});
+
+QUnit.test('extension registers commands even when ripgrep is unavailable', function (assert) {
+    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var missingRipgrepIndex = source.indexOf("TaskVision: Failed to find vscode-ripgrep");
+    var firstCommandIndex = source.indexOf("vscode.commands.registerCommand('taskvision.openUrl'");
+    var missingRipgrepBlock = source.slice(missingRipgrepIndex, firstCommandIndex);
+
+    assert.ok(missingRipgrepIndex !== -1, 'missing ripgrep warning exists');
+    assert.ok(firstCommandIndex !== -1, 'commands are registered');
+    assert.ok(missingRipgrepIndex < firstCommandIndex, 'warning still happens before command registration');
+    assert.ok(missingRipgrepBlock.indexOf('return;') === -1, 'missing ripgrep warning does not abort command registration');
+});

@@ -9,11 +9,11 @@
 
 ## Session Summary
 
-- Active focus: Reanalyzed the AI context feature's data flow, product logic, and agent handoff contract after sidecar write hardening.
-- Verification: read-only source/docs/tests review plus `git --no-pager ls-files .taskvision .gitignore`; no test suite was run because no runtime code changed.
+- Active focus: Reworked highlight acrylic so the default effect is text-layer glow/underline without background fill, border blocks, or hidden text.
+- Verification: `npx qunit test/highlights.tests.js test/schemes.tests.js`, `npm test`, `npm run webpack`, CDP screenshot `/tmp/taskvision-cdp-visual-final-pass2.png`, visual subagent review, and targeted `git diff --check` passed.
 
 ## Active Session Task
 
-| Priority | Task                          | Status    | Owner | Due        |
-| -------- | ----------------------------- | --------- | ----- | ---------- |
-| P1       | Reanalyze AI context logic    | Completed | AI    | 2026-04-29 |
+| Priority | Task                                  | Status        | Owner | Due        |
+| -------- | ------------------------------------- | ------------- | ----- | ---------- |
+| P1       | Rework glass highlight transparency model          | Completed     | AI    | 2026-06-04 |

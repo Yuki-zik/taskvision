@@ -43,6 +43,20 @@ function malformedBackupPath(filePath) {
     return filePath + '.invalid';
 }
 
+QUnit.test("agent store schema document covers sidecar versions and migration rules", function (assert) {
+    var schema = fs.readFileSync(path.join('agent', 'store-schema.md'), 'utf8');
+
+    assert.ok(schema.indexOf('tasks-meta.json') !== -1);
+    assert.ok(schema.indexOf('context-index.json') !== -1);
+    assert.ok(schema.indexOf('change-sessions/*.json') !== -1);
+    assert.ok(schema.indexOf('version: 2') !== -1);
+    assert.ok(schema.indexOf('version: 1') !== -1);
+    assert.ok(schema.indexOf('Migration policy') !== -1);
+    assert.ok(schema.indexOf('Recovery policy') !== -1);
+    assert.ok(schema.indexOf('.invalid') !== -1);
+    assert.ok(schema.indexOf('Atomic write') !== -1);
+});
+
 QUnit.test("taskMetaStore upgrades to v2 with stableIndex and contextRefs", function (assert) {
     var root = makeTempRoot();
 

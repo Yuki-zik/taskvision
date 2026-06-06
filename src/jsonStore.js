@@ -62,7 +62,7 @@ function createTempPath(filePath) {
     );
 }
 
-function writeJsonFile(filePath, value) {
+function writeTextFile(filePath, text) {
     if (!filePath) {
         return undefined;
     }
@@ -71,7 +71,7 @@ function writeJsonFile(filePath, value) {
     var tempPath = createTempPath(filePath);
 
     try {
-        fs.writeFileSync(tempPath, JSON.stringify(value, null, 2) + '\n');
+        fs.writeFileSync(tempPath, text);
         fs.renameSync(tempPath, filePath);
     }
     catch (e) {
@@ -84,6 +84,15 @@ function writeJsonFile(filePath, value) {
     return filePath;
 }
 
+function writeJsonFile(filePath, value) {
+    if (!filePath) {
+        return undefined;
+    }
+
+    return writeTextFile(filePath, JSON.stringify(value, null, 2) + '\n');
+}
+
 module.exports.readJsonFile = readJsonFile;
 module.exports.writeJsonFile = writeJsonFile;
+module.exports.writeTextFile = writeTextFile;
 module.exports.backupMalformedJson = backupMalformedJson;

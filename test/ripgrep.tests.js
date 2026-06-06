@@ -4,6 +4,16 @@ var path = require('path');
 var events = require('events');
 var ripgrep = require('../src/ripgrep.js');
 
+QUnit.test("package default ripgrep buffer is large enough for workspace scans", function (assert) {
+    var packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    var ripgrepConfig = packageJson.contributes.configuration.find(function (section) {
+        return section.properties && section.properties['taskvision.ripgrep.ripgrepMaxBuffer'];
+    });
+
+    assert.ok(ripgrepConfig.properties['taskvision.ripgrep.ripgrepMaxBuffer'].default >= 10240);
+    assert.equal(ripgrep._defaultMaxBufferKb, 10240);
+});
+
 QUnit.test("ripgrep._parseAdditionalArgs handles quotes", function (assert) {
     var args = ripgrep._parseAdditionalArgs('--hidden --max-filesize "1 MB" --glob \'*.js\'');
     assert.deepEqual(args, ['--hidden', '--max-filesize', '1 MB', '--glob', '*.js']);

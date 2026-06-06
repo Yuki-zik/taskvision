@@ -14,8 +14,18 @@ var annotationParser = require('./annotationParser.js');
 var config;
 
 var envRegex = new RegExp("\\$\\{(.*?)\\}", "g");
-var rgbRegex = new RegExp("^rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*(\\d+(?:\\.\\d+)?))?\\)$", "gi");
+var rgbRegex = new RegExp("^rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*(\\d+(?:\\.\\d+)?))?\\)$", "i");
 var placeholderRegex = new RegExp("(\\$\\{.*\\})");
+
+function computeCommentStart(str) {
+    var delimiters = ['//', '/*', '#', '<!--', ';', '--', '%', '"'];
+    var index = -1;
+    delimiters.forEach(function (d) {
+        var i = str.lastIndexOf(d);
+        if (i > index) index = i;
+    });
+    return index > -1 ? index : 0;
+}
 
 function init(configuration) {
     config = configuration;
@@ -284,15 +294,7 @@ function extractTag(text, matchOffset) {
                 before: before,
                 after: after,
                 tagOffset: tagOffset,
-                commentStart: (function (str) {
-                    var delimiters = ['//', '/*', '#', '<!--', ';', '--', '%', '"'];
-                    var index = -1;
-                    delimiters.forEach(function (d) {
-                        var i = str.lastIndexOf(d);
-                        if (i > index) index = i;
-                    });
-                    return index > -1 ? index : 0;
-                })(before),
+                commentStart: computeCommentStart(before),
                 subTag: subTag,
                 status: derivedStatus,
                 hasExplicitStatus: tagTail.hasExplicitStatus,
@@ -339,15 +341,7 @@ function extractTag(text, matchOffset) {
                 before: before,
                 after: after,
                 tagOffset: tagOffset,
-                commentStart: (function (str) {
-                    var delimiters = ['//', '/*', '#', '<!--', ';', '--', '%', '"'];
-                    var index = -1;
-                    delimiters.forEach(function (d) {
-                        var i = str.lastIndexOf(d);
-                        if (i > index) index = i;
-                    });
-                    return index > -1 ? index : 0;
-                })(before),
+                commentStart: computeCommentStart(before),
                 subTag: subTag,
                 status: explicitStatusInfo ? explicitStatusInfo.status : taskState.defaultStatusForTag(originalTag),
                 hasExplicitStatus: explicitStatusInfo !== undefined,
@@ -370,15 +364,7 @@ function extractTag(text, matchOffset) {
         before: before,
         after: after,
         tagOffset: tagOffset,
-        commentStart: (function (str) {
-            var delimiters = ['//', '/*', '#', '<!--', ';', '--', '%', '"'];
-            var index = -1;
-            delimiters.forEach(function (d) {
-                var i = str.lastIndexOf(d);
-                if (i > index) index = i;
-            });
-            return index > -1 ? index : 0;
-        })(before),
+        commentStart: computeCommentStart(before),
         subTag: subTag,
         status: fallbackStatus,
         hasExplicitStatus: explicitStatusInfo !== undefined,
@@ -522,11 +508,18 @@ function formatLabel(template, node, unexpectedPlaceholders) {
     return result;
 }
 
-function createTaskId(rootPath, fsPath, tag, text, subTag) {
-    var relativePath = fsPath || '';
-    if (rootPath && fsPath && fsPath.indexOf(rootPath) === 0) {
-        relativePath = path.relative(rootPath, fsPath);
+function toRootRelative(rootPath, fsPath) {
+    if (rootPath && fsPath) {
+        var relative = path.relative(rootPath, fsPath);
+        if (relative === '' || (relative.indexOf('..') !== 0 && !path.isAbsolute(relative))) {
+            return relative;
+        }
     }
+    return fsPath || '';
+}
+
+function createTaskId(rootPath, fsPath, tag, text, subTag) {
+    var relativePath = toRootRelative(rootPath, fsPath);
 
     var digest = [
         String(relativePath).replace(/\\/g, '/'),
@@ -553,10 +546,7 @@ function createShortHash(parts) {
 }
 
 function createStableId(prefix, rootPath, fsPath, text, hint) {
-    var relativePath = fsPath || '';
-    if (rootPath && fsPath && fsPath.indexOf(rootPath) === 0) {
-        relativePath = path.relative(rootPath, fsPath);
-    }
+    var relativePath = toRootRelative(rootPath, fsPath);
 
     var slug = slugifyIdentifier(text || hint || path.basename(fsPath || '') || prefix, prefix);
     var hash = createShortHash([
@@ -652,8 +642,8 @@ function upsertTvDirectivesInLine(lineText, task, directives) {
         tail = afterTag.slice(statusInfo.range.end);
     }
 
-    tail = annotationParser.removeDirectives(tail).replace(/\s{2,}/g, ' ');
-    return head + ' ' + tokens.join(' ') + tail;
+    tail = annotationParser.removeDirectives(tail).replace(/\s{2,}/g, ' ').trim();
+    return head + (tail ? ' ' + tail : '') + ' ' + tokens.join(' ');
 }
 
 function getSingleLineCommentToken(fileName) {
@@ -705,13 +695,13 @@ function buildAnnotationComment(fileName, baseLineText, tag, status, directives,
         parts.push(taskState.toInlineToken(status));
     }
 
-    annotationParser.buildDirectiveTokens(directives).forEach(function (token) {
-        parts.push(token);
-    });
-
     if (text) {
         parts.push(String(text).trim());
     }
+
+    annotationParser.buildDirectiveTokens(directives).forEach(function (token) {
+        parts.push(token);
+    });
 
     return buildCommentLine(fileName, baseLineText, parts.join(' '));
 }
