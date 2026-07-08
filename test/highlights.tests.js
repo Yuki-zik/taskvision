@@ -319,7 +319,7 @@ QUnit.test('highlights keeps 2.0 channel defaults when only legacy type is confi
     });
 });
 
-QUnit.test('highlights does not create default glass style for 8 digit hex backgrounds', function (assert) {
+QUnit.test('highlights renders glass fill from 8 digit hex backgrounds', function (assert) {
     withHighlightPlan({
         'taskvision.highlights': {
             customHighlight: {
@@ -343,9 +343,8 @@ QUnit.test('highlights does not create default glass style for 8 digit hex backg
         }
     }, function (highlights) {
         var plan = highlights._getTagPlan('TODO');
-        assert.equal(plan.channels.glass.style.light.backgroundColor, undefined);
-        assert.equal(plan.channels.glass.style.light.border, undefined);
-        assert.equal(plan.channels.glass.enabled, false);
+        assert.equal(plan.channels.glass.style.light.backgroundColor, '#42A5F566');
+        assert.equal(plan.channels.glass.enabled, true);
     });
 });
 
@@ -410,7 +409,8 @@ QUnit.test('highlights treats null and zero opacity settings as unset', function
         assert.equal(plan.channels.color.style.light.color, '#FFFFFF');
         assert.equal(plan.channels.glow.enabled, true);
         assert.ok(plan.channels.glow.style.light.textShadow.indexOf('rgba(66,165,245,0.45)') !== -1);
-        assert.equal(plan.channels.glass.enabled, false);
+        assert.equal(plan.channels.glass.enabled, true);
+        assert.equal(plan.channels.glass.style.light.backgroundColor, '#42A5F566');
     });
 });
 
@@ -442,7 +442,7 @@ QUnit.test('highlights applies explicit glassOpacity over 8 digit hex defaults',
     });
 });
 
-QUnit.test('highlights does not create default glass style for alpha-only legacy backgrounds', function (assert) {
+QUnit.test('highlights renders glass fill from alpha-only legacy backgrounds', function (assert) {
     withHighlightPlan({
         'taskvision.highlights': {
             customHighlight: {
@@ -464,9 +464,8 @@ QUnit.test('highlights does not create default glass style for alpha-only legacy
         }
     }, function (highlights) {
         var plan = highlights._getTagPlan('BLOCKER');
-        assert.equal(plan.channels.glass.style.light.backgroundColor, undefined);
-        assert.equal(plan.channels.glass.style.light.border, undefined);
-        assert.equal(plan.channels.glass.enabled, false);
+        assert.equal(plan.channels.glass.style.light.backgroundColor, '#FF174466');
+        assert.equal(plan.channels.glass.enabled, true);
     });
 });
 
@@ -535,12 +534,13 @@ QUnit.test('highlights applies visible text and glass decorations for legacy typ
             return decoration.options.light && decoration.options.light.color !== undefined;
         });
 
-        assert.notOk(decorations.some(function (decoration) {
-            return decoration.options.light && (
-                decoration.options.light.backgroundColor !== undefined ||
-                decoration.options.light.border !== undefined
-            );
-        }), 'default highlighting should not create glass fill or border decorations');
+        var glassDecoration = decorations.find(function (decoration) {
+            return decoration.options.light && decoration.options.light.backgroundColor !== undefined;
+        });
+
+        assert.ok(glassDecoration, 'glass fill decoration should be created for alpha background');
+        assert.equal(glassDecoration.options.light.backgroundColor, '#42A5F566');
+        assert.ok(glassDecoration.ranges.length > 0, 'glass fill should be applied to a range');
 
         assert.ok(textDecoration, 'text decoration should be created');
         assert.equal(textDecoration.options.light.color, '#FFFFFF');

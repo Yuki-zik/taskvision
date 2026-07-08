@@ -323,18 +323,23 @@ function getTagPlan(tag) {
 
     var schemeName = attributes.getScheme(tag);
     var hasGlass = schemeName === 'glass' || schemeName === 'neon+glass';
-    var hasAlphaOnlyGlass = !hasGlass && hasHexAlpha(backgroundColour);
-    var finalGlassOpacity = glassOpacity !== undefined ? glassOpacity : ((hasGlass && !hasHexAlpha(backgroundColour)) ? 15 : undefined);
+    var bgHasAlpha = hasHexAlpha(backgroundColour);
+    var hasAlphaOnlyGlass = !hasGlass && bgHasAlpha;
+    var finalGlassOpacity = glassOpacity !== undefined ? glassOpacity : ((hasGlass && !bgHasAlpha) ? 15 : undefined);
 
-    if (lightBackgroundColour !== undefined && finalGlassOpacity !== undefined) {
-        lightBackgroundColour = applyOpacity(lightBackgroundColour, finalGlassOpacity);
-    } else if (hasGlass || hasHexAlpha(backgroundColour)) {
-        lightBackgroundColour = undefined;
+    if (lightBackgroundColour !== undefined) {
+        if (finalGlassOpacity !== undefined) {
+            lightBackgroundColour = applyOpacity(lightBackgroundColour, finalGlassOpacity);
+        } else if (!bgHasAlpha) {
+            lightBackgroundColour = undefined;
+        }
     }
-    if (darkBackgroundColour !== undefined && finalGlassOpacity !== undefined) {
-        darkBackgroundColour = applyOpacity(darkBackgroundColour, finalGlassOpacity);
-    } else if (hasGlass || hasHexAlpha(backgroundColour)) {
-        darkBackgroundColour = undefined;
+    if (darkBackgroundColour !== undefined) {
+        if (finalGlassOpacity !== undefined) {
+            darkBackgroundColour = applyOpacity(darkBackgroundColour, finalGlassOpacity);
+        } else if (!bgHasAlpha) {
+            darkBackgroundColour = undefined;
+        }
     }
 
     if (lightForegroundColour === undefined && utils.isHexColour(lightBackgroundColour)) {
