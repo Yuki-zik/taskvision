@@ -234,10 +234,12 @@ module.exports.search = function ripGrep( cwd, options )
 
     return new Promise( function( resolve, reject )
     {
-        const maxBuffer = ( options.maxBuffer || 200 ) * 1024;
+        const maxBufferKB = ( options.maxBuffer || 200 );
+        const maxBuffer = maxBufferKB * 1024;
         var results = "";
         var errors = "";
         var hasCompleted = false;
+        var truncated = false;
 
         currentProcess = child_process.spawn( rgPath, args, {
             cwd: cwd,
@@ -262,12 +264,23 @@ module.exports.search = function ripGrep( cwd, options )
 
         currentProcess.stdout.on( 'data', function( data )
         {
+            if( truncated )
+            {
+                return;
+            }
             debug( "Search results:\n" + data );
             results += data;
             if( Buffer.byteLength( results, 'utf8' ) > maxBuffer )
             {
-                currentProcess.kill( 'SIGINT' );
-                fail( "Search output exceeded maxBuffer of " + ( options.maxBuffer || 200 ) + " KB", errors );
+                // Rather than rejecting (which would leave the tree empty on
+                // large repos), flag the result as truncated, stop the search
+                // and let the 'close' handler resolve with the partial matches.
+                truncated = true;
+                debug( "Search output exceeded maxBuffer of " + maxBufferKB + " KB - returning partial results. Raise 'taskvision.ripgrep.ripgrepMaxBuffer' to collect more tags." );
+                if( currentProcess !== undefined )
+                {
+                    currentProcess.kill( 'SIGINT' );
+                }
             }
         } );
 
@@ -292,6 +305,19 @@ module.exports.search = function ripGrep( cwd, options )
             hasCompleted = true;
             cleanupPatternFile( options.patternFilePath );
             currentProcess = undefined;
+
+            if( truncated )
+            {
+                // Partial results collected before the buffer limit are still
+                // useful. Resolve them with a marker so callers can warn the
+                // user instead of discarding every tag. This takes priority
+                // over the SIGINT we sent to stop the search.
+                var partial = formatResults( results, options.multiline );
+                partial.truncated = true;
+                partial.maxBuffer = maxBufferKB;
+                resolve( partial );
+                return;
+            }
 
             if( signal )
             {

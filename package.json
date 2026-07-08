@@ -1716,7 +1716,7 @@
                 "type": "object",
                 "properties": {
                     "taskvision.ripgrep.ripgrepMaxBuffer": {
-                        "default": 200,
+                        "default": 20480,
                         "markdownDescription": "%taskvision.configuration.ripgrep.ripgrepMaxBuffer.markdownDescription%",
                         "type": "integer"
                     },

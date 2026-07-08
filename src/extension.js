@@ -58,6 +58,7 @@ var OK_BUTTON = "OK";
 
 function activate(context) {
     var outputChannel;
+    var bufferTruncationWarningShown = false;
 
     function settingLocation(setting) {
         var current = vscode.workspace.getConfiguration('taskvision').inspect(setting);
@@ -294,10 +295,26 @@ function activate(context) {
         }
     }
 
+    function notifyBufferTruncated(maxBuffer) {
+        debug("Search output exceeded maxBuffer of " + maxBuffer + " KB - showing partial results");
+        if (bufferTruncationWarningShown) {
+            return;
+        }
+        bufferTruncationWarningShown = true;
+        vscode.window.showWarningMessage("TaskVision: Search output exceeded the buffer limit (" + maxBuffer + " KB), so only partial results are shown. Increase 'taskvision.ripgrep.ripgrepMaxBuffer' to see all tags.", OPEN_SETTINGS_BUTTON, OK_BUTTON).then(function (button) {
+            if (button === OPEN_SETTINGS_BUTTON) {
+                vscode.commands.executeCommand('workbench.action.openSettings', 'taskvision.ripgrep.ripgrepMaxBuffer');
+            }
+        });
+    }
+
     function search(options) {
         debug("Searching " + options.filename + "...");
 
         return ripgrep.search("/", options).then(matches => {
+            if (matches && matches.truncated === true) {
+                notifyBufferTruncated(matches.maxBuffer || options.maxBuffer);
+            }
             if (matches.length > 0) {
                 matches.forEach(match => {
                     match.uri = vscode.Uri.file(match.fsPath);
@@ -547,6 +564,7 @@ function activate(context) {
         provider.clear(vscode.workspace.workspaceFolders);
 
         interrupted = false;
+        bufferTruncationWarningShown = false;
 
         statusBarIndicator.text = "TaskVision: Scanning...";
         statusBarIndicator.show();

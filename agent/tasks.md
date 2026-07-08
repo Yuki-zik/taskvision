@@ -9,11 +9,11 @@
 
 ## Session Summary
 
-- Active focus: Reanalyzed the AI context feature's data flow, product logic, and agent handoff contract after sidecar write hardening.
-- Verification: read-only source/docs/tests review plus `git --no-pager ls-files .taskvision .gitignore`; no test suite was run because no runtime code changed.
+- Active focus: Fixed GitHub issue #4 — `ripgrep.search` now returns the partial results it collected (with a one-time warning) instead of rejecting the whole search when stdout exceeds `maxBuffer`, and raised the default `taskvision.ripgrep.ripgrepMaxBuffer` from 200 KB to 20480 KB (20 MB).
+- Verification: `npm test` (120 passing, including a new truncation/partial-results regression test and the unchanged SIGINT interrupted test) and `npm run webpack` (build succeeded).
 
 ## Active Session Task
 
-| Priority | Task                          | Status    | Owner | Due        |
-| -------- | ----------------------------- | --------- | ----- | ---------- |
-| P1       | Reanalyze AI context logic    | Completed | AI    | 2026-04-29 |
+| Priority | Task                                                              | Status    | Owner | Due        |
+| -------- | ----------------------------------------------------------------- | --------- | ----- | ---------- |
+| P1       | Fix issue #4: return partial ripgrep results instead of failing   | Completed | AI    | 2026-07-08 |

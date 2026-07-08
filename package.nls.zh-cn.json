@@ -106,7 +106,7 @@
     "taskvision.configuration.ripgrep": "Ripgrep",
     "taskvision.configuration.ripgrep.ripgrep.markdownDescription": "通常此拓展在需要时能自行定位 ripgrep。若要使用 ripgrep 的其他版本，在此处设置其安装位置。",
     "taskvision.configuration.ripgrep.ripgrepArgs.markdownDescription": "配置要传递给 ripgrep 的额外参数（谨慎使用）。",
-    "taskvision.configuration.ripgrep.ripgrepMaxBuffer.markdownDescription": "配置 ripgrep 缓冲区的大小（KB）。当目前缓冲区大小不足以查看所有标签时，可适当增加缓冲区大小。",
+    "taskvision.configuration.ripgrep.ripgrepMaxBuffer.markdownDescription": "配置 ripgrep 缓冲区的大小（KB）。默认值为 `20480`（20 MB）。当超大仓库仍超出此限制时，TaskVision 会展示已收集到的部分结果，并提示你进一步增大该值。",
     "taskvision.configuration.ripgrep.usePatternFile.markdownDescription": "默认情况下，模板文件与 ripgrep 一起使用。当删除模板文件时遇到问题，请将此项设置为 false，即可使用向 ripgrep 提供正则表达式的旧方法。",
     "taskvision.configuration.tree": "树",
     "taskvision.configuration.tree.autoRefresh.markdownDescription": "打开或保存文件时自动刷新树状图。",
