@@ -25,6 +25,22 @@
 | Priority | Task                                                        | Status    | Owner | Due        |
 | -------- | ---------------------------------------------------------- | --------- | ----- | ---------- |
 | P1       | Fix Cursor gray highlight background block (issue #1)       | Completed | AI    | 2026-07-08 |
+- Active focus: Fixed GitHub issue #4 — `ripgrep.search` now returns the partial results it collected (with a one-time warning) instead of rejecting the whole search when stdout exceeds `maxBuffer`, and raised the default `taskvision.ripgrep.ripgrepMaxBuffer` from 200 KB to 20480 KB (20 MB).
+- Verification: `npm test` (120 passing, including a new truncation/partial-results regression test and the unchanged SIGINT interrupted test) and `npm run webpack` (build succeeded).
+
+## Active Session Task
+
+| Priority | Task                                                              | Status    | Owner | Due        |
+| -------- | ----------------------------------------------------------------- | --------- | ----- | ---------- |
+| P1       | Fix issue #4: return partial ripgrep results instead of failing   | Completed | AI    | 2026-07-08 |
+- Active focus: Fixed GitHub issue #3 — added the `%` comment prefix (LaTeX/Matlab/Erlang) to the default TODO/FIXME detection regex so `% TODO`/`% FIXME` are detected.
+- Verification: `npm ci`, `npm test` (120 passing, 0 failing, including the new `%`-comment case), `npm run webpack` (build succeeded).
+
+## Active Session Task
+
+| Priority | Task                                                | Status    | Owner | Due        |
+| -------- | --------------------------------------------------- | --------- | ----- | ---------- |
+| P1       | Support `%`-style comment TODO detection (issue #3) | Completed | AI    | 2026-07-08 |
 - Active focus: Fixed the Windows-only `master` CI failure (`extension applies on-demand stable ID tracking policy`) caused by CRLF checkouts breaking `\n`-based multi-line source-scanning assertions.
 - Root cause + fix: no repo `.gitattributes` + `core.autocrlf=true` ⇒ CRLF working tree; added `.gitattributes` (`* text=auto eol=lf`) to force LF checkout everywhere, and a `readSource()` EOL-normalizing helper in `test/extension.tests.js` for robustness against existing CRLF copies. No runtime code changed.
 - Verification: isolated worktree off `origin/master` on Windows (CRLF working tree) reproduced the failure, then `node qunit test/extension.tests.js` (15 passing), `npm test` (145 passing), and `npm run webpack` all passed; `git check-attr` confirms `eol=lf`; staged diff is only `.gitattributes` + `test/extension.tests.js`.

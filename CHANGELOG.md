@@ -1,5 +1,9 @@
 # TaskVision Change Log
 
+## Unreleased
+
+- Detect `TODO`/`FIXME` (and other tags) in `%`-style comments used by LaTeX, Matlab and Erlang by adding `%` to the default detection regex. (#3)
+
 ## v2.0.1 - 2026-02-21
 
 - Fix image URL warning during extension packaging by updating package.json repository field.
