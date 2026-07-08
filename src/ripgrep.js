@@ -244,10 +244,12 @@ module.exports.search = function ripGrep( cwd, options )
 
     return new Promise( function( resolve, reject )
     {
-        const maxBuffer = ( options.maxBuffer || DEFAULT_MAX_BUFFER_KB ) * 1024;
+        const maxBufferKB = ( options.maxBuffer || DEFAULT_MAX_BUFFER_KB );
+        const maxBuffer = maxBufferKB * 1024;
         var results = "";
         var errors = "";
         var hasCompleted = false;
+        var truncated = false;
 
         var rgProcess = child_process.spawn( rgPath, args, {
             cwd: cwd,
@@ -273,12 +275,20 @@ module.exports.search = function ripGrep( cwd, options )
 
         rgProcess.stdout.on( 'data', function( data )
         {
+            if( truncated )
+            {
+                return;
+            }
             debug( "Search results:\n" + data );
             results += data;
             if( Buffer.byteLength( results, 'utf8' ) > maxBuffer )
             {
+                // Rather than rejecting (which would leave the tree empty on
+                // large repos), flag the result as truncated, stop the search
+                // and let the 'close' handler resolve with the partial matches.
+                truncated = true;
+                debug( "Search output exceeded maxBuffer of " + maxBufferKB + " KB - returning partial results. Raise 'taskvision.ripgrep.ripgrepMaxBuffer' to collect more tags." );
                 rgProcess.kill( 'SIGINT' );
-                fail( "Search output exceeded maxBuffer of " + ( options.maxBuffer || DEFAULT_MAX_BUFFER_KB ) + " KB", errors );
             }
         } );
 
@@ -303,6 +313,19 @@ module.exports.search = function ripGrep( cwd, options )
             hasCompleted = true;
             cleanupPatternFile( options.patternFilePath );
             removeActiveProcess( rgProcess );
+
+            if( truncated )
+            {
+                // Partial results collected before the buffer limit are still
+                // useful. Resolve them with a marker so callers can warn the
+                // user instead of discarding every tag. This takes priority
+                // over the SIGINT we sent to stop the search.
+                var partial = formatResults( results, options.multiline );
+                partial.truncated = true;
+                partial.maxBuffer = maxBufferKB;
+                resolve( partial );
+                return;
+            }
 
             if( signal )
             {
