@@ -355,31 +355,44 @@ function getTagPlan(tag) {
     return plan;
 }
 
+function applyGlassTheme(target, source, borderRadius) {
+    if (source.backgroundColor !== undefined) {
+        target.backgroundColor = source.backgroundColor;
+    }
+    if (source.border !== undefined) {
+        target.border = source.border;
+    }
+
+    // Keep borderRadius co-located with the border/background it rounds instead of
+    // leaving it on the decoration's base rule.
+    if (borderRadius !== undefined && (target.border !== undefined || target.backgroundColor !== undefined)) {
+        target.borderRadius = borderRadius;
+    }
+
+    // Cursor (and VS Code, see microsoft/vscode#175819 & wayou/vscode-todo-highlight#434)
+    // paints a fallback gray box when a decoration carries a border or borderRadius
+    // without an explicit, co-located backgroundColor. Guarantee a transparent
+    // background in that case so the glass box stays see-through in every fork.
+    if ((target.border !== undefined || target.borderRadius !== undefined) && target.backgroundColor === undefined) {
+        target.backgroundColor = 'transparent';
+    }
+}
+
 function buildGlassDecorationOptions(plan) {
     var glassChannel = plan.channels.glass;
     var lightStyle = glassChannel.style.light || {};
     var darkStyle = glassChannel.style.dark || {};
+    var borderRadius = glassChannel.style.borderRadius;
 
     var options = {
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
         isWholeLine: glassChannel.rangeType === 'whole-line' || glassChannel.rangeType === 'line',
-        borderRadius: glassChannel.style.borderRadius,
         light: {},
         dark: {}
     };
 
-    if (lightStyle.backgroundColor !== undefined) {
-        options.light.backgroundColor = lightStyle.backgroundColor;
-    }
-    if (darkStyle.backgroundColor !== undefined) {
-        options.dark.backgroundColor = darkStyle.backgroundColor;
-    }
-    if (lightStyle.border !== undefined) {
-        options.light.border = lightStyle.border;
-    }
-    if (darkStyle.border !== undefined) {
-        options.dark.border = darkStyle.border;
-    }
+    applyGlassTheme(options.light, lightStyle, borderRadius);
+    applyGlassTheme(options.dark, darkStyle, borderRadius);
 
     return options;
 }
@@ -811,3 +824,4 @@ module.exports.triggerHighlight = triggerHighlight;
 module.exports.clearCache = clearCache;
 module.exports._getTagPlan = getTagPlan;
 module.exports._buildTextSegments = buildTextSegments;
+module.exports._buildGlassDecorationOptions = buildGlassDecorationOptions;

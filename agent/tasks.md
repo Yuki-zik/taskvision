@@ -9,11 +9,13 @@
 
 ## Session Summary
 
-- Active focus: Reanalyzed the AI context feature's data flow, product logic, and agent handoff contract after sidecar write hardening.
-- Verification: read-only source/docs/tests review plus `git --no-pager ls-files .taskvision .gitignore`; no test suite was run because no runtime code changed.
+- Active focus: Fixed issue #1 — Cursor rendered a solid gray background block behind the `neon+glass` tag highlight where VS Code showed the intended translucent glass box.
+- Root cause: `buildGlassDecorationOptions` in `src/highlights.js` placed `borderRadius` on the decoration base rule while `backgroundColor`/`border` lived only in `light`/`dark`; a border/borderRadius base rule without a co-located background triggers Cursor's fallback gray fill (microsoft/vscode#175819, wayou/vscode-todo-highlight#434).
+- Fix: re-scoped `borderRadius` into `light`/`dark` alongside the border and injected `backgroundColor: 'transparent'` on any themed object that carries a border/borderRadius without an explicit background; VS Code appearance unchanged.
+- Verification: `npx qunit test/highlights.decorations.tests.js` (5 passing), `npm test` (124 passing), `npm run webpack` (success). Cursor is not installed in this environment, so final visual confirmation in Cursor requires a maintainer.
 
 ## Active Session Task
 
-| Priority | Task                          | Status    | Owner | Due        |
-| -------- | ----------------------------- | --------- | ----- | ---------- |
-| P1       | Reanalyze AI context logic    | Completed | AI    | 2026-04-29 |
+| Priority | Task                                                        | Status    | Owner | Due        |
+| -------- | ---------------------------------------------------------- | --------- | ----- | ---------- |
+| P1       | Fix Cursor gray highlight background block (issue #1)       | Completed | AI    | 2026-07-08 |
