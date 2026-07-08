@@ -15,11 +15,12 @@
 
 ## Session Summary
 
-- Active focus: Reworked highlight acrylic so the default effect is text-layer glow/underline without background fill, border blocks, or hidden text.
-- Verification: `npx qunit test/highlights.tests.js test/schemes.tests.js`, `npm test`, `npm run webpack`, CDP screenshot `/tmp/taskvision-cdp-visual-final-pass2.png`, visual subagent review, and targeted `git diff --check` passed.
+- Active focus: Fixed the Windows-only `master` CI failure (`extension applies on-demand stable ID tracking policy`) caused by CRLF checkouts breaking `\n`-based multi-line source-scanning assertions.
+- Root cause + fix: no repo `.gitattributes` + `core.autocrlf=true` ⇒ CRLF working tree; added `.gitattributes` (`* text=auto eol=lf`) to force LF checkout everywhere, and a `readSource()` EOL-normalizing helper in `test/extension.tests.js` for robustness against existing CRLF copies. No runtime code changed.
+- Verification: isolated worktree off `origin/master` on Windows (CRLF working tree) reproduced the failure, then `node qunit test/extension.tests.js` (15 passing), `npm test` (145 passing), and `npm run webpack` all passed; `git check-attr` confirms `eol=lf`; staged diff is only `.gitattributes` + `test/extension.tests.js`.
 
 ## Active Session Task
 
-| Priority | Task                                  | Status        | Owner | Due        |
-| -------- | ------------------------------------- | ------------- | ----- | ---------- |
-| P1       | Rework glass highlight transparency model          | Completed     | AI    | 2026-06-04 |
+| Priority | Task                                     | Status    | Owner | Due        |
+| -------- | ---------------------------------------- | --------- | ----- | ---------- |
+| P1       | Fix Windows CRLF `master` CI test failure | Completed | AI    | 2026-07-08 |

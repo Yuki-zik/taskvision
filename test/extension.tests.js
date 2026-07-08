@@ -1,7 +1,11 @@
 var fs = require('fs');
 
+function readSource(file) {
+    return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+}
+
 QUnit.test('extension resolves highlight updates to workspace first', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
 
     assert.ok(source.indexOf('function resolveConfigTarget()') !== -1);
     assert.ok(source.indexOf('vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0') !== -1);
@@ -10,14 +14,14 @@ QUnit.test('extension resolves highlight updates to workspace first', function (
 });
 
 QUnit.test('extension writes customHighlight updates using resolved target', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
 
     assert.ok(source.indexOf("currentConfig.update('customHighlight', updated, customHighlightTarget);") !== -1);
     assert.ok(source.indexOf("cfg.update('customHighlight', updated, customHighlightTarget);") !== -1);
 });
 
 QUnit.test('extension exposes independent color/glow/glass/font scope controls', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
 
     assert.ok(source.indexOf("value: 'scope-color'") !== -1);
     assert.ok(source.indexOf("value: 'scope-glow'") !== -1);
@@ -30,7 +34,7 @@ QUnit.test('extension exposes independent color/glow/glass/font scope controls',
 });
 
 QUnit.test('extension refreshes when regex and global opacity settings change', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
 
     assert.ok(source.indexOf('if (e.affectsConfiguration("taskvision.regex.regex")) {\n                    return;\n                }') === -1);
     assert.ok(source.indexOf('e.affectsConfiguration("taskvision.highlights.foregroundOpacity")') !== -1);
@@ -40,7 +44,7 @@ QUnit.test('extension refreshes when regex and global opacity settings change', 
 });
 
 QUnit.test('extension updates font appearance in a single customHighlight write', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
 
     assert.ok(source.indexOf('var updateConfigValues = function (values)') !== -1);
     assert.ok(source.indexOf("updateConfig('fontWeight', font.fontWeight);\n                                updateConfig('fontStyle', font.fontStyle);") === -1);
@@ -48,7 +52,7 @@ QUnit.test('extension updates font appearance in a single customHighlight write'
 });
 
 QUnit.test('extension source accepts built-in taskvision icons during validation', function (assert) {
-    var source = fs.readFileSync('src/icons.js', 'utf8');
+    var source = readSource('src/icons.js');
 
     assert.ok(source.indexOf("!octicons[icon] && icon !== 'taskvision' && icon !== 'taskvision-filled'") !== -1);
 });
@@ -85,7 +89,7 @@ QUnit.test('package localizes contributed command titles', function (assert) {
 });
 
 QUnit.test('buildCodiconNames fails instead of overwriting codicons with a minimal fallback', function (assert) {
-    var source = fs.readFileSync('buildCodiconNames.js', 'utf8');
+    var source = readSource('buildCodiconNames.js');
 
     assert.ok(source.indexOf('process.exitCode = 1') !== -1);
     assert.ok(source.indexOf('writeMinimalFile') === -1);
@@ -136,7 +140,7 @@ QUnit.test('package routes tree context menus by task/context/review node types'
 });
 
 QUnit.test('tree source differentiates task/context/review labels and context values', function (assert) {
-    var source = fs.readFileSync('src/tree.js', 'utf8');
+    var source = readSource('src/tree.js');
 
     assert.ok(source.indexOf('treeItem.contextValue = "task";') !== -1);
     assert.ok(source.indexOf('treeItem.contextValue = "context";') !== -1);
@@ -149,7 +153,7 @@ QUnit.test('tree source differentiates task/context/review labels and context va
 });
 
 QUnit.test('extension applies on-demand stable ID tracking policy', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
 
     assert.ok(source.indexOf('function shouldEnsureStableIdForNode(node, options, referencedStableIds)') !== -1);
     assert.ok(source.indexOf('if (ensureOptions.forceStableIds === true)') !== -1);
@@ -160,7 +164,7 @@ QUnit.test('extension applies on-demand stable ID tracking policy', function (as
 });
 
 QUnit.test('extension limits forced stable IDs to the AI export scope', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
 
     assert.ok(source.indexOf('function getSyncNodesForRoot(rootPath, syncOptions)') !== -1);
     assert.ok(source.indexOf('Array.isArray(options.scopeNodes)') !== -1);
@@ -169,7 +173,7 @@ QUnit.test('extension limits forced stable IDs to the AI export scope', function
 });
 
 QUnit.test('extension writes AI status report before updating export baseline', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
     var exportStart = source.indexOf('function exportAiContext(node)');
     var markIndex = source.indexOf('taskMetaStore.markTasksExported', exportStart);
     var reportIndex = source.indexOf('aiContext.writeStatusReport', exportStart);
@@ -181,7 +185,7 @@ QUnit.test('extension writes AI status report before updating export baseline', 
 });
 
 QUnit.test('extension registers commands even when ripgrep is unavailable', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = readSource('src/extension.js');
     var missingRipgrepIndex = source.indexOf("TaskVision: Failed to find vscode-ripgrep");
     var firstCommandIndex = source.indexOf("vscode.commands.registerCommand('taskvision.openUrl'");
     var missingRipgrepBlock = source.slice(missingRipgrepIndex, firstCommandIndex);
