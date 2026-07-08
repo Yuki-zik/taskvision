@@ -23,6 +23,7 @@ var contextStore = require('./contextStore.js');
 var changeSessionStore = require('./changeSessionStore.js');
 var annotationParser = require('./annotationParser.js');
 var aiContext = require('./aiContext.js');
+var highlightScheme = require('./highlightScheme.js');
 
 var searchList = [];
 var currentFilter;
@@ -2348,6 +2349,55 @@ function activate(context) {
                     currentConfig.update('customHighlight', updated, customHighlightTarget);
                 });
             }
+        }));
+
+        context.subscriptions.push(vscode.commands.registerCommand('taskvision.setHighlightSchemeForAllTags', function () {
+            var currentConfig = vscode.workspace.getConfiguration('taskvision.highlights');
+            var customHighlight = currentConfig.get('customHighlight', {});
+            var defaultHighlight = currentConfig.get('defaultHighlight', {});
+            var configTarget = resolveConfigTarget();
+
+            var items = [
+                {
+                    label: '$(zap) Neon',
+                    detail: 'Enable glow preset for every tag',
+                    value: 'neon'
+                },
+                {
+                    label: '$(browser) Glass',
+                    detail: 'Enable glass preset for every tag',
+                    value: 'glass'
+                },
+                {
+                    label: '$(sparkle) Neon + Glass',
+                    detail: 'Enable both glow and glass presets for every tag',
+                    value: 'neon+glass'
+                },
+                {
+                    label: '$(circle-slash) None',
+                    detail: 'Clear scheme preset for every tag',
+                    value: 'none'
+                }
+            ];
+
+            vscode.window.showQuickPick(items, {
+                placeHolder: 'Choose a highlight scheme to apply to ALL tags',
+                matchOnDetail: true
+            }).then(function (selection) {
+                if (!selection) {
+                    return;
+                }
+
+                var updated = highlightScheme.applySchemeToAllTags(customHighlight, defaultHighlight, selection.value);
+
+                return Promise.resolve(currentConfig.update('customHighlight', updated.customHighlight, configTarget))
+                    .then(function () {
+                        return currentConfig.update('defaultHighlight', updated.defaultHighlight, configTarget);
+                    })
+                    .then(function () {
+                        vscode.window.showInformationMessage('Applied "' + selection.value + '" highlight scheme to all tags');
+                    });
+            });
         }));
 
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.customizeAppearance', function (node) {

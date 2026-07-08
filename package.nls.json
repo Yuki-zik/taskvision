@@ -48,6 +48,7 @@
     "taskvision.command.setTaskStatus.title": "Set Task Status",
     "taskvision.command.setTaskPriority.title": "Set Task Priority",
     "taskvision.command.editTaskNote.title": "Edit Task Note",
+    "taskvision.command.setHighlightSchemeForAllTags.title": "Set Highlight Scheme for All Tags",
     "taskvision.configuration.title": "TaskVision",
     "taskvision.configuration.filtering": "Filtering",
     "taskvision.configuration.filtering.excludedWorkspaces.markdownDescription": "An array of workspace names to exclude as roots in the tree (wildcards can be used).",

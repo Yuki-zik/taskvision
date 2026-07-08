@@ -235,6 +235,8 @@ TaskVision uses four independent styling channels:
 
 > `scheme` controls presets only — it no longer decides scope.
 
+**Apply a scheme to every tag at once:** run **TaskVision: Set Highlight Scheme for All Tags** from the Command Palette or the tree view's `⋯` overflow menu, then pick `neon`, `glass`, `neon+glass`, or `none`. TaskVision writes the choice into every existing `customHighlight` entry **and** `defaultHighlight`, so you no longer have to edit each tag by hand.
+
 ---
 
 ## Quick Start
