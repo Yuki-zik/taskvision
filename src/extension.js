@@ -915,7 +915,7 @@ function activate(context) {
                         ignoreMarkdownUpdate = true;
                         addTag('[ ]');
                         addTag('[x]');
-                        c.update('regex.regex', '(//|#|<!--|;|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)', true);
+                        c.update('regex.regex', '(//|#|<!--|;|/\\*|%|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)', true);
                     }
                     else if (button === MORE_INFO_BUTTON) {
                         vscode.env.openExternal(vscode.Uri.parse("https://github.com/Yuki-zik/taskvision#markdown-support"));
