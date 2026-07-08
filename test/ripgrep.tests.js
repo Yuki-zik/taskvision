@@ -93,3 +93,54 @@ QUnit.test("ripgrep.kill forwards SIGINT to active process", function (assert) {
 
     ripgrep.kill();
 });
+
+QUnit.test("ripgrep.search returns partial results when output exceeds maxBuffer", function (assert) {
+    var done = assert.async();
+    var childProcess = require('child_process');
+    var originalSpawn = childProcess.spawn;
+
+    var fakeProcess = new events.EventEmitter();
+    fakeProcess.stdout = new events.EventEmitter();
+    fakeProcess.stderr = new events.EventEmitter();
+    fakeProcess.stdout.setEncoding = function () { };
+    fakeProcess.stderr.setEncoding = function () { };
+    var killSignal;
+    fakeProcess.kill = function (signal) {
+        killSignal = signal;
+        // Emulate ripgrep stopping after being asked to stop.
+        this.emit('close', null, 'SIGINT');
+    };
+
+    childProcess.spawn = function () {
+        return fakeProcess;
+    };
+
+    // Build more than one KB of valid vimgrep output so the 1 KB buffer overflows.
+    var line = 'src/file.js:1:1:// TODO something that needs doing\n';
+    var bigChunk = '';
+    while (bigChunk.length < 2 * 1024) {
+        bigChunk += line;
+    }
+
+    ripgrep.search(process.cwd(), {
+        rgPath: process.execPath,
+        regex: '(TODO)',
+        unquotedRegex: '(TODO)',
+        additional: '',
+        globs: [],
+        maxBuffer: 1
+    }).then(function (matches) {
+        childProcess.spawn = originalSpawn;
+        assert.strictEqual(matches.truncated, true, "results are flagged as truncated");
+        assert.strictEqual(matches.maxBuffer, 1, "the buffer size is reported back to the caller");
+        assert.ok(matches.length > 0, "partial matches are still returned instead of rejecting");
+        assert.equal(killSignal, 'SIGINT', "the search process is stopped once the buffer is exceeded");
+        done();
+    }).catch(function (e) {
+        childProcess.spawn = originalSpawn;
+        assert.ok(false, "search should resolve with partial results, but rejected: " + (e && e.message));
+        done();
+    });
+
+    fakeProcess.stdout.emit('data', bigChunk);
+});
