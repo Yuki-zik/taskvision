@@ -14,7 +14,17 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 const utils = require( './utils' );
 
-var currentProcess;
+var activeProcesses = [];
+var DEFAULT_MAX_BUFFER_KB = 10240;
+
+function removeActiveProcess( proc )
+{
+    var index = activeProcesses.indexOf( proc );
+    if( index !== -1 )
+    {
+        activeProcesses.splice( index, 1 );
+    }
+}
 
 function RipgrepError( error, stderr )
 {
@@ -234,21 +244,22 @@ module.exports.search = function ripGrep( cwd, options )
 
     return new Promise( function( resolve, reject )
     {
-        const maxBufferKB = ( options.maxBuffer || 200 );
+        const maxBufferKB = ( options.maxBuffer || DEFAULT_MAX_BUFFER_KB );
         const maxBuffer = maxBufferKB * 1024;
         var results = "";
         var errors = "";
         var hasCompleted = false;
         var truncated = false;
 
-        currentProcess = child_process.spawn( rgPath, args, {
+        var rgProcess = child_process.spawn( rgPath, args, {
             cwd: cwd,
             shell: false,
             windowsHide: true
         } );
+        activeProcesses.push( rgProcess );
 
-        currentProcess.stdout.setEncoding( 'utf8' );
-        currentProcess.stderr.setEncoding( 'utf8' );
+        rgProcess.stdout.setEncoding( 'utf8' );
+        rgProcess.stderr.setEncoding( 'utf8' );
 
         function fail( error, stderr )
         {
@@ -258,11 +269,11 @@ module.exports.search = function ripGrep( cwd, options )
             }
             hasCompleted = true;
             cleanupPatternFile( options.patternFilePath );
-            currentProcess = undefined;
+            removeActiveProcess( rgProcess );
             reject( new RipgrepError( error, stderr ) );
         }
 
-        currentProcess.stdout.on( 'data', function( data )
+        rgProcess.stdout.on( 'data', function( data )
         {
             if( truncated )
             {
@@ -277,25 +288,22 @@ module.exports.search = function ripGrep( cwd, options )
                 // and let the 'close' handler resolve with the partial matches.
                 truncated = true;
                 debug( "Search output exceeded maxBuffer of " + maxBufferKB + " KB - returning partial results. Raise 'taskvision.ripgrep.ripgrepMaxBuffer' to collect more tags." );
-                if( currentProcess !== undefined )
-                {
-                    currentProcess.kill( 'SIGINT' );
-                }
+                rgProcess.kill( 'SIGINT' );
             }
         } );
 
-        currentProcess.stderr.on( 'data', function( data )
+        rgProcess.stderr.on( 'data', function( data )
         {
             debug( "Search failed:\n" + data );
             errors += data;
         } );
 
-        currentProcess.on( 'error', function( error )
+        rgProcess.on( 'error', function( error )
         {
             fail( error.message, errors );
         } );
 
-        currentProcess.on( 'close', function( code, signal )
+        rgProcess.on( 'close', function( code, signal )
         {
             if( hasCompleted )
             {
@@ -304,7 +312,7 @@ module.exports.search = function ripGrep( cwd, options )
 
             hasCompleted = true;
             cleanupPatternFile( options.patternFilePath );
-            currentProcess = undefined;
+            removeActiveProcess( rgProcess );
 
             if( truncated )
             {
@@ -340,23 +348,23 @@ module.exports.search = function ripGrep( cwd, options )
 
 module.exports.kill = function()
 {
-    if( currentProcess !== undefined )
+    activeProcesses.slice().forEach( function( proc )
     {
         try
         {
-            currentProcess.kill( 'SIGINT' );
+            proc.kill( 'SIGINT' );
         }
         catch( e )
         {
             try
             {
-                currentProcess.kill();
+                proc.kill();
             }
             catch( ignored )
             {
             }
         }
-    }
+    } );
 };
 
 class Match
@@ -371,8 +379,8 @@ class Match
         if( match && match.groups )
         {
             this.fsPath = match.groups.file;
-            this.line = parseInt( match.groups.line );
-            this.column = parseInt( match.groups.column );
+            this.line = parseInt( match.groups.line, 10 );
+            this.column = parseInt( match.groups.column, 10 );
             this.match = match.groups.todo;
         }
         else // Fall back to old method
@@ -387,10 +395,10 @@ class Match
             var parts = matchText.split( ':' );
             var hasColumn = ( parts.length === 4 );
             this.fsPath += parts.shift();
-            this.line = parseInt( parts.shift() );
+            this.line = parseInt( parts.shift(), 10 );
             if( hasColumn === true )
             {
-                this.column = parseInt( parts.shift() );
+                this.column = parseInt( parts.shift(), 10 );
             }
             else
             {
@@ -399,9 +407,19 @@ class Match
             this.match = parts.join( ':' );
 
         }
+
+        if( isNaN( this.line ) )
+        {
+            this.line = 0;
+        }
+        if( isNaN( this.column ) )
+        {
+            this.column = 1;
+        }
     }
 }
 
 module.exports.Match = Match;
 module.exports._parseAdditionalArgs = parseAdditionalArgs;
 module.exports._buildArgs = buildArgs;
+module.exports._defaultMaxBufferKb = DEFAULT_MAX_BUFFER_KB;

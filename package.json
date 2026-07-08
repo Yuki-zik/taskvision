@@ -819,7 +819,7 @@
                         "default": {
                             "BLOCKER": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "scheme": "neon+glass",
                                 "background": "#FF1744",
                                 "gutterIcon": true,
@@ -832,7 +832,7 @@
                             },
                             "FIXME": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#9C27B0",
                                 "gutterIcon": true,
                                 "icon": "flame",
@@ -846,7 +846,7 @@
                             },
                             "BUG": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#FF7043",
                                 "gutterIcon": true,
                                 "icon": "bug",
@@ -859,7 +859,7 @@
                             },
                             "HACK": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#E040FB",
                                 "gutterIcon": true,
                                 "icon": "x-circle",
@@ -873,7 +873,7 @@
                             },
                             "XXX": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#FFD740",
                                 "gutterIcon": true,
                                 "icon": "tools",
@@ -886,7 +886,7 @@
                             },
                             "TODO": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#42A5F5",
                                 "gutterIcon": true,
                                 "icon": "tasklist",
@@ -899,7 +899,7 @@
                             },
                             "[ ]": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#26C6DA",
                                 "gutterIcon": true,
                                 "icon": "issue-opened",
@@ -913,7 +913,7 @@
                             },
                             "[x]": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#81C784",
                                 "gutterIcon": true,
                                 "icon": "issue-closed",
@@ -926,7 +926,7 @@
                             },
                             "[ x]": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#81C784",
                                 "gutterIcon": true,
                                 "icon": "issue-closed",
@@ -939,7 +939,7 @@
                             },
                             "NOTE": {
                                 "glowType": "tag",
-                                "glassType": "whole-line",
+                                "glassType": "tag",
                                 "background": "#546E7A",
                                 "foreground": "#FFEE58",
                                 "gutterIcon": true,
@@ -1127,7 +1127,7 @@
                             "scheme": "neon+glass",
                             "colorType": "text",
                             "glowType": "tag",
-                            "glassType": "whole-line",
+                            "glassType": "tag",
                             "fontType": "tag"
                         },
                         "markdownDescription": "%taskvision.configuration.highlights.defaultHighlight.markdownDescription%",
@@ -1716,7 +1716,7 @@
                 "type": "object",
                 "properties": {
                     "taskvision.ripgrep.ripgrepMaxBuffer": {
-                        "default": 20480,
+                        "default": 10240,
                         "markdownDescription": "%taskvision.configuration.ripgrep.ripgrepMaxBuffer.markdownDescription%",
                         "type": "integer"
                     },

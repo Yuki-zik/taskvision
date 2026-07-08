@@ -513,7 +513,7 @@ function locateTreeChildNode(rootNode, pathElements, tag, subTag) {
                 tagPathList.push(subTag);
             }
             tagPathList.push(tag);
-            parentNode = createPathNode(rootNode ? rootNode.fsPath : JSON.stringify(result), tagPathList, subTag);
+            parentNode = createPathNode(rootNode ? rootNode.fsPath : '', tagPathList, subTag);
             parentNode.isRootTagNode = true;
             parentNode.tag = tag;
             parentNodes.push(parentNode);
@@ -525,7 +525,7 @@ function locateTreeChildNode(rootNode, pathElements, tag, subTag) {
         if (parentNode === undefined) {
             var subTagPathList = [];
             subTagPathList.push(subTag);
-            parentNode = createPathNode(rootNode ? rootNode.fsPath : JSON.stringify(result), subTagPathList, subTag);
+            parentNode = createPathNode(rootNode ? rootNode.fsPath : '', subTagPathList, subTag);
             parentNode.subTag = subTag;
             parentNodes.push(parentNode);
         }
@@ -773,6 +773,7 @@ class TreeNodeProvider {
         }
         catch (e) {
             console.log("Failed to create tree item: " + e);
+            treeItem = new vscode.TreeItem((node && node.label) || "");
         }
 
         treeItem.id = node.id;
@@ -1233,14 +1234,11 @@ class TreeNodeProvider {
                 this.exportChildren(parent[child.label], this.getChildren(child));
             }
             else if (!child.notExported) {
-                var format = config.labelFormat();
                 var itemLabel = "line " + (child.line + 1);
                 if (config.shouldShowTagsOnly() === true) {
                     itemLabel = child.fsPath + " " + itemLabel;
                 }
-                parent[itemLabel] = (format !== "") ?
-                    renderTodoDisplayLabel(child) :
-                    renderTodoDisplayLabel(child);
+                parent[itemLabel] = renderTodoDisplayLabel(child);
             }
         }, this);
         return parent;
