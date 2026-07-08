@@ -1677,7 +1677,7 @@
                 "type": "object",
                 "properties": {
                     "taskvision.regex.regex": {
-                        "default": "(//|#|<!--|;|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)",
+                        "default": "(//|#|<!--|;|/\\*|%|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)",
                         "markdownDescription": "%taskvision.configuration.regex.regex.markdownDescription%",
                         "type": "string",
                         "minLength": 1,

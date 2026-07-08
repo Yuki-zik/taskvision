@@ -260,6 +260,22 @@ QUnit.test("utils.getRegexSource sorts the tags in reverse order to allow more s
     assert.equal(utils.getRegexSource(), "(TODO\\(API\\)|TODO|FIXME)");
 });
 
+QUnit.test("default regex detects tags in %-style (LaTeX/Matlab) comments", function (assert) {
+    var testConfig = stubs.getTestConfig();
+    testConfig.regexSource = "(//|#|<!--|;|/\\*|%|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)";
+    testConfig.tagList = ["TODO", "FIXME"];
+    utils.init(testConfig);
+
+    var regex = utils.getRegexForEditorSearch(false);
+
+    assert.ok(regex.test("% TODO fix this"), "matches % TODO");
+    assert.ok(regex.test("% FIXME later"), "matches % FIXME");
+    assert.ok(regex.test("// TODO still works"), "still matches // TODO");
+    assert.ok(regex.test("# TODO still works"), "still matches # TODO");
+
+    assert.equal(utils.extractTag("% TODO fix this").tag, "TODO", "extracts TODO from % comment");
+});
+
 QUnit.test("utils.getRegexSource returns the regex source and escapes other regex characters", function (assert) {
     var testConfig = stubs.getTestConfig();
     testConfig.tagList = [

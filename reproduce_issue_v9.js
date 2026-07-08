@@ -8,7 +8,7 @@ const vscode = {
                         if (key === 'tags') return ["BLOCKER", "BUG", "FIXME", "HACK", "TODO", "[ ]", "[x]", "[ x]", "NOTE", "XXX"];
                     }
                     if (section === 'taskvision.regex') {
-                        if (key === 'regex') return "(//|#|<!--|;|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)";
+                        if (key === 'regex') return "(//|#|<!--|;|/\\*|%|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)";
                         if (key === 'regexCaseSensitive') return true;
                         if (key === 'enableMultiLine') return false;
                         if (key === 'subTagRegex') return "";
