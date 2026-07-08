@@ -554,14 +554,14 @@ function activate(context) {
         statusBarIndicator.command = "taskvision.stopScan";
         statusBarIndicator.tooltip = "Click to interrupt scan";
 
-        searchList = getRootFolders();
+        searchList = getRootFolders() || [];
 
         if (searchList.length === 0) {
             searchWorkspaces(searchList);
         }
 
         if (config.shouldIgnoreGitSubmodules()) {
-            submoduleExcludeGlobs = [];
+            var submoduleExcludeGlobs = [];
             searchList.forEach(function (rootPath) {
                 submoduleExcludeGlobs = submoduleExcludeGlobs.concat(utils.getSubmoduleExcludeGlobs(rootPath));
             });
@@ -585,6 +585,10 @@ function activate(context) {
             if (vscode.workspace.workspaceFolders) {
                 vscode.workspace.workspaceFolders.map(function (folder) {
                     child_process.exec("git rev-parse HEAD", { cwd: folder.uri.fsPath }, (err, stdout, stderr) => {
+                        if (err) {
+                            lastGitHead[folder.uri.fsPath] = '';
+                            return;
+                        }
                         var gitHead = stdout.toString();
                         if (lastGitHead[folder.uri.fsPath] !== undefined && gitHead != lastGitHead[folder.uri.fsPath]) {
                             debug('Rescan triggered by change to git repository');
@@ -1002,6 +1006,26 @@ function activate(context) {
         });
     }
 
+    function getSyncNodesForRoot(rootPath, syncOptions) {
+        var options = syncOptions || {};
+        var scopeNodes;
+
+        if (options.scopeNodesByRoot && Array.isArray(options.scopeNodesByRoot[rootPath])) {
+            scopeNodes = options.scopeNodesByRoot[rootPath];
+        }
+        else if (Array.isArray(options.scopeNodes)) {
+            scopeNodes = options.scopeNodes;
+        }
+
+        if (scopeNodes) {
+            return scopeNodes.filter(function (node) {
+                return node && (node.rootPath || getWorkspaceRootForFile(node.fsPath)) === rootPath;
+            });
+        }
+
+        return getNodesForRoot(rootPath);
+    }
+
     function collectRootPaths(nodes) {
         var seen = {};
         (nodes || []).forEach(function (node) {
@@ -1039,13 +1063,68 @@ function activate(context) {
         };
     }
 
-    function ensureStableIdsInSource(nodes) {
+    function collectReferencedStableIds(nodes) {
+        var referencedStableIds = {};
+        (nodes || []).forEach(function (node) {
+            (node && node.taskRefs || []).forEach(function (taskRef) {
+                referencedStableIds[taskRef] = true;
+            });
+            (node && node.contextRefs || []).forEach(function (contextRef) {
+                referencedStableIds[contextRef] = true;
+            });
+        });
+        return referencedStableIds;
+    }
+
+    function shouldEnsureStableIdForNode(node, options, referencedStableIds) {
+        var ensureOptions = options || {};
+        if (ensureOptions.forceStableIds === true) {
+            return true;
+        }
+
+        if (!node) {
+            return false;
+        }
+
+        if (isContextAnnotationNode(node)) {
+            return !!node.contextKind;
+        }
+
+        if (!isTaskAnnotationNode(node)) {
+            return false;
+        }
+
+        var derivedStableId = deriveStableIdForNode(node);
+        if (derivedStableId && referencedStableIds && referencedStableIds[derivedStableId] === true) {
+            return true;
+        }
+
+        if (node.note) {
+            return true;
+        }
+
+        if (node.priority && node.priority !== config.defaultTaskPriority()) {
+            return true;
+        }
+
+        if (Array.isArray(node.contextRefs) && node.contextRefs.length > 0) {
+            return true;
+        }
+
+        var status = taskState.normaliseStatus(node.status) || taskState.defaultStatusForTag(node.actualTag || node.tag);
+        return status !== 'todo' && status !== 'idea';
+    }
+
+    function ensureStableIdsInSource(nodes, options) {
+        var ensureOptions = options || {};
+        var referencedStableIds = collectReferencedStableIds(nodes);
         var candidates = (nodes || []).filter(function (node) {
             return node &&
                 node.rootPath &&
                 node.actualTag &&
                 (isTaskAnnotationNode(node) || isContextAnnotationNode(node)) &&
-                !node.explicitStableId;
+                !node.explicitStableId &&
+                shouldEnsureStableIdForNode(node, ensureOptions, referencedStableIds);
         });
 
         if (candidates.length === 0) {
@@ -1118,9 +1197,12 @@ function activate(context) {
         var updatedAt = syncOptions.updatedAt || new Date().toISOString();
         var actor = syncOptions.actor || 'user';
         var outputDir = config.aiContextOutputDir();
+        var initialRootNodes = getSyncNodesForRoot(rootPath, syncOptions);
 
-        return ensureStableIdsInSource(getNodesForRoot(rootPath)).then(function () {
-            var rootNodes = getNodesForRoot(rootPath);
+        return ensureStableIdsInSource(initialRootNodes, {
+                forceStableIds: syncOptions.forceStableIds === true
+            }).then(function () {
+            var rootNodes = getSyncNodesForRoot(rootPath, syncOptions);
             var taskNodes = rootNodes.filter(isTaskAnnotationNode);
             var contextNodes = rootNodes.filter(isContextAnnotationNode);
             var reviewNodes = rootNodes.filter(isReviewAnnotationNode);
@@ -1898,7 +1980,9 @@ function activate(context) {
         syncRoots(Object.keys(grouped), scopeLabel, {
             actor: 'user',
             rebuildContext: false,
-            updatedAt: generatedAt
+            updatedAt: generatedAt,
+            forceStableIds: true,
+            scopeNodesByRoot: grouped
         }).then(function (syncedRoots) {
             Object.keys(grouped).forEach(function (rootPath) {
                 var rootNodes = syncedRoots[rootPath] || grouped[rootPath];
@@ -1909,8 +1993,8 @@ function activate(context) {
                     generatedAt,
                     config.aiContextOutputDir()
                 );
-                taskMetaStore.markTasksExported(rootPath, rootNodes.filter(isTaskAnnotationNode), generatedAt, config.aiContextOutputDir());
                 aiContext.writeStatusReport(rootPath, getNodesForRoot(rootPath), generatedAt, config.aiContextOutputDir());
+                taskMetaStore.markTasksExported(rootPath, rootNodes.filter(isTaskAnnotationNode), generatedAt, config.aiContextOutputDir());
                 createdPaths.push(paths.markdown);
             });
 
@@ -2035,10 +2119,9 @@ function activate(context) {
             return vscode.workspace.getConfiguration('taskvision.tree').autoRefresh === true && config.scanMode() !== SCAN_MODE_WORKSPACE_ONLY;
         }
 
-        // We can't do anything if we can't find ripgrep
+        // Commands should still register without ripgrep so the view never exposes dead menu items.
         if (!config.ripgrepPath()) {
             vscode.window.showErrorMessage("TaskVision: Failed to find vscode-ripgrep - please install ripgrep manually and set 'taskvision.ripgrep' to point to the executable");
-            return;
         }
 
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.openUrl', (url) => {
@@ -2705,6 +2788,10 @@ function activate(context) {
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.goToNext', function () {
             var editor = vscode.window.activeTextEditor;
 
+            if (!editor) {
+                return;
+            }
+
             var text = editor.document.getText();
             var regex = utils.getRegexForEditorSearch(false);
 
@@ -2745,6 +2832,10 @@ function activate(context) {
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.goToPrevious', function () {
             var editor = vscode.window.activeTextEditor;
 
+            if (!editor) {
+                return;
+            }
+
             var text = editor.document.getText();
 
             var newSelections = [];
@@ -2759,6 +2850,7 @@ function activate(context) {
                 var lastMatch;
                 var lastMatchOffset = -1;
 
+                var result;
                 while (result = regex.exec(textToSearch)) {
                     lastMatch = result;
                     lastMatchOffset = result.index;
@@ -2904,7 +2996,7 @@ function activate(context) {
                     }
                     else {
                         var keep = false;
-                        var tempSearchList = getRootFolders();
+                        var tempSearchList = getRootFolders() || [];
 
                         if (tempSearchList.length === 0) {
                             searchWorkspaces(tempSearchList);

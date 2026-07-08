@@ -67,10 +67,13 @@ QUnit.test("utils.extractTag parses TaskVision directives", function (assert) {
     utils.init(testConfig);
 
     var task = utils.extractTag("// TODO [todo] [tv:id=task.auth-refresh.c3f12a] fix refresh");
+    var tailTask = utils.extractTag("// TODO [todo] fix refresh [tv:id=task.auth-refresh.c3f12a]");
     var context = utils.extractTag("// NOTE [idea] [tv:id=ctx.auth-refresh.8a91de] [tv:ctx=invariant] refresh must stay single-flight");
     var review = utils.extractTag("// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.auth-refresh.c3f12a] [tv:review=verify] verify retry flow");
 
     assert.equal(task.stableId, "task.auth-refresh.c3f12a");
+    assert.equal(tailTask.stableId, "task.auth-refresh.c3f12a");
+    assert.equal(tailTask.withoutTag, "fix refresh");
     assert.equal(task.annotationKind, "task");
     assert.equal(context.contextKind, "invariant");
     assert.equal(context.annotationKind, "context");
@@ -79,7 +82,7 @@ QUnit.test("utils.extractTag parses TaskVision directives", function (assert) {
     assert.equal(review.annotationKind, "review");
 });
 
-QUnit.test("utils.upsertTvDirectivesInLine inserts TaskVision directives after status", function (assert) {
+QUnit.test("utils.upsertTvDirectivesInLine appends TaskVision directives after human text", function (assert) {
     var testConfig = stubs.getTestConfig();
     testConfig.tagList = ["TODO"];
     utils.init(testConfig);
@@ -91,19 +94,50 @@ QUnit.test("utils.upsertTvDirectivesInLine inserts TaskVision directives after s
         stableId: "task.cache.123abc"
     });
 
-    assert.equal(updated, "// TODO [todo] [tv:id=task.cache.123abc] fix cache");
+    assert.equal(updated, "// TODO [todo] fix cache [tv:id=task.cache.123abc]");
 });
 
-QUnit.test("annotationParser builds directive tokens in stable order", function (assert) {
+QUnit.test("utils.upsertTvDirectivesInLine normalises existing directives to the line tail", function (assert) {
+    var testConfig = stubs.getTestConfig();
+    testConfig.tagList = ["TODO"];
+    utils.init(testConfig);
+
+    var updated = utils.upsertTvDirectivesInLine("// TODO [todo] [tv:id=task.old.000000] fix cache", {
+        actualTag: "TODO",
+        column: 4
+    }, {
+        stableId: "task.cache.123abc"
+    });
+
+    assert.equal(updated, "// TODO [todo] fix cache [tv:id=task.cache.123abc]");
+});
+
+QUnit.test("utils.buildAnnotationComment appends directives after human text", function (assert) {
+    var context = utils.buildAnnotationComment("cache.js", "const x = 1;", "NOTE", "idea", {
+        stableId: "ctx.cache.456def",
+        contextKind: "invariant"
+    }, "cache writes stay synchronous");
+
+    var review = utils.buildAnnotationComment("cache.js", "const x = 1;", "NOTE", "review", {
+        reviewKind: "verify",
+        taskRefs: ["task.cache.123abc"],
+        sessionId: "sess.20260308.codex.001"
+    }, "verify retry path");
+
+    assert.equal(context, "// NOTE [idea] cache writes stay synchronous [tv:ctx=invariant] [tv:id=ctx.cache.456def]");
+    assert.equal(review, "// NOTE [review] verify retry path [tv:review=verify] [tv:task=task.cache.123abc] [tv:session=sess.20260308.codex.001]");
+});
+
+QUnit.test("annotationParser builds directive tokens in human-readable tail order", function (assert) {
     assert.deepEqual(annotationParser.buildDirectiveTokens({
         stableId: "ctx.auth-refresh.8a91de",
         contextKind: "invariant",
         taskRefs: ["task.auth-refresh.c3f12a"],
         sessionId: "sess.20260308.codex.001"
     }), [
-        "[tv:id=ctx.auth-refresh.8a91de]",
         "[tv:ctx=invariant]",
         "[tv:task=task.auth-refresh.c3f12a]",
-        "[tv:session=sess.20260308.codex.001]"
+        "[tv:session=sess.20260308.codex.001]",
+        "[tv:id=ctx.auth-refresh.8a91de]"
     ]);
 });

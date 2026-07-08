@@ -10,7 +10,7 @@
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/version-2.0.1-3B82F6?style=flat-square" alt="Version 2.0.1" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/tests-100%20passing-22C55E?style=flat-square" alt="100 passing tests" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/tests-145%20passing-22C55E?style=flat-square" alt="145 passing tests" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
 </p>
 
@@ -77,10 +77,10 @@ TaskVision 内置以下状态：
 | `paused` | 暂时搁置 | `idea` | 想法或观察，还未进入正式任务流 |
 
 ```ts
-// TODO [todo] [tv:id=task.task.19d80a] 重构缓存失效逻辑
-// TODO [blocked] [tv:id=task.api-schema.9950a8] 等待 API schema
-// TODO [review] [tv:id=task.qa.371dc2] 重试流程已改完，等待 QA
-// NOTE [idea] [tv:id=task.parser-renderer.f4916c] 可以拆分 parser 和 renderer
+// TODO [todo] 重构缓存失效逻辑
+// TODO [blocked] 等待 API schema
+// TODO [review] 重试流程已改完，等待 QA
+// NOTE [idea] 可以拆分 parser 和 renderer
 ```
 
 **兼容规则：**
@@ -96,31 +96,34 @@ TaskVision 内置以下状态：
 
 ## AI 协作语法
 
-TaskVision 支持在 `TAG [status]` 之后继续写 `tv:` 指令：
+TaskVision 支持在面向人类的正文之后追加可选 `tv:` 指令。日常注释不需要手写 ID；只有任务或上下文需要持久追踪时，TaskVision 才会补 stable ID。
 
 ```ts
-// TODO [todo] [tv:id=task.auth-refresh.c3f12a] 修复 refresh 并发问题
-// NOTE [idea] [tv:id=ctx.auth-refresh.8a91de] [tv:ctx=invariant] refresh 必须保持 single-flight
-// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.auth-refresh.c3f12a] [tv:review=verify] 验证重试分支
+// TODO [todo] 修复 refresh 并发问题
+// TODO [doing] 修复 refresh 并发问题 [tv:id=task.auth-refresh.c3f12a]
+// NOTE [idea] refresh 必须保持 single-flight [tv:ctx=invariant] [tv:id=ctx.auth-refresh.8a91de]
+// NOTE [review] 验证重试分支 [tv:review=verify] [tv:task=task.auth-refresh.c3f12a] [tv:session=sess.20260308.codex.001]
 ```
 
 源码里的三类注释：
 
 | 类型 | 常见形态 | 作用 |
 | :--- | :--- | :--- |
-| `task` | `TODO/FIXME/[ ]/[x] + [tv:id]` | 进入任务状态流的工作项 |
-| `context` | `NOTE [idea] + [tv:ctx=...]` | 人类或 AI 标注的重要约束、决策、不变量 |
-| `review` | `NOTE [review] + [tv:session=...] + [tv:review=...]` | 带会话 ID 的 AI review / follow-up 注释 |
+| `task` | `TODO/FIXME/[ ]/[x] + 可选 [tv:id]` | 进入任务状态流的工作项 |
+| `context` | `NOTE [idea] + [tv:ctx=...] + 可选 [tv:id]` | 人类或 AI 标注的重要约束、决策、不变量 |
+| `review` | `NOTE [review] + [tv:review=...] + [tv:session=...]` | 带会话 ID 的 AI review / follow-up 注释 |
 
 支持的 `tv:` 指令：
 
 | 指令 | 说明 |
 | :--- | :--- |
-| `[tv:id=...]` | 任务或上下文锚点的稳定 ID |
+| `[tv:id=...]` | 任务或上下文锚点的稳定 ID，通常由 TaskVision 管理 |
 | `[tv:ctx=...]` | 上下文类型，如 `must-read`、`constraint`、`invariant`、`decision` |
 | `[tv:task=...]` | 关联的任务 stable ID，可写多个 |
 | `[tv:review=...]` | review 类型，如 `changed`、`why`、`risk`、`verify`、`blocked`、`followup` |
 | `[tv:session=...]` | 当前 planning / review / implementation 会话 ID |
+
+只有在需要持久链接时才需要 stable ID：sidecar 元数据、`taskRefs` / `contextRefs`、AI context 导出、长期 context 锚点。临时 TODO 和普通想法可以保持为可读的轻量注释。
 
 ---
 
@@ -133,9 +136,9 @@ TaskVision 支持在 `TAG [status]` 之后继续写 `tv:` 指令：
 | **Set Task Status** | 直接改源码里的 `[status]` |
 | **Set Task Priority** | 把优先级写入 `.taskvision/tasks-meta.json` |
 | **Edit Task Note** | 给 AI 总结和交接补充备注 |
-| **Add Context Annotation** | 在当前行上方插入 `NOTE [idea] [tv:ctx=...] ...` 上下文注释 |
+| **Add Context Annotation** | 在当前行上方插入 `NOTE [idea] ... [tv:ctx=...]` 上下文注释 |
 | **Start Agent Session** | 创建或切换当前工作区的活跃 AI 会话 |
-| **Write Agent Annotations** | 在当前行上方插入 `NOTE [review] [tv:session=...] [tv:review=...] ...` |
+| **Write Agent Annotations** | 在当前行上方插入 `NOTE [review] ... [tv:review=...] [tv:session=...]` |
 | **Sync Data Model** | 对齐源码注释、sidecar JSON 和导出的 AI 上下文 |
 | **Add Missing Inline Statuses** | 给可见范围内还没写状态的任务补上状态文字 |
 | **Filter By Status** | 按一个或多个状态筛选树 |
@@ -223,13 +226,15 @@ TaskVision 使用四个独立样式通道：
 
 **支持的范围：** `tag` · `text` · `tag-and-comment` · `text-and-comment` · `tag-and-subTag` · `line` · `whole-line` · `none`
 
+玻璃通道默认建议使用 `tag`，只给任务标记本身做轻玻璃徽标；只有明确想要包住当前行文本时才使用 `line`，想铺满整个编辑器宽度时才使用 `whole-line`。
+
 **scheme 规则：**
 
 | Scheme | 效果 |
 | :--- | :--- |
-| `"neon"` | 只启用辉光预设 |
-| `"glass"` | 只启用玻璃预设 |
-| `"neon+glass"` | 同时启用两者 |
+| `"neon"` | 启用文字层霓虹 / 亚克力辉光 |
+| `"glass"` | 启用玻璃色系；设置 `glassOpacity` 或 `glassBorderOpacity` 后才渲染玻璃填充或边框 |
+| `"neon+glass"` | 启用文字层霓虹 / 亚克力辉光，并允许按需开启玻璃填充或边框 |
 
 > `scheme` 只控制预设启用，不再决定作用范围。
 
@@ -249,7 +254,7 @@ TaskVision 使用四个独立样式通道：
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   },
   "FIXME": {
@@ -258,7 +263,7 @@ TaskVision 使用四个独立样式通道：
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   },
   "[ ]": {
@@ -267,7 +272,7 @@ TaskVision 使用四个独立样式通道：
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   },
   "[x]": {
@@ -276,8 +281,7 @@ TaskVision 使用四个独立样式通道：
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   }
 }
@@ -286,15 +290,15 @@ TaskVision 使用四个独立样式通道：
 然后写一些这样的注释试试：
 
 ```ts
-// TODO [todo] [tv:id=task.onboarding.7e4666] 发布新版 onboarding
-// TODO [blocked] [tv:id=task.task.3be64c] 等法务文案
-// TODO [review] [tv:id=task.task.11d4d6] 快捷键逻辑已改完
-// NOTE [idea] [tv:id=task.command-layer-render-lay.3e95c7] 可以拆成 command layer 和 render layer
+// TODO [todo] 发布新版 onboarding
+// TODO [blocked] 等法务文案
+// TODO [review] 快捷键逻辑已改完
+// NOTE [idea] 可以拆成 command layer 和 render layer
 ```
 
 ### 分通道亮度控制
 
-高亮是多层叠加出来的，你现在可以分别调文字、辉光、玻璃背景和玻璃边框：
+高亮是多层叠加出来的，你现在可以分别调文字、辉光、可选玻璃填充和玻璃边框：
 
 ```jsonc
 "taskvision.highlights.foregroundOpacity": 90,
@@ -304,6 +308,8 @@ TaskVision 使用四个独立样式通道：
 ```
 
 这些键也可以写在 `taskvision.highlights.customHighlight` 的单个标签配置里。旧的 `opacity` 仍然保留，但现在只是 `glassOpacity` 的兼容别名。
+
+对玻璃类 scheme 来说，`background` 主要表示强调色。TaskVision 默认把亚克力效果保留在文字层，不再添加填充背景，因此 `#42A5F566` 这类旧的高 alpha 配置不会变成彩色实心块。需要玻璃填充或边框徽标 / 背景带时，请显式设置 `glassOpacity` 或 `glassBorderOpacity`。
 
 ---
 

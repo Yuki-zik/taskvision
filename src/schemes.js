@@ -57,9 +57,9 @@ function getPreset(schemeName, lightBaseColor, darkBaseColor, channelOptions) {
     var defaultAccent = '#42A5F5';
     var lightColor = resolveColor(lightBaseColor, defaultAccent);
     var darkColor = resolveColor(darkBaseColor, lightColor);
-    var glowOpacity = normalizeOpacity(channelOptions.glowOpacity, 100);
-    var glassOpacity = normalizeOpacity(channelOptions.glassOpacity, 15);
-    var glassBorderOpacity = normalizeOpacity(channelOptions.glassBorderOpacity, 60);
+    var glowOpacity = normalizeOpacity(channelOptions.glowOpacity, 45);
+    var glassOpacity = normalizeOpacity(channelOptions.glassOpacity, undefined);
+    var glassBorderOpacity = normalizeOpacity(channelOptions.glassBorderOpacity, undefined);
 
     var hasGlow = schemeName === 'neon' || schemeName === 'neon+glass';
     var hasGlass = schemeName === 'glass' || schemeName === 'neon+glass';
@@ -67,19 +67,19 @@ function getPreset(schemeName, lightBaseColor, darkBaseColor, channelOptions) {
     return {
         lightColor: lightColor,
         darkColor: darkColor,
-        glow: hasGlow ? {
+        glow: hasGlow && glowOpacity !== undefined ? {
             light: { textShadow: getGlowShadow(lightColor, glowOpacity) },
             dark: { textShadow: getGlowShadow(darkColor, glowOpacity) }
         } : undefined,
         glass: hasGlass ? {
             borderRadius: '6px',
             light: {
-                backgroundColor: withAlpha(lightColor, glassOpacity),
-                border: '1px solid ' + withAlpha(lightColor, glassBorderOpacity)
+                backgroundColor: glassOpacity !== undefined ? withAlpha(lightColor, glassOpacity) : undefined,
+                border: glassBorderOpacity !== undefined ? '1px solid ' + withAlpha(lightColor, glassBorderOpacity) : undefined
             },
             dark: {
-                backgroundColor: withAlpha(darkColor, glassOpacity),
-                border: '1px solid ' + withAlpha(darkColor, glassBorderOpacity)
+                backgroundColor: glassOpacity !== undefined ? withAlpha(darkColor, glassOpacity) : undefined,
+                border: glassBorderOpacity !== undefined ? '1px solid ' + withAlpha(darkColor, glassBorderOpacity) : undefined
             }
         } : undefined
     };

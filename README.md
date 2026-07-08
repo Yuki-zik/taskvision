@@ -10,7 +10,7 @@
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/version-2.0.1-3B82F6?style=flat-square" alt="Version 2.0.1" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/tests-100%20passing-22C55E?style=flat-square" alt="100 passing tests" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/tests-145%20passing-22C55E?style=flat-square" alt="145 passing tests" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
 </p>
 
@@ -79,10 +79,10 @@ TaskVision supports these built-in task states:
 | `paused` | Intentionally deferred | `idea` | Observation or future direction |
 
 ```ts
-// TODO [todo] [tv:id=task.refactor-cache-invalidat.13c895] refactor cache invalidation
-// TODO [blocked] [tv:id=task.waiting-for-the-api-sche.34bfd1] waiting for the API schema
-// TODO [review] [tv:id=task.retry-flow-rewritten-pen.abfec3] retry flow rewritten, pending QA
-// NOTE [idea] [tv:id=task.split-parser-and-rendere.b13966] split parser and renderer
+// TODO [todo] refactor cache invalidation
+// TODO [blocked] waiting for the API schema
+// TODO [review] retry flow rewritten, pending QA
+// NOTE [idea] split parser and renderer
 ```
 
 **Compatibility rules:**
@@ -98,31 +98,34 @@ TaskVision supports these built-in task states:
 
 ## AI Collaboration Syntax
 
-TaskVision supports extra inline directives after the tag / status pair:
+TaskVision supports optional `tv:` directives after the human-readable text. Most everyday comments do not need an ID; TaskVision adds stable IDs only when a task or context needs durable tracking.
 
 ```ts
-// TODO [todo] [tv:id=task.auth-refresh.c3f12a] fix refresh concurrency
-// NOTE [idea] [tv:id=ctx.auth-refresh.8a91de] [tv:ctx=invariant] refresh must stay single-flight
-// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.auth-refresh.c3f12a] [tv:review=verify] verify retry flow
+// TODO [todo] fix refresh concurrency
+// TODO [doing] fix refresh concurrency [tv:id=task.auth-refresh.c3f12a]
+// NOTE [idea] refresh must stay single-flight [tv:ctx=invariant] [tv:id=ctx.auth-refresh.8a91de]
+// NOTE [review] verify retry flow [tv:review=verify] [tv:task=task.auth-refresh.c3f12a] [tv:session=sess.20260308.codex.001]
 ```
 
 Three source annotation classes are recognized:
 
 | Class | Typical form | Purpose |
 | :--- | :--- | :--- |
-| `task` | `TODO/FIXME/[ ]/[x] + [tv:id]` | Work item tracked in task state flow |
-| `context` | `NOTE [idea] + [tv:ctx=...]` | Human or AI-authored constraint / invariant / decision |
-| `review` | `NOTE [review] + [tv:session=...] + [tv:review=...]` | Session-scoped AI review or follow-up note |
+| `task` | `TODO/FIXME/[ ]/[x] + optional [tv:id]` | Work item tracked in task state flow |
+| `context` | `NOTE [idea] + [tv:ctx=...] + optional [tv:id]` | Human or AI-authored constraint / invariant / decision |
+| `review` | `NOTE [review] + [tv:review=...] + [tv:session=...]` | Session-scoped AI review or follow-up note |
 
 Supported `tv:` directives:
 
 | Directive | Meaning |
 | :--- | :--- |
-| `[tv:id=...]` | Stable ID for a task or context anchor |
+| `[tv:id=...]` | Stable ID for a task or context anchor, usually managed by TaskVision |
 | `[tv:ctx=...]` | Context kind: `must-read`, `constraint`, `invariant`, `decision`, ... |
 | `[tv:task=...]` | Task stable ID(s) linked to a context or review note |
 | `[tv:review=...]` | Review kind: `changed`, `why`, `risk`, `verify`, `blocked`, `followup` |
 | `[tv:session=...]` | Active planning / review / implementation session ID |
+
+Stable IDs are required only when an annotation needs durable links: sidecar metadata, `taskRefs` / `contextRefs`, AI context export, or long-lived context anchors. Temporary TODOs and ideas can stay as plain human-readable comments.
 
 ---
 
@@ -135,9 +138,9 @@ TaskVision supports a full task + AI collaboration workflow directly from the tr
 | **Set Task Status** | Rewrites the inline `[status]` token in source |
 | **Set Task Priority** | Stores priority in `.taskvision/tasks-meta.json` |
 | **Edit Task Note** | Stores extra context for summaries and handoff |
-| **Add Context Annotation** | Inserts a `NOTE [idea] [tv:ctx=...] ...` context anchor above the current line |
+| **Add Context Annotation** | Inserts a `NOTE [idea] ... [tv:ctx=...]` context anchor above the current line |
 | **Start Agent Session** | Creates or switches the active workspace session used by AI review notes |
-| **Write Agent Annotations** | Inserts `NOTE [review] [tv:session=...] [tv:review=...] ...` above the current line |
+| **Write Agent Annotations** | Inserts `NOTE [review] ... [tv:review=...] [tv:session=...]` above the current line |
 | **Sync Data Model** | Reconciles source annotations, sidecar JSON stores, and exported AI context |
 | **Add Missing Inline Statuses** | Backfills status tokens for visible tasks without one |
 | **Filter By Status** | Filters the tree by one or more states |
@@ -225,13 +228,15 @@ TaskVision uses four independent styling channels:
 
 **Supported scopes:** `tag` · `text` · `tag-and-comment` · `text-and-comment` · `tag-and-subTag` · `line` · `whole-line` · `none`
 
+Use `tag` for the glass channel when you want a compact translucent badge around the task marker. Use `line` only when you intentionally want a band around the line text, and `whole-line` only when you want the background to stretch across the full editor width.
+
 **Scheme rules:**
 
 | Scheme | Effect |
 | :--- | :--- |
-| `"neon"` | Enables glow preset |
-| `"glass"` | Enables glass preset |
-| `"neon+glass"` | Enables both |
+| `"neon"` | Enables text-layer neon/acrylic glow |
+| `"glass"` | Enables the glass colour family; add `glassOpacity` or `glassBorderOpacity` to render glass fill or border |
+| `"neon+glass"` | Enables text-layer neon/acrylic glow plus optional glass fill or border |
 
 > `scheme` controls presets only — it no longer decides scope.
 
@@ -251,7 +256,7 @@ Add a minimal setup to `settings.json`:
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   },
   "FIXME": {
@@ -260,7 +265,7 @@ Add a minimal setup to `settings.json`:
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   },
   "[ ]": {
@@ -269,7 +274,7 @@ Add a minimal setup to `settings.json`:
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   },
   "[x]": {
@@ -278,7 +283,7 @@ Add a minimal setup to `settings.json`:
     "scheme": "neon+glass",
     "colorType": "text",
     "glowType": "tag",
-    "glassType": "whole-line",
+    "glassType": "tag",
     "fontType": "tag"
   }
 }
@@ -287,15 +292,15 @@ Add a minimal setup to `settings.json`:
 Then try these comments:
 
 ```ts
-// TODO [todo] [tv:id=task.ship-the-new-onboarding.cdff7a] ship the new onboarding
-// TODO [blocked] [tv:id=task.waiting-for-legal-copy.7cb8c0] waiting for legal copy
-// TODO [review] [tv:id=task.shortcut-handler-updated.d073a3] shortcut handler updated
-// NOTE [idea] [tv:id=task.split-command-and-render.96ab70] split command and render layers
+// TODO [todo] ship the new onboarding
+// TODO [blocked] waiting for legal copy
+// TODO [review] shortcut handler updated
+// NOTE [idea] split command and render layers
 ```
 
 ### Per-channel brightness
 
-Highlight rendering is layered. You can tune text, glow, glass fill, and glass border independently:
+Highlight rendering is layered. You can tune text, glow, optional glass fill, and glass border independently:
 
 ```jsonc
 "taskvision.highlights.foregroundOpacity": 90,
@@ -305,6 +310,8 @@ Highlight rendering is layered. You can tune text, glow, glass fill, and glass b
 ```
 
 The same keys also work per tag inside `taskvision.highlights.customHighlight`. Legacy `opacity` is still supported as an alias for `glassOpacity`.
+
+For glass schemes, `background` is treated as the accent colour. By default TaskVision keeps the acrylic effect on the text layer and does not add a filled background, so old alpha-heavy settings such as `#42A5F566` do not turn into solid colour blocks. Set `glassOpacity` or `glassBorderOpacity` explicitly when you want a filled or outlined glass badge/band.
 
 ---
 
