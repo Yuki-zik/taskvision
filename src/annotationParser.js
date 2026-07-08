@@ -157,11 +157,11 @@ function buildDirectiveTokens(options) {
     var directives = options || {};
     var tokens = [];
 
-    if (directives.stableId) {
-        tokens.push('[tv:id=' + directives.stableId + ']');
-    }
     if (directives.contextKind) {
         tokens.push('[tv:ctx=' + directives.contextKind + ']');
+    }
+    if (directives.reviewKind) {
+        tokens.push('[tv:review=' + directives.reviewKind + ']');
     }
 
     var taskRefs = normaliseList(directives.taskRefs);
@@ -169,11 +169,11 @@ function buildDirectiveTokens(options) {
         tokens.push('[tv:task=' + taskRefs.join(',') + ']');
     }
 
-    if (directives.reviewKind) {
-        tokens.push('[tv:review=' + directives.reviewKind + ']');
-    }
     if (directives.sessionId) {
         tokens.push('[tv:session=' + directives.sessionId + ']');
+    }
+    if (directives.stableId) {
+        tokens.push('[tv:id=' + directives.stableId + ']');
     }
 
     return tokens;

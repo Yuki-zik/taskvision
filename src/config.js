@@ -72,8 +72,33 @@ function ripgrepPath() {
         return isWin ? "rg.exe" : "rg";
     }
 
+    function platformFolderName() {
+        var arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+        if (process.platform === 'win32') {
+            return 'win32-' + arch;
+        }
+        if (process.platform === 'darwin') {
+            return 'darwin-' + arch;
+        }
+        return 'linux-' + arch;
+    }
+
     function exePathIsDefined(rgExePath) {
         return fs.existsSync(rgExePath) ? rgExePath : undefined;
+    }
+
+    function findOnPath() {
+        var pathValue = process.env.PATH || '';
+        var parts = pathValue.split(path.delimiter).filter(Boolean);
+        var exe = exeName();
+        var result;
+
+        parts.some(function (part) {
+            result = exePathIsDefined(path.join(part, exe));
+            return result !== undefined;
+        });
+
+        return result;
     }
 
     var rgPath = "";
@@ -91,6 +116,15 @@ function ripgrepPath() {
     if (rgPath) return rgPath;
 
     rgPath = exePathIsDefined(path.join(vscode.env.appRoot, "node_modules.asar.unpacked/@vscode/ripgrep/bin/", exeName()));
+    if (rgPath) return rgPath;
+
+    rgPath = exePathIsDefined(path.join(vscode.env.appRoot, "node_modules/@vscode/ripgrep-universal/bin/", platformFolderName(), exeName()));
+    if (rgPath) return rgPath;
+
+    rgPath = exePathIsDefined(path.join(vscode.env.appRoot, "node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/", platformFolderName(), exeName()));
+    if (rgPath) return rgPath;
+
+    rgPath = findOnPath();
     if (rgPath) return rgPath;
 
     return rgPath;

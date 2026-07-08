@@ -68,7 +68,9 @@ function resolveCaptureGroups(rangeType, context, ranges) {
 
     var groupSpec = rangeType.substring(rangeType.indexOf(':') + 1);
     if (!groupSpec) {
-        return true;
+        // Empty spec (e.g. "capture-groups:") — fall back to the default range
+        // handling instead of silently producing no highlight ranges.
+        return false;
     }
 
     var indices = context.matchIndices || [];

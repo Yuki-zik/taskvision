@@ -6,3 +6,23 @@ test/
 test-files
 webpack.config.js
 dist/extension.js.map
+
+# Build / tooling not needed in the published extension
+buildCodiconNames.js
+.github/
+.travis.yml
+.taskvision/
+agent/
+notes-local/
+MIGRATION.md
+debugging_journal.md
+
+# OS noise and local debug / trace artifacts
+.DS_Store
+*.txt
+reproduce_issue*.js
+trace_braces.js
+check_braces.js
+clean_highlights*.js
+test_css*.js
+test_out_css.json

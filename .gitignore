@@ -1,6 +1,7 @@
 test-files
 node_modules
 dist
+out
 
 # https://github.com/github/gitignore/blob/master/Global/VisualStudioCode.gitignore
 .vscode/*
@@ -8,3 +9,27 @@ dist
 !.vscode/launch.json
 
 *.vsix
+
+# OS noise
+.DS_Store
+
+# Local debug / trace artifacts (not source)
+/reproduce_issue*.js
+/trace_braces.js
+/check_braces.js
+/clean_highlights*.js
+/test_css*.js
+/full_braces.txt
+/brace_trace.txt
+/current_trace.txt
+/diff.txt
+/git_log*.txt
+/push_*.txt
+/syntax_check*.txt
+/test_out*
+src/reproduce_issue*.js
+src/repro_output.txt
+
+# Generated agent/AI context output
+.taskvision/
+/agent/reports/

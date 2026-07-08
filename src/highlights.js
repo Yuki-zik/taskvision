@@ -77,6 +77,10 @@ function applyOpacity(colour, opacity) {
     return colour;
 }
 
+function normalizeOpacitySetting(opacity) {
+    return opacity === null || opacity === '' || opacity === 0 || opacity === '0' ? undefined : opacity;
+}
+
 function getRulerColour(tag, defaultColour) {
     var colour = attributes.getRulerColour(tag);
     if (colour === undefined) {
@@ -98,7 +102,7 @@ function getOpacity(tag) {
     if (opacity === undefined) {
         opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('opacity');
     }
-    return opacity;
+    return normalizeOpacitySetting(opacity);
 }
 
 function getForegroundOpacity(tag) {
@@ -106,7 +110,7 @@ function getForegroundOpacity(tag) {
     if (opacity === undefined) {
         opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('foregroundOpacity');
     }
-    return opacity;
+    return normalizeOpacitySetting(opacity);
 }
 
 function getGlowOpacity(tag) {
@@ -114,7 +118,7 @@ function getGlowOpacity(tag) {
     if (opacity === undefined) {
         opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('glowOpacity');
     }
-    return opacity;
+    return normalizeOpacitySetting(opacity);
 }
 
 function getGlassOpacity(tag) {
@@ -125,7 +129,7 @@ function getGlassOpacity(tag) {
     if (opacity === undefined) {
         opacity = getOpacity(tag);
     }
-    return opacity;
+    return normalizeOpacitySetting(opacity);
 }
 
 function getGlassBorderOpacity(tag) {
@@ -133,7 +137,7 @@ function getGlassBorderOpacity(tag) {
     if (opacity === undefined) {
         opacity = vscode.workspace.getConfiguration('taskvision.highlights').get('glassBorderOpacity');
     }
-    return opacity;
+    return normalizeOpacitySetting(opacity);
 }
 
 function getRulerOpacity(tag) {
@@ -168,20 +172,24 @@ function showInGutter(tag) {
     return attributes.getAttribute(tag, 'gutterIcon', true);
 }
 
+function getRangeType(tag, channelAttribute, defaultValue) {
+    return rangeResolver.normaliseRangeType(attributes.getAttribute(tag, channelAttribute, defaultValue));
+}
+
 function getColorType(tag) {
-    return rangeResolver.normaliseRangeType(attributes.getAttribute(tag, 'colorType', 'text'));
+    return getRangeType(tag, 'colorType', 'text');
 }
 
 function getGlowType(tag) {
-    return rangeResolver.normaliseRangeType(attributes.getAttribute(tag, 'glowType', 'tag'));
+    return getRangeType(tag, 'glowType', 'tag');
 }
 
 function getGlassType(tag) {
-    return rangeResolver.normaliseRangeType(attributes.getAttribute(tag, 'glassType', 'whole-line'));
+    return getRangeType(tag, 'glassType', 'tag');
 }
 
 function getFontType(tag) {
-    return rangeResolver.normaliseRangeType(attributes.getAttribute(tag, 'fontType', 'tag'));
+    return getRangeType(tag, 'fontType', 'tag');
 }
 
 function editorId(editor) {
@@ -212,7 +220,10 @@ function resolveThemeColour(raw, fallbackThemeColorId) {
 }
 
 function resolveSchemeBaseColor(tag, foregroundColor, backgroundColor) {
-    var iconColour = attributes.getIconColour(tag);
+    var iconColour = attributes.getAttribute(tag, 'iconColor', undefined, true);
+    if (iconColour === undefined) {
+        iconColour = attributes.getAttribute(tag, 'iconColour', undefined, true);
+    }
     if (iconColour && typeof iconColour === 'string' && iconColour.startsWith('#')) {
         if (iconColour.length === 9) {
             return iconColour.substring(0, 7);
@@ -243,6 +254,55 @@ function resolveSchemeBaseColor(tag, foregroundColor, backgroundColor) {
     return undefined;
 }
 
+function hasHexAlpha(colour) {
+    if (!colour || typeof colour !== 'string' || colour.indexOf('#') !== 0) {
+        return false;
+    }
+
+    var hex = colour.substring(1).split(/ /)[0].replace(/[^\da-fA-F]/g, '');
+    return hex.length === 4 || hex.length === 8;
+}
+
+function createGlassBorder(colour, opacity) {
+    if (colour === undefined) {
+        return undefined;
+    }
+    return '1px solid ' + applyOpacity(colour, opacity);
+}
+
+function createAcrylicTextDecoration(colour) {
+    var accent = colour !== undefined ? colour : '#42A5F5';
+    return 'underline; text-decoration-color: ' + applyOpacity(accent, 45) + '; text-decoration-thickness: 2px; text-underline-offset: 3px';
+}
+
+function resolveGlassAccentColor(tag, backgroundColor) {
+    var iconColour = attributes.getAttribute(tag, 'iconColor', undefined, true);
+    if (iconColour === undefined) {
+        iconColour = attributes.getAttribute(tag, 'iconColour', undefined, true);
+    }
+    if (iconColour && typeof iconColour === 'string' && iconColour.startsWith('#')) {
+        if (iconColour.length === 9) {
+            return iconColour.substring(0, 7);
+        }
+        if (iconColour.length === 5) {
+            return iconColour.substring(0, 4);
+        }
+        return iconColour;
+    }
+
+    if (backgroundColor && typeof backgroundColor === 'string' && backgroundColor.startsWith('#')) {
+        if (backgroundColor.length === 9) {
+            return backgroundColor.substring(0, 7);
+        }
+        if (backgroundColor.length === 5) {
+            return backgroundColor.substring(0, 4);
+        }
+        return backgroundColor;
+    }
+
+    return undefined;
+}
+
 function getTagPlan(tag) {
     if (tagPlanCache[tag]) {
         return tagPlanCache[tag];
@@ -263,14 +323,23 @@ function getTagPlan(tag) {
 
     var schemeName = attributes.getScheme(tag);
     var hasGlass = schemeName === 'glass' || schemeName === 'neon+glass';
-    var defaultGlassOpacity = hasGlass ? 15 : undefined;
-    var finalGlassOpacity = glassOpacity !== undefined ? glassOpacity : defaultGlassOpacity;
+    var bgHasAlpha = hasHexAlpha(backgroundColour);
+    var hasAlphaOnlyGlass = !hasGlass && bgHasAlpha;
+    var finalGlassOpacity = glassOpacity !== undefined ? glassOpacity : ((hasGlass && !bgHasAlpha) ? 15 : undefined);
 
     if (lightBackgroundColour !== undefined) {
-        lightBackgroundColour = applyOpacity(lightBackgroundColour, finalGlassOpacity);
+        if (finalGlassOpacity !== undefined) {
+            lightBackgroundColour = applyOpacity(lightBackgroundColour, finalGlassOpacity);
+        } else if (!bgHasAlpha) {
+            lightBackgroundColour = undefined;
+        }
     }
     if (darkBackgroundColour !== undefined) {
-        darkBackgroundColour = applyOpacity(darkBackgroundColour, finalGlassOpacity);
+        if (finalGlassOpacity !== undefined) {
+            darkBackgroundColour = applyOpacity(darkBackgroundColour, finalGlassOpacity);
+        } else if (!bgHasAlpha) {
+            darkBackgroundColour = undefined;
+        }
     }
 
     if (lightForegroundColour === undefined && utils.isHexColour(lightBackgroundColour)) {
@@ -285,13 +354,16 @@ function getTagPlan(tag) {
     var textDecoration = getTextDecoration(tag);
 
     var baseColor = resolveSchemeBaseColor(tag, foregroundColour, backgroundColour);
+    if (hasGlass && textDecoration === undefined) {
+        textDecoration = createAcrylicTextDecoration(baseColor);
+    }
     var schemePreset = schemes.getPreset(schemeName, baseColor, baseColor, {
         glowOpacity: glowOpacity,
         glassOpacity: finalGlassOpacity,
         glassBorderOpacity: glassBorderOpacity
     });
 
-    if (schemeName && (foregroundColour === undefined || foregroundColour.toUpperCase() === '#FFFFFF' || foregroundColour.toUpperCase() === '#FFF')) {
+    if (schemeName && foregroundColour === undefined) {
         lightForegroundColour = schemePreset.lightColor;
         darkForegroundColour = schemePreset.darkColor;
     }
@@ -322,6 +394,20 @@ function getTagPlan(tag) {
         schemePreset: schemePreset
     });
 
+    if (hasAlphaOnlyGlass && glassBorderOpacity !== undefined) {
+        var borderOpacity = glassBorderOpacity !== undefined ? glassBorderOpacity : 30;
+        var glassAccentColor = resolveGlassAccentColor(tag, backgroundColour);
+        var lightBorder = createGlassBorder(glassAccentColor, borderOpacity);
+        var darkBorder = createGlassBorder(glassAccentColor, borderOpacity);
+
+        if (lightBorder !== undefined) {
+            channels.glass.style.light.border = lightBorder;
+        }
+        if (darkBorder !== undefined) {
+            channels.glass.style.dark.border = darkBorder;
+        }
+    }
+
     var lane = getRulerLane(tag);
     if (isNaN(parseInt(lane, 10))) {
         lane = lane !== undefined ? lanes[String(lane).toLowerCase()] : undefined;
@@ -334,7 +420,7 @@ function getTagPlan(tag) {
 
         if (utils.isThemeColour(rulerColour)) {
             rulerColour = new vscode.ThemeColor(rulerColour);
-        } else {
+        } else if (rulerOpacity !== undefined) {
             rulerColour = applyOpacity(rulerColour, rulerOpacity);
         }
     }
@@ -386,7 +472,7 @@ function buildGlassDecorationOptions(plan) {
 
     var options = {
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-        isWholeLine: glassChannel.rangeType === 'whole-line' || glassChannel.rangeType === 'line',
+        isWholeLine: glassChannel.rangeType === 'whole-line',
         light: {},
         dark: {}
     };
@@ -815,7 +901,7 @@ function triggerHighlight(editor) {
         if (highlightTimer[id]) {
             clearTimeout(highlightTimer[id]);
         }
-        highlightTimer[id] = setTimeout(highlight, vscode.workspace.getConfiguration('taskvision.highlights').highlightDelay, editor);
+        highlightTimer[id] = setTimeout(highlight, vscode.workspace.getConfiguration('taskvision.highlights').get('highlightDelay'), editor);
     }
 }
 

@@ -1,0 +1,22 @@
+# Normalize line endings: store text as LF and check out as LF on all
+# platforms. This prevents Windows CRLF checkouts (core.autocrlf=true) from
+# breaking source-scanning tests that match multi-line \n string literals.
+* text=auto eol=lf
+
+# Explicit LF for the source and tooling files the tests read.
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.svg text eol=lf
+
+# Binary assets must never be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

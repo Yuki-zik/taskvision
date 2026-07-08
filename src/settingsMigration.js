@@ -115,6 +115,8 @@ async function migrateLegacySettings( vscode, context, log )
         }
     }
 
+    var hadFailure = false;
+
     for( var i = 0; i < SETTING_PATHS.length; i++ )
     {
         var settingPath = SETTING_PATHS[ i ];
@@ -135,8 +137,17 @@ async function migrateLegacySettings( vscode, context, log )
         }
         catch( error )
         {
+            hadFailure = true;
             trace( "Failed to migrate setting '" + settingPath + "': " + error.message );
         }
+    }
+
+    if( hadFailure )
+    {
+        // Leave migratedVersion unchanged so migration is retried next startup
+        // instead of permanently marking a partially-failed migration as done.
+        trace( "Legacy settings migration completed with errors (" + updates + " updates); will retry next startup." );
+        return { migrated: updates > 0, updates: updates, hadFailure: true };
     }
 
     await context.globalState.update( 'migratedVersion', MIGRATION_VERSION );

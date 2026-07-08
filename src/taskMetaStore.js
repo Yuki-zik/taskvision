@@ -134,6 +134,9 @@ function loadStore(rootPath, outputDir) {
     }
 
     var key = getStorePath(rootPath, outputDir);
+    if (!key) {
+        return createEmptyStore();
+    }
     if (cache[key]) {
         return cache[key];
     }
@@ -146,10 +149,6 @@ function loadStore(rootPath, outputDir) {
             store.tasks[taskId] = normaliseTaskEntry(parsed.tasks[taskId]);
         });
         store.stableIndex = parsed.stableIndex || {};
-    }
-
-    if (!key) {
-        return store;
     }
 
     rebuildStableIndex(store);

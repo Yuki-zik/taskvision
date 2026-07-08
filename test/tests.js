@@ -548,6 +548,13 @@ QUnit.test("searchResults can be added and removed", function (assert) {
     assert.equal(searchResults.count(), 0);
 });
 
+QUnit.test("searchResults removes equivalent URI objects", function (assert) {
+    searchResults.add({ uri: { toString: function () { return "file:///workspace/src/cache.js"; } } });
+    assert.equal(searchResults.count(), 1);
+    searchResults.remove({ toString: function () { return "file:///workspace/src/cache.js"; } });
+    assert.equal(searchResults.count(), 0);
+});
+
 QUnit.test("searchResults can be cleared", function (assert) {
     searchResults.add({ uri: "uri1" });
     searchResults.add({ uri: "uri2" });

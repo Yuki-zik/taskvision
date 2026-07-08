@@ -1,5 +1,7 @@
 var config;
 
+var highlightRegexCache = {};
+
 function init(configuration) {
     config = configuration;
 }
@@ -20,13 +22,20 @@ function getAttribute(tag, attribute, defaultValue, ignoreDefaultHighlight) {
             }
             var escapedT = t.replace(/\\/g, '\\\\').replace(/[|{}()[\]^$+*?.-]/g, '\\$&');
 
-            try {
-                var regex = new RegExp(escapedT, flags);
-                if (tag.match(regex)) {
-                    result = customHighlight[t];
+            var cacheKey = escapedT + ' ' + flags;
+            var regex = highlightRegexCache[cacheKey];
+            if (regex === undefined) {
+                try {
+                    regex = new RegExp(escapedT, flags);
+                } catch (e) {
+                    // Ignore improperly formed dynamic regexes
+                    regex = null;
                 }
-            } catch (e) {
-                // Ignore improperly formed dynamic regexes
+                highlightRegexCache[cacheKey] = regex;
+            }
+
+            if (regex && tag.match(regex)) {
+                result = customHighlight[t];
             }
         });
         return result;
@@ -123,7 +132,6 @@ module.exports.getForeground = getForeground;
 module.exports.getBackground = getBackground;
 module.exports.getOpacity = getOpacity;
 module.exports.getRulerColour = getRulerColour;
-module.exports.getRulerLane = getRulerLane;
 module.exports.getRulerLane = getRulerLane;
 module.exports.getBorderRadius = getBorderRadius;
 module.exports.getScheme = getScheme;
