@@ -1,9 +1,8 @@
 
-Todo Tree
+TaskVision
 
-Copyright (c) Nigel Scott
-
-All rights reserved.
+Copyright (c) 2026 TaskVision (A-Znk)
+Copyright (c) Nigel Scott (Todo Tree, the project from which TaskVision is forked)
 
 MIT License
 

@@ -72,7 +72,7 @@ QUnit.test('package defaults use decoupled four-channel semantics for key tags',
         assert.strictEqual(defaults[key].scheme, 'neon+glass', key + ' uses neon+glass');
         assert.strictEqual(defaults[key].colorType, 'text', key + ' colorType is text');
         assert.strictEqual(defaults[key].glowType, 'tag', key + ' glowType is tag');
-        assert.strictEqual(defaults[key].glassType, 'whole-line', key + ' glassType is whole-line');
+        assert.strictEqual(defaults[key].glassType, 'tag', key + ' glassType is tag');
         assert.strictEqual(defaults[key].fontType, 'tag', key + ' fontType is tag');
     });
 });
@@ -89,6 +89,24 @@ QUnit.test('schemes.getPreset keeps glow and glass as independent style presets'
     var both = schemes.getPreset('neon+glass', '#112233', '#445566');
     assert.ok(both.glow);
     assert.ok(both.glass);
+});
+
+QUnit.test('schemes.getPreset applies explicit glow opacity', function (assert) {
+    var neon = schemes.getPreset('neon', '#112233', '#445566', {
+        glowOpacity: 40
+    });
+
+    assert.ok(neon.glow);
+    assert.ok(neon.glow.light.textShadow.indexOf('rgba(17,34,51,0.4)') !== -1);
+});
+
+QUnit.test('schemes.getPreset uses soft glass defaults', function (assert) {
+    var preset = schemes.getPreset('neon+glass', '#112233', '#445566');
+
+    assert.strictEqual(preset.glass.light.backgroundColor, undefined);
+    assert.strictEqual(preset.glass.dark.backgroundColor, undefined);
+    assert.strictEqual(preset.glass.light.border, undefined);
+    assert.strictEqual(preset.glass.dark.border, undefined);
 });
 
 QUnit.test('schemes.getPreset applies per-channel opacity controls independently', function (assert) {

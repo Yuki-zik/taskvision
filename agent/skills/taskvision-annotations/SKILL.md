@@ -21,7 +21,7 @@ Do **not** use this skill to edit `.taskvision/tasks-meta.json`, `.taskvision/co
 Every annotation is a single comment line with this token order:
 
 ```
-<COMMENT-PREFIX> <TAG> [<status>] [tv:id=...] [tv:ctx=...|tv:review=...] [tv:task=...] [tv:session=...] <body text>
+<COMMENT-PREFIX> <TAG> [<status>] <body text> [tv:ctx=...|tv:review=...] [tv:task=...] [tv:session=...] [tv:id=...]
 ```
 
 Rules:
@@ -29,16 +29,17 @@ Rules:
 - `<COMMENT-PREFIX>` is the language's normal single-line comment marker (`//`, `#`, `<!--`, `--`, `;`, ...).
 - `<TAG>` MUST be one of: `TODO`, `FIXME`, `XXX`, `NOTE`, `IDEA`, `[ ]`, `[x]`. Use `TODO`/`FIXME` for work, `NOTE`/`IDEA` for context or review notes, `[ ]`/`[x]` for markdown checkboxes.
 - `[<status>]` is REQUIRED for tasks and SHOULD be present for context/review notes. Allowed values: `todo`, `doing`, `blocked`, `paused`, `review`, `done`, `wontdo`, `idea`.
-- `tv:` directives are optional but, when present, MUST keep the order `id` → `ctx`/`review` → `task` → `session`.
+- `tv:` directives are optional but, when present, MUST keep the tail order `ctx`/`review` → `task` → `session` → `id`.
 - `<body text>` is the human-readable summary. Keep it on the same line.
+- Keep human-readable text directly after `TAG [status]`; machine fields belong at the end.
 
 ## The three annotation classes
 
 | Class | Required tag(s) | Required directives | Example |
 | :--- | :--- | :--- | :--- |
-| `task` | `TODO`, `FIXME`, `XXX`, `[ ]`, `[x]` | `[tv:id=task....]` (recommended) | `// TODO [doing] [tv:id=task.cache.123abc] refactor cache invalidation` |
-| `context` | `NOTE` (or `IDEA`) with `[idea]` | `[tv:id=ctx....]` and `[tv:ctx=<kind>]` | `// NOTE [idea] [tv:id=ctx.cache.456def] [tv:ctx=invariant] cache writes must stay synchronous` |
-| `review` | `NOTE` with `[review]` | `[tv:session=...]` and `[tv:review=<kind>]` | `// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.cache.123abc] [tv:review=verify] verify retry path under timeout` |
+| `task` | `TODO`, `FIXME`, `XXX`, `[ ]`, `[x]` | `[tv:id=task....]` only when tracked | `// TODO [doing] refactor cache invalidation [tv:id=task.cache.123abc]` |
+| `context` | `NOTE` (or `IDEA`) with `[idea]` | `[tv:ctx=<kind>]`; `[tv:id=ctx....]` when tracked | `// NOTE [idea] cache writes must stay synchronous [tv:ctx=invariant] [tv:id=ctx.cache.456def]` |
+| `review` | `NOTE` with `[review]` | `[tv:review=<kind>]` and `[tv:session=...]` | `// NOTE [review] verify retry path under timeout [tv:review=verify] [tv:task=task.cache.123abc] [tv:session=sess.20260308.codex.001]` |
 
 `tv:ctx` allowed kinds: `must-read`, `constraint`, `invariant`, `business-rule`, `pitfall`, `do-not-touch`, `entrypoint`, `example`, `decision`, `terminology`.
 
@@ -47,7 +48,7 @@ Rules:
 ## Stable IDs
 
 - Stable IDs look like `task.<slug>.<6-hex>` or `ctx.<slug>.<6-hex>`.
-- If you are creating a new task or context anchor and you do not have an ID, **omit `tv:id`**. Run the `TaskVision: Sync Data Model` command (or have the user run it) to let TaskVision compute and write it back.
+- If you are creating a new task or context anchor and you do not have an ID, **omit `tv:id`**. TaskVision writes stable IDs only when the annotation needs durable tracking, such as sidecar metadata, task/context links, non-lightweight task states, context anchors, or AI context export.
 - Never invent an ID with random hex. Never reuse another annotation's stable ID.
 - When updating an existing annotation, preserve its `tv:id` exactly.
 
@@ -69,7 +70,7 @@ Rules:
 1. Does the line start with the file's normal comment marker?
 2. Is the tag one of the allowed values?
 3. Is the status one of the allowed values, or correctly omitted (only for plain `[ ]`/`[x]`)?
-4. Are `tv:` tokens in the order `id, ctx|review, task, session`?
+4. Are `tv:` tokens at the line tail in the order `ctx|review, task, session, id`?
 5. Is the body text a single line, no trailing block-comment terminator?
 6. Did you avoid touching any `.taskvision/*.json` file?
 
@@ -79,11 +80,11 @@ If all six pass, the annotation will round-trip cleanly through the TaskVision t
 
 ```ts
 // TODO [todo] add streaming support to the parser
-// FIXME [blocked] [tv:id=task.parser-stream.aa12cd] waiting on upstream codec PR
-// TODO [review] [tv:id=task.cache.123abc] retry path rewritten, needs QA
-// NOTE [idea] [tv:id=ctx.cache.456def] [tv:ctx=invariant] cache writes must stay single-flight
-// NOTE [review] [tv:session=sess.20260308.codex.001] [tv:task=task.cache.123abc] [tv:review=risk] cold-start race possible if invalidation lands before warmup
-- [ ] [tv:id=task.docs.update.7e44a1] update README quick start
+// FIXME [blocked] waiting on upstream codec PR [tv:id=task.parser-stream.aa12cd]
+// TODO [review] retry path rewritten, needs QA [tv:id=task.cache.123abc]
+// NOTE [idea] cache writes must stay single-flight [tv:ctx=invariant] [tv:id=ctx.cache.456def]
+// NOTE [review] cold-start race possible if invalidation lands before warmup [tv:review=risk] [tv:task=task.cache.123abc] [tv:session=sess.20260308.codex.001]
+- [ ] update README quick start
 - [x] migrate jest config
 ```
 

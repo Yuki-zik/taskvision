@@ -12,11 +12,22 @@ function add( result )
     searchResults.push( result );
 }
 
+function uriKey( uri )
+{
+    if( uri === undefined || uri === null )
+    {
+        return uri;
+    }
+
+    return uri.toString ? uri.toString() : uri;
+}
+
 function remove( uri )
 {
+    var key = uriKey( uri );
     searchResults = searchResults.filter( function( match )
     {
-        return match.uri !== uri;
+        return uriKey( match.uri ) !== key;
     } );
 }
 
@@ -47,9 +58,10 @@ function count()
 
 function contains( result )
 {
+    var key = uriKey( result.uri );
     return searchResults.filter( function( match )
     {
-        return match.uri === result.uri && match.line == result.line && match.column == result.column;
+        return uriKey( match.uri ) === key && match.line == result.line && match.column == result.column;
     } ).length > 0;
 }
 

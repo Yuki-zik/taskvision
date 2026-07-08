@@ -12,6 +12,10 @@ var productIconNames = require('./productIconNames.js');
 function getIcon(context, tag, debug) {
     var colour = attributes.getIconColour(tag);
 
+    if (typeof colour !== 'string') {
+        colour = 'green';
+    }
+
     var darkIconPath = context.asAbsolutePath(path.join("resources/icons", "dark", "todo-green.svg"));
     var lightIconPath = context.asAbsolutePath(path.join("resources/icons", "light", "todo-green.svg"));
 
@@ -24,7 +28,7 @@ function getIcon(context, tag, debug) {
         if (debug) {
             debug("Attempting to create global storage folder " + context.globalStorageUri.fsPath);
         }
-        fs.mkdirSync(context.globalStorageUri.fsPath);
+        fs.mkdirSync(context.globalStorageUri.fsPath, { recursive: true });
     }
 
     if (iconName === 'taskvision' || iconName === 'taskvision-filled') {

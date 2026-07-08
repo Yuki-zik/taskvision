@@ -73,6 +73,9 @@ function loadSession(rootPath, sessionId, outputDir) {
     }
 
     var sessionPath = getSessionPath(rootPath, sessionId, outputDir);
+    if (!sessionPath) {
+        return undefined;
+    }
     if (cache[sessionPath]) {
         return cache[sessionPath];
     }
