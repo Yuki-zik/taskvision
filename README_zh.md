@@ -238,6 +238,8 @@ TaskVision 使用四个独立样式通道：
 
 > `scheme` 只控制预设启用，不再决定作用范围。
 
+**一次性为所有标签设置方案：** 在命令面板或树视图标题栏的 `⋯` 溢出菜单中运行 **TaskVision: 为所有标签设置高亮方案**，然后选择 `neon`、`glass`、`neon+glass` 或 `none`。TaskVision 会把所选方案写入每一个已存在的 `customHighlight` 条目**以及** `defaultHighlight`，无需再逐个标签手动修改。
+
 ---
 
 ## 快速开始

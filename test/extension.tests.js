@@ -51,6 +51,33 @@ QUnit.test('extension updates font appearance in a single customHighlight write'
     assert.ok(source.indexOf('updateConfigValues({ fontWeight: font.fontWeight, fontStyle: font.fontStyle });') !== -1);
 });
 
+QUnit.test('extension registers a command to set the highlight scheme for all tags', function (assert) {
+    var source = fs.readFileSync('src/extension.js', 'utf8');
+
+    assert.ok(source.indexOf("var highlightScheme = require('./highlightScheme.js');") !== -1, 'requires the highlightScheme module');
+    assert.ok(source.indexOf("vscode.commands.registerCommand('taskvision.setHighlightSchemeForAllTags'") !== -1, 'registers the command');
+    assert.ok(source.indexOf('highlightScheme.applySchemeToAllTags(customHighlight, defaultHighlight, selection.value)') !== -1, 'delegates to the pure helper');
+    assert.ok(source.indexOf('var configTarget = resolveConfigTarget();') !== -1, 'uses resolveConfigTarget for the write target');
+    assert.ok(source.indexOf("currentConfig.update('customHighlight', updated.customHighlight, configTarget)") !== -1, 'writes customHighlight with the resolved target');
+    assert.ok(source.indexOf("currentConfig.update('defaultHighlight', updated.defaultHighlight, configTarget)") !== -1, 'writes defaultHighlight with the resolved target');
+});
+
+QUnit.test('package contributes the set-scheme-for-all-tags command in the view title overflow menu', function (assert) {
+    var packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
+    var command = packageJson.contributes.commands.find(function (candidate) {
+        return candidate.command === 'taskvision.setHighlightSchemeForAllTags';
+    });
+    assert.ok(command, 'command is contributed');
+    assert.strictEqual(command.title, '%taskvision.command.setHighlightSchemeForAllTags.title%', 'command title uses an NLS key');
+
+    var titleMenu = packageJson.contributes.menus['view/title'].find(function (item) {
+        return item.command === 'taskvision.setHighlightSchemeForAllTags';
+    });
+    assert.ok(titleMenu, 'command is added to the view/title menu');
+    assert.ok(titleMenu.group.indexOf('navigation') === -1, 'command is placed in the overflow menu, not the navigation bar');
+});
+
 QUnit.test('extension source accepts built-in taskvision icons during validation', function (assert) {
     var source = readSource('src/icons.js');
 
@@ -73,7 +100,8 @@ QUnit.test('package localizes contributed command titles', function (assert) {
         'taskvision.addMissingTaskStatuses',
         'taskvision.setTaskStatus',
         'taskvision.setTaskPriority',
-        'taskvision.editTaskNote'
+        'taskvision.editTaskNote',
+        'taskvision.setHighlightSchemeForAllTags'
     ];
 
     commandIds.forEach(function (commandId) {

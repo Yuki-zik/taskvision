@@ -84,6 +84,11 @@
                     "group": "navigation@1.3"
                 },
                 {
+                    "command": "taskvision.setHighlightSchemeForAllTags",
+                    "when": "view =~ /taskvision/",
+                    "group": "1-highlights@1"
+                },
+                {
                     "command": "taskvision.reveal",
                     "when": "view =~ /taskvision/ && taskvision-tags-only == false && taskvision-show-reveal-button == true",
                     "group": "navigation@2"
@@ -674,6 +679,12 @@
                 "command": "taskvision.customizeAppearance",
                 "title": "Customize Tag Appearance",
                 "category": "%taskvision.command.category%"
+            },
+            {
+                "command": "taskvision.setHighlightSchemeForAllTags",
+                "title": "%taskvision.command.setHighlightSchemeForAllTags.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(symbol-color)"
             }
         ],
         "configuration": [

@@ -15,6 +15,14 @@
 
 ## Session Summary
 
+- Active focus: Implemented issue #2 — added a command to uniformly set the highlight scheme for all tags, resolving that shipped per-tag `customHighlight` entries hid `defaultHighlight`.
+- Verification: `npx qunit test/highlightScheme.tests.js` (5 passing), `npm test` (126 passing), `npm run webpack`, `git --no-pager diff --check` (clean).
+
+## Active Session Task
+
+| Priority | Task                                             | Status    | Owner | Due        |
+| -------- | ------------------------------------------------ | --------- | ----- | ---------- |
+| P1       | Add "set highlight scheme for all tags" command  | Completed | AI    | 2026-07-08 |
 - Active focus: Fixed issue #1 — Cursor rendered a solid gray background block behind the `neon+glass` tag highlight where VS Code showed the intended translucent glass box.
 - Root cause: `buildGlassDecorationOptions` in `src/highlights.js` placed `borderRadius` on the decoration base rule while `backgroundColor`/`border` lived only in `light`/`dark`; a border/borderRadius base rule without a co-located background triggers Cursor's fallback gray fill (microsoft/vscode#175819, wayou/vscode-todo-highlight#434).
 - Fix: re-scoped `borderRadius` into `light`/`dark` alongside the border and injected `backgroundColor: 'transparent'` on any themed object that carries a border/borderRadius without an explicit background; VS Code appearance unchanged.
