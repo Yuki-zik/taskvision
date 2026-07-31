@@ -7,6 +7,31 @@
 | P2       | Keep `agent/timeline.md` and `agent/tasks.md` in sync with every future code or doc change  | ⏳ In Progress | AI + Human | Ongoing    |
 | P2       | Review whether a lint command should be added to complement the existing QUnit suite        | ⏳ Pending     | Human      | TBD        |
 
+## Session Summary (2026-07-31)
+
+- Active focus: Read-only audit of the whole codebase, cleanup of merged local branches, and syncing the local checkout to `origin/master`. No runtime code changed.
+- Branch cleanup: deleted 9 fully-merged local branches (`integration-preview`, `work-5`–`work-8`, and four `yuki-zik-*` feature branches) after cross-checking each with `merge-base --is-ancestor`, two-dot diff, `git log --cherry-mark` and `gh pr list`. Retained the two branches held by Copilot worktrees. Remote refs untouched.
+- Sync: local `master` was 0 ahead / 7 behind; fast-forwarded `2cb179e` → `4f2e592`. Nothing was ever pending upload.
+- Verification: `npm install`, `npm test` (159 passing, 0 failed; the pre-sync baseline was 119).
+- **Caveat**: the first pass of this audit ran against the stale local `master`, which produced two false findings (duplicate `getRulerLane` export; ~22 root-level debug files) — both were already fixed upstream. Findings below were re-verified against `4f2e592`.
+
+### Confirmed defects still open on `master` (not yet scheduled)
+
+| Area | Evidence | Note |
+| ---- | -------- | ---- |
+| Localisation | `package.json:675`, `:680`, `:1585` | `setScheme` / `customizeAppearance` titles and the `showStatusPrefix` description are hard-coded English, so they bypass the otherwise complete NLS key parity. |
+| Sidecar concurrency | `src/taskMetaStore.js:11`, `:140`, `:155` | The in-memory store cache has no mtime check, so edits an external agent makes to `.taskvision/tasks-meta.json` are silently overwritten on the next save. This undercuts the external-agent handoff the feature exists for. |
+| Highlight opacity | `src/schemes.js:31-37` | `normalizeOpacity` does not clamp values above 100, so an opacity of 200 yields an invalid `rgba(r,g,b,2)`. |
+| Repo hygiene | `.gitignore` lists `.taskvision/`, yet `git ls-files .taskvision` still returns 4 files | `.gitignore` does not untrack files that are already tracked, so the rule has no effect and the generated artifacts keep producing diffs. |
+
+## Active Session Task
+
+| Priority | Task                                                     | Status    | Owner | Due        |
+| -------- | -------------------------------------------------------- | --------- | ----- | ---------- |
+| P1       | Full codebase read-through and defect re-verification    | Completed | AI    | 2026-07-31 |
+| P2       | Clean up merged local branches and sync to `origin/master` | Completed | AI    | 2026-07-31 |
+| P2       | Decide whether to untrack the generated `.taskvision/` artifacts | Pending | Human | TBD |
+
 ## 升级调研 Session (2026-06-16)
 
 - 产出:`agent/reports/taskvision-upgrade-research-2026-06-16.md` —— 跨模型 deep-research 升级 roadmap(websearch+gh+codex search 三通道核实 + `mcp__codex__codex` 对抗 REVISE→reconcile;**未改任何源码/构建**)
