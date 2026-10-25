@@ -145,8 +145,12 @@ function defaultStatusForTag(tag) {
         return 'todo';
     }
 
-    if (/^(note|idea)$/i.test(tag.trim())) {
+    if (/^(note|idea|core|reuse|intent)$/i.test(tag.trim())) {
         return 'idea';
+    }
+
+    if (/^review$/i.test(tag.trim())) {
+        return 'review';
     }
 
     return 'todo';

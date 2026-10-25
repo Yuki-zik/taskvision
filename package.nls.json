@@ -147,5 +147,11 @@
     "taskvision.configuration.tree.buttons.filter.markdownDescription": "Show a button in the tree view title bar allowing the tree to be filtered by entering some text.",
     "taskvision.configuration.tree.buttons.refresh.markdownDescription": "Show a refresh button in the tree view title bar.",
     "taskvision.configuration.tree.buttons.expand.markdownDescription": "Show a button in the tree view title bar to expand or collapse the whole tree.",
-    "taskvision.configuration.tree.buttons.export.markdownDescription": "Show a button in the tree view title bar to create a file showing the tree content."
+    "taskvision.configuration.tree.buttons.export.markdownDescription": "Show a button in the tree view title bar to create a file showing the tree content.",
+    "taskvision.command.openWorkspace.title": "Open Knowledge Workspace",
+    "taskvision.command.stopWorkspace.title": "Stop Knowledge Workspace",
+    "taskvision.command.copyMcpConfig.title": "Copy Agent MCP Configuration",
+    "taskvision.command.enableKnowledgeTags.title": "Enable Knowledge Tags (Preserve Custom Tags)",
+    "taskvision.configuration.workspace": "TaskVision Workspace",
+    "taskvision.configuration.workspace.nodePath": "Node.js 22.18+ executable for the optional local Web/MCP workspace. Set in User Settings; workspace overrides are ignored. Nothing runs until you open the workspace."
 }

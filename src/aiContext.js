@@ -1,4 +1,5 @@
 /* jshint esversion:6, node: true */
+// CORE: 旧 Markdown／JSON 交接包导出入口；与新 MCP 工作台保持兼容。 [tv:id=core.context-export]
 /* eslint-env node */
 
 'use strict';

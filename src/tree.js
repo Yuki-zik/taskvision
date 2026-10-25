@@ -1,4 +1,5 @@
 /* jshint esversion:6 */
+// REUSE: 复用现有目录／标签分组和源码定位，知识标签继续使用同一棵树。 [tv:id=reuse.tree]
 
 var vscode = require('vscode');
 var path = require("path");
@@ -652,6 +653,13 @@ class TreeNodeProvider {
 
         buildCounter = _context.workspaceState.get('buildCounter', 1);
         expandedNodes = _context.workspaceState.get('expandedNodes', {});
+    }
+
+    dispose() {
+        if (this._onDidChangeTreeData) {
+            this._onDidChangeTreeData.dispose();
+            this._onDidChangeTreeData = undefined;
+        }
     }
 
     getChildren(node) {

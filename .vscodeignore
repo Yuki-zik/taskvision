@@ -1,7 +1,8 @@
 .vscode
 .gitignore
 node_modules/
-src/
+src/**
+!src/annotationParser.js
 test/
 test-files
 webpack.config.js
@@ -26,3 +27,13 @@ check_braces.js
 clean_highlights*.js
 test_css*.js
 test_out_css.json
+
+# Workspace ships the bundled MCP runtime, not development dependencies
+workspace/node_modules/**
+workspace/test/**
+workspace/scripts/**
+workspace/.playwright-cli/**
+workspace/package-lock.json
+workspace/CONTRACT.md
+artifacts/**
+workspace/test-extension/**

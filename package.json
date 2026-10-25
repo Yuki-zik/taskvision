@@ -9,7 +9,7 @@
         "taskvision",
         "multi-root ready"
     ],
-    "version": "2.0.1",
+    "version": "2.1.0",
     "license": "MIT",
     "icon": "resources/taskvision.png",
     "publisher": "A-Znk",
@@ -25,15 +25,24 @@
     },
     "scripts": {
         "test": "qunit",
-        "vscode:prepublish": "node ./buildCodiconNames.js && node --openssl-legacy-provider node_modules/webpack/bin/webpack.js --mode production",
+        "vscode:prepublish": "node workspace/scripts/prepublish.mjs",
         "webpack": "node --openssl-legacy-provider node_modules/webpack/bin/webpack.js --mode development",
-        "webpack-dev": "node --openssl-legacy-provider node_modules/webpack/bin/webpack.js --mode development --watch"
+        "webpack-dev": "node --openssl-legacy-provider node_modules/webpack/bin/webpack.js --mode development --watch",
+        "workspace:install": "npm --prefix workspace ci",
+        "workspace:start": "node workspace/server.mjs --root .",
+        "workspace:test": "npm --prefix workspace test",
+        "workspace:mcp": "node workspace/mcp.mjs --root .",
+        "package:preview": "node workspace/scripts/package.mjs"
     },
     "categories": [
         "Other"
     ],
     "activationEvents": [
-        "onStartupFinished"
+        "onStartupFinished",
+        "onCommand:taskvision.openWorkspace",
+        "onCommand:taskvision.stopWorkspace",
+        "onCommand:taskvision.copyMcpConfig",
+        "onCommand:taskvision.enableKnowledgeTags"
     ],
     "main": "./dist/extension",
     "contributes": {
@@ -182,6 +191,26 @@
                     "command": "taskvision.collapse",
                     "when": "view =~ /taskvision/ && taskvision-expanded == true && taskvision-show-expand-button == true",
                     "group": "navigation@9"
+                },
+                {
+                    "command": "taskvision.openWorkspace",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@0"
+                },
+                {
+                    "command": "taskvision.stopWorkspace",
+                    "when": "view =~ /taskvision/",
+                    "group": "0-workspace"
+                },
+                {
+                    "command": "taskvision.copyMcpConfig",
+                    "when": "view =~ /taskvision/",
+                    "group": "0-workspace"
+                },
+                {
+                    "command": "taskvision.enableKnowledgeTags",
+                    "when": "view =~ /taskvision/",
+                    "group": "0-workspace"
                 }
             ],
             "view/item/context": [
@@ -685,6 +714,30 @@
                 "title": "%taskvision.command.setHighlightSchemeForAllTags.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(symbol-color)"
+            },
+            {
+                "command": "taskvision.openWorkspace",
+                "title": "%taskvision.command.openWorkspace.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(type-hierarchy)"
+            },
+            {
+                "command": "taskvision.stopWorkspace",
+                "title": "%taskvision.command.stopWorkspace.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "taskvision.copyMcpConfig",
+                "title": "%taskvision.command.copyMcpConfig.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(copy)"
+            },
+            {
+                "command": "taskvision.enableKnowledgeTags",
+                "title": "%taskvision.command.enableKnowledgeTags.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(tag)"
             }
         ],
         "configuration": [
@@ -806,7 +859,11 @@
                             "[ ]",
                             "[x]",
                             "NOTE",
-                            "XXX"
+                            "XXX",
+                            "CORE",
+                            "REUSE",
+                            "INTENT",
+                            "REVIEW"
                         ],
                         "items": {
                             "type": "string"
@@ -962,6 +1019,54 @@
                                 "scheme": "neon+glass",
                                 "colorType": "text",
                                 "fontType": "tag"
+                            },
+                            "CORE": {
+                                "foreground": "#60A5FA",
+                                "icon": "symbol-namespace",
+                                "iconColour": "#60A5FA",
+                                "rulerColour": "#60A5FA",
+                                "gutterIcon": true,
+                                "colorType": "text",
+                                "glowType": "none",
+                                "glassType": "none",
+                                "fontType": "tag",
+                                "fontWeight": "bold"
+                            },
+                            "REUSE": {
+                                "foreground": "#34D399",
+                                "icon": "references",
+                                "iconColour": "#34D399",
+                                "rulerColour": "#34D399",
+                                "gutterIcon": true,
+                                "colorType": "text",
+                                "glowType": "none",
+                                "glassType": "none",
+                                "fontType": "tag",
+                                "fontWeight": "bold"
+                            },
+                            "INTENT": {
+                                "foreground": "#A78BFA",
+                                "icon": "comment-discussion",
+                                "iconColour": "#A78BFA",
+                                "rulerColour": "#A78BFA",
+                                "gutterIcon": true,
+                                "colorType": "text",
+                                "glowType": "none",
+                                "glassType": "none",
+                                "fontType": "tag",
+                                "fontWeight": "bold"
+                            },
+                            "REVIEW": {
+                                "foreground": "#FBBF24",
+                                "icon": "eye",
+                                "iconColour": "#FBBF24",
+                                "rulerColour": "#FBBF24",
+                                "gutterIcon": true,
+                                "colorType": "text",
+                                "glowType": "none",
+                                "glassType": "none",
+                                "fontType": "tag",
+                                "fontWeight": "bold"
                             }
                         },
                         "markdownDescription": "%taskvision.configuration.highlights.customHighlight.markdownDescription%",
@@ -1735,6 +1840,17 @@
                         "default": true,
                         "markdownDescription": "%taskvision.configuration.ripgrep.usePatternFile.markdownDescription%",
                         "type": "boolean"
+                    }
+                }
+            },
+            {
+                "title": "%taskvision.configuration.workspace%",
+                "properties": {
+                    "taskvision.workspace.nodePath": {
+                        "type": "string",
+                        "default": "node",
+                        "scope": "machine",
+                        "markdownDescription": "%taskvision.configuration.workspace.nodePath%"
                     }
                 }
             }

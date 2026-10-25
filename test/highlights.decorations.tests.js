@@ -127,3 +127,12 @@ QUnit.test('glass decoration leaves background-only configs untouched', function
     assert.strictEqual(opts.light.borderRadius, undefined, 'no borderRadius fabricated');
     assert.strictEqual(opts.dark.backgroundColor, 'rgba(1,2,3,0.15)', 'dark background preserved');
 });
+
+QUnit.test('highlight lifecycle registers a disposable rather than its mutable decoration map', function (assert) {
+    var context = { subscriptions: [] };
+    highlights.init(context, function () {});
+    assert.strictEqual(context.subscriptions.length, 1);
+    assert.strictEqual(typeof context.subscriptions[0].dispose, 'function');
+    context.subscriptions[0].dispose();
+    assert.ok(true, 'disposal clears timers and cached decorations without throwing');
+});

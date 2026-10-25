@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/readme-header.svg" alt="TaskVision" width="100%" />
+  <strong>TaskVision — 源码驱动的人机协作知识工作台</strong>
 </p>
 
 <p align="center">
@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-2.0.1-3B82F6?style=flat-square" alt="Version 2.0.1" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-2.1.0_preview-3B82F6?style=flat-square" alt="Version 2.1.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/tests-145%20passing-22C55E?style=flat-square" alt="145 passing tests" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -32,6 +32,19 @@ code --install-extension A-Znk.taskvision
 
 > [!IMPORTANT]
 > TaskVision 2.0 使用**四通道高亮模型**。样式范围现在拆分为 `colorType`、`glowType`、`glassType`、`fontType`。
+
+---
+
+
+## 2.1.0 本地预览：项目知识工作台
+
+保留原有高亮、任务树与上下文导出，新增 **CORE / REUSE / INTENT / REVIEW** 标签、独立 Web 工作台、10 个 MCP 工具、协作租约和人工 Review。默认不启动服务，也不修改全局 Agent 配置。
+
+在命令面板运行 **TaskVision: 打开项目知识工作台**；需要独立的 Node.js 22.18+。旧用户的自定义标签不会被覆盖，可运行 **启用知识标签**。Web 支持项目结构与标签联动、源码只读预览、带版本检查的注释编辑、共享指导与任务／Review 队列。
+
+源码开发：`npm ci`，`npm run workspace:install`，`npm run workspace:start`。插件预览包：`npm run package:preview`。详细使用、存储位置和安全边界见 [workspace/README.md](workspace/README.md)，Agent 工作流见 [专属 Skill](workspace/skills/taskvision-workspace/SKILL.md)。
+
+当前边界：本地优先；结构图为目录与轻量静态 import 索引；租约是协作约定；Web 知识保存在本地数据库，需显式导出，不自动提交 Git；当前不含跨设备同步、自动调度或语义正确性证明。
 
 ---
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/readme-header.svg" alt="TaskVision" width="100%" />
+  <strong>TaskVision — Source-linked knowledge for humans and coding agents</strong>
 </p>
 
 <p align="center">
@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-2.0.1-3B82F6?style=flat-square" alt="Version 2.0.1" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-2.1.0_preview-3B82F6?style=flat-square" alt="Version 2.1.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/tests-145%20passing-22C55E?style=flat-square" alt="145 passing tests" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -34,6 +34,19 @@ code --install-extension A-Znk.taskvision
 
 > [!IMPORTANT]
 > TaskVision 2.0 uses a **four-channel highlight model**. Styling scopes are now split into `colorType`, `glowType`, `glassType`, and `fontType`.
+
+---
+
+
+## 2.1.0 local preview: Knowledge Workspace
+
+The existing highlight, task tree and AI export remain available. This preview adds **CORE / REUSE / INTENT / REVIEW** tags, a standalone local Web workspace, 10 MCP tools, shared task leases and human review. It does not start a service on activation or modify global agent configuration.
+
+Run **TaskVision: Open Knowledge Workspace**. An external Node.js 22.18+ runtime is required. Existing custom tag lists are preserved; use **Enable Knowledge Tags** to append the new tags.
+
+For development: `npm ci`, `npm run workspace:install`, then `npm run workspace:start`. Build the local preview with `npm run package:preview`. See [workspace documentation](workspace/README.md) and the [bundled Agent Skill](workspace/skills/taskvision-workspace/SKILL.md).
+
+Limits: local-first; lightweight directory/static-import mapping; advisory leases; Web knowledge is stored locally until explicitly exported, not automatically committed to Git. No cross-device synchronization, agent scheduler or proof of semantic correctness.
 
 ---
 

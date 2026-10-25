@@ -1,5 +1,27 @@
 # Current Tasks
 
+## Local preview delivered — 2026-10-25
+
+User authorized rebuilding TaskVision on Mac mini. Local repository: `~/Code/taskvision`; feature branch `feat/knowledge-workspace-20261025`, base `e4c923c`. Preview version 2.1.0. No remote push, Marketplace publication, user-profile extension replacement or global Agent configuration change.
+
+| Work | Owner | State |
+|---|---|---|
+| Shared source/knowledge core, SQLite coordination, scope leases and review fingerprints | Main | Implemented and tested |
+| Local Web service, real MCP/CLI, dedicated Skill and security boundaries | Main | Implemented and tested |
+| Project map, source inspector, human guidance editing, task and review views | Main | Browser-verified on desktop and 390px viewport |
+| Existing extension compatibility and opt-in workspace commands | Main | 166 QUnit tests passing; production build and VSIX packaging passing |
+| Protocol, security and concurrency acceptance | Main | 22 Node tests passing, including real SDK MCP and child-process contention |
+| Real installed VS Code Extension Host | Main | Activation, eight command registrations and custom-tag preservation passed in an isolated profile |
+| Human product/architecture review | Human | Pending; no actual project review was self-approved |
+
+Parallel worker launch was attempted but Claude authentication, Copilot policy and Codex account/configuration rejected execution before any worker changed code. Main completed implementation directly; the three-worker plan is not a claim of completed independent agent review.
+
+Acceptance evidence is in `agent/reports/taskvision-workspace-acceptance-20261025.md` and `~/agent-machine/workbench/taskvision-20261025/`. Real browser review acceptance was exercised only on an isolated fixture. Source entry tags and the user's stated reuse requirement were added to the actual project as dogfood knowledge.
+
+Known limits: local-first Node22.18+ runtime; advisory source-scope leases; lightweight lexical structure instead of a complete language graph; no cross-device sync, automatic scheduler or Git synchronization of Web notes. Web knowledge and coordination live in the Git-common-dir SQLite database and require explicit export for portability. General symbol/move anchor migration is incomplete. Existing MIT declaration lacks a LICENSE file, and VSIX packaging reports that warning; provenance/license release work remains before publication.
+
+Next validation priorities: user walkthrough of the UI, realistic parallel coding with supported Agent clients, large-repo incremental performance, symbol-level navigation/anchor migration, durable knowledge import/export and non-macOS Extension Host acceptance.
+
 | Priority | Task                                                                                        | Status        | Owner      | Due        |
 | -------- | ------------------------------------------------------------------------------------------- | ------------- | ---------- | ---------- |
 | P1       | Sync repository root `AGENTS.md` with the governance rules in `agent/agents.md`             | ✅ Completed   | AI         | 2026-03-08 |

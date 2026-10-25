@@ -1,4 +1,5 @@
 var vscode = require('vscode');
+// INTENT: 保留四通道高亮与 Cursor 兼容行为；新增知识标签不重写渲染管线。 [tv:id=intent.highlight-compat]
 require('regexp-match-indices').shim();
 
 var config = require('./config.js');
@@ -29,7 +30,11 @@ var tagPlanCache = {};
 function init(context_, debug_) {
     context = context_;
     debug = debug_;
-    context.subscriptions.push(decorations);
+    context.subscriptions.push({ dispose: function () {
+        Object.keys(highlightTimer).forEach(function (key) { clearTimeout(highlightTimer[key]); });
+        highlightTimer = {};
+        clearCache();
+    } });
 }
 
 function trace(text) {

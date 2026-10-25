@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### 2.1.0 local preview (2026-10-25)
+
+- Add CORE, REUSE, INTENT and REVIEW semantic tags through the existing parser, tree and highlight pipeline.
+- Add an opt-in local knowledge workspace with project mapping, source inspection, human guidance editing, scoped tasks and review queue.
+- Add shared Node22 SQLite coordination, expiring fenced leases, optimistic writes, source fingerprints, real MCP/CLI and a dedicated Agent Skill.
+- Preserve existing user tags and keep new services off until explicitly opened. Ship the MCP dependency bundle in the VSIX.
+- Add real protocol/security/worktree/multiprocess tests and installed Extension Host acceptance. Fix existing optional-channel/provider/highlight-cache disposal problems found during that acceptance.
+- Preview only: no Marketplace release, cross-device sync, autonomous agent scheduler or automatic Git persistence of Web notes.
+
 - Detect `TODO`/`FIXME` (and other tags) in `%`-style comments used by LaTeX, Matlab and Erlang by adding `%` to the default detection regex. (#3)
 
 ## v2.0.1 - 2026-02-21

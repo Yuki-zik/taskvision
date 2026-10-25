@@ -1,0 +1,10 @@
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+const root=fileURLToPath(new URL('../../',import.meta.url));
+const output=path.resolve(process.argv[2]||path.join(root,'artifacts','taskvision-2.1.0-preview.vsix'));
+fs.mkdirSync(path.dirname(output),{recursive:true});
+const vsce=path.join(root,'workspace/node_modules/@vscode/vsce/vsce');
+const result=spawnSync(process.execPath,[vsce,'package','--pre-release','--no-dependencies','--allow-missing-repository','--out',output],{cwd:root,stdio:'inherit',env:{...process.env,TASKVISION_PREVIEW_OFFLINE:'1'}});
+process.exitCode=result.status??1;

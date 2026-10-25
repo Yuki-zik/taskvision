@@ -1,4 +1,5 @@
 /* jshint esversion:6 */
+// CORE: VS Code 入口：注册扫描、任务树、注释同步与工作台命令。 [tv:id=core.extension]
 
 var vscode = require('vscode');
 var ripgrep = require('./ripgrep');
@@ -24,6 +25,7 @@ var changeSessionStore = require('./changeSessionStore.js');
 var annotationParser = require('./annotationParser.js');
 var aiContext = require('./aiContext.js');
 var highlightScheme = require('./highlightScheme.js');
+var knowledgeWorkspace = require('./knowledgeWorkspace.js');
 
 var searchList = [];
 var currentFilter;
@@ -98,6 +100,7 @@ function activate(context) {
     }
 
     config.init(context);
+    knowledgeWorkspace.register(vscode, context);
     highlights.init(context, debug);
     utils.init(config);
     attributes.init(config);
@@ -3112,7 +3115,10 @@ function activate(context) {
             documentChanged(e.document);
         }));
 
-        context.subscriptions.push(outputChannel);
+        // The channel is optional and can be recreated after configuration changes.
+        context.subscriptions.push({ dispose: function () {
+            if (outputChannel) { outputChannel.dispose(); outputChannel = undefined; }
+        } });
 
         resetOutputChannel();
 

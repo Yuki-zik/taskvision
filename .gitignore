@@ -33,3 +33,8 @@ src/repro_output.txt
 # Generated agent/AI context output
 .taskvision/
 /agent/reports/
+
+# Rebuild artifacts and local browser sessions
+artifacts/
+.playwright-cli/
+workspace/mcp.bundle.mjs

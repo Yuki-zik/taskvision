@@ -13,6 +13,7 @@ var CONTEXT_KINDS = [
     'pitfall',
     'do-not-touch',
     'entrypoint',
+    'reusable',
     'example',
     'decision',
     'terminology'
@@ -134,6 +135,18 @@ function parseDirectives(text, tag) {
 
         return '';
     }) : '';
+
+    // CORE: Keep human-facing tags compatible with the existing task/context/review protocol.
+    if (!parsed.contextKind && !parsed.reviewKind) {
+        var semanticTag = String(tag || '').trim().toUpperCase();
+        var defaults = { CORE: 'entrypoint', REUSE: 'reusable', INTENT: 'constraint' };
+        if (Object.prototype.hasOwnProperty.call(defaults, semanticTag)) {
+            parsed.contextKind = defaults[semanticTag];
+        }
+        else if (semanticTag === 'REVIEW') {
+            parsed.reviewKind = 'verify';
+        }
+    }
 
     if (rawTokens.length > 0) {
         cleaned = cleaned.replace(/\s{2,}/g, ' ');

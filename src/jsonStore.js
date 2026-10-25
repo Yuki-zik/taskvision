@@ -1,4 +1,5 @@
 /* jshint esversion:6, node: true */
+// REUSE: 旧 sidecar 写入统一通过临时文件与 rename；新协作租约使用独立事务存储。 [tv:id=reuse.atomic-json]
 /* eslint-env node */
 
 'use strict';

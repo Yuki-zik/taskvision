@@ -1,4 +1,5 @@
 /* jshint esversion:6, node: true */
+// REVIEW: 旧 store 存在进程内缓存；外部协作写入不得直接覆盖此 sidecar。 [tv:id=review.legacy-store]
 /* eslint-env node */
 
 'use strict';

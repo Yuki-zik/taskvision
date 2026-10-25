@@ -72,3 +72,9 @@ TaskVision is a VS Code extension that turns TODO-style source comments into str
 
 - Generated AI output lives under `.taskvision/` and should stay excluded from normal scans.
 - Project governance documents live under `agent/` and must be updated at session start and end.
+
+## 2026-10-25 Knowledge Workspace preview
+
+The 2.1.0 local preview preserves the CommonJS VS Code extension and adds a separate Node22 ESM `workspace/` runtime. `src/knowledgeWorkspace.js` is an opt-in process bridge. `workspace/core` reuses `src/annotationParser.js`, scans actual source, stores Web knowledge and transactional coordination in the Git common directory, and enforces optimistic edits and human review gates. `server.mjs`, `mcp.mjs` and `cli.mjs` share the dispatch layer. `public/` is a dependency-free local Web UI; `skills/taskvision-workspace/` documents Agent behavior.
+
+Run `npm test`, `npm run workspace:test`, `npm run webpack` and `npm run package:preview`. Detailed limits, permissions and commands are in `workspace/README.md`. The legacy `.taskvision` stores remain separate; the new runtime only reads legacy contexts and never overwrites them.
