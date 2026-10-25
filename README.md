@@ -8,9 +8,9 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-2.1.0_preview-3B82F6?style=flat-square" alt="Version 2.1.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.0.0_preview-3B82F6?style=flat-square" alt="Version 3.0.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/tests-145%20passing-22C55E?style=flat-square" alt="145 passing tests" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
 </p>
 
@@ -38,15 +38,24 @@ code --install-extension A-Znk.taskvision
 ---
 
 
-## 2.1.0 local preview: Knowledge Workspace
+## 3.0 preview: a typed code-knowledge and collaboration workspace
 
-The existing highlight, task tree and AI export remain available. This preview adds **CORE / REUSE / INTENT / REVIEW** tags, a standalone local Web workspace, 10 MCP tools, shared task leases and human review. It does not start a service on activation or modify global agent configuration.
+The project now uses **strict TypeScript** throughout the extension and domain services. **React, React Flow and ELK** power the interactive architecture workbench. Existing highlighting, task navigation and AI context export remain compatible.
 
-Run **TaskVision: Open Knowledge Workspace**. An external Node.js 22.18+ runtime is required. Existing custom tag lists are preserved; use **Enable Knowledge Tags** to append the new tags.
+CORE / REUSE / INTENT / REVIEW annotations, human guidance, scoped agent leases and source-linked review share one domain model. The Web interface supports drilldown, source/knowledge navigation, revision-safe editing, proposal adoption, real before/after review and explicit knowledge import previews. Eleven MCP tools and a dedicated Skill support retrieval, reuse, coordination and handoff.
 
-For development: `npm ci`, `npm run workspace:install`, then `npm run workspace:start`. Build the local preview with `npm run package:preview`. See [workspace documentation](workspace/README.md) and the [bundled Agent Skill](workspace/skills/taskvision-workspace/SKILL.md).
+```sh
+npm ci
+npm run typecheck
+npm run build
+npm run workspace:start
+```
 
-Limits: local-first; lightweight directory/static-import mapping; advisory leases; Web knowledge is stored locally until explicitly exported, not automatically committed to Git. No cross-device synchronization, agent scheduler or proof of semantic correctness.
+After installing the preview VSIX, run **TaskVision: Open Knowledge Workspace**. The external runtime requires **Node.js 22.18+**. Existing custom tags are preserved; use **Enable Knowledge Tags** to append the new ones. `npm run package:preview` creates a local VSIX without publishing it.
+
+See the [workspace guide](workspace/README.md), [Agent Skill](workspace/skills/taskvision-workspace/SKILL.md), and [acceptance contract](agent/refactor-acceptance.md). Source boundaries: `src/` for the editor; `packages/shared` for types/validation; `packages/core` for indexing/knowledge/coordination; `apps/` for Web, HTTP, MCP and CLI.
+
+Local-first. No automatic cloud synchronization, agent scheduler or auto-merge. Leases are cooperative; human approval remains explicit. The graph is not a complete runtime call graph.
 
 ---
 

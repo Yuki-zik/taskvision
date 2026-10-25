@@ -1,40 +1,56 @@
+const {createHost, withHost} = require('./helpers/extensionHost');
+const path = require('path');
+const os = require('os');
 var fs = require('fs');
 
 function readSource(file) {
     return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 }
 
-QUnit.test('extension resolves highlight updates to workspace first', function (assert) {
-    var source = readSource('src/extension.js');
+QUnit.test("extension resolves highlight updates to workspace first", async assert => {
+    for (const folders of [undefined, [{uri:{scheme:'file',fsPath:'/tmp/project'}}]]) {
+      const host = createHost({workspaceFolders: folders, picks: ['glass']});
+      await withHost(host, async load => {
+        load('commands/appearance').registerAppearanceCommands(host.context);
+        host.commands.get('taskvision.setHighlightSchemeForAllTags')();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(host.updates.length, 2);
+        assert.ok(host.updates.every(update => update.target === (folders ? 2 : 1)), 'writes go to the active scope');
+      });
+    }
+  });
 
-    assert.ok(source.indexOf('function resolveConfigTarget()') !== -1);
-    assert.ok(source.indexOf('vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0') !== -1);
-    assert.ok(source.indexOf('return vscode.ConfigurationTarget.Workspace;') !== -1);
-    assert.ok(source.indexOf('return vscode.ConfigurationTarget.Global;') !== -1);
-});
+QUnit.test("extension writes customHighlight updates using resolved target", async assert => {
+    const host = createHost({picks: ['glass'], settings: {'taskvision.highlights.customHighlight': {TODO:{icon:'check'},CUSTOM:{scheme:'neon'}}}});
+    await withHost(host, async load => {
+      load('commands/appearance').registerAppearanceCommands(host.context);
+      host.commands.get('taskvision.setScheme')({tag:'TODO'});
+      await new Promise(resolve => setImmediate(resolve));
+      assert.strictEqual(host.updates.length,1);
+      assert.strictEqual(host.updates[0].target,host.vscode.ConfigurationTarget.Workspace);
+      assert.deepEqual(host.updates[0].value,{TODO:{icon:'check',scheme:'glass'},CUSTOM:{scheme:'neon'}});
+    });
+  });
 
-QUnit.test('extension writes customHighlight updates using resolved target', function (assert) {
-    var source = readSource('src/extension.js');
-
-    assert.ok(source.indexOf("currentConfig.update('customHighlight', updated, customHighlightTarget);") !== -1);
-    assert.ok(source.indexOf("cfg.update('customHighlight', updated, customHighlightTarget);") !== -1);
-});
-
-QUnit.test('extension exposes independent color/glow/glass/font scope controls', function (assert) {
-    var source = readSource('src/extension.js');
-
-    assert.ok(source.indexOf("value: 'scope-color'") !== -1);
-    assert.ok(source.indexOf("value: 'scope-glow'") !== -1);
-    assert.ok(source.indexOf("value: 'scope-glass'") !== -1);
-    assert.ok(source.indexOf("value: 'scope-font'") !== -1);
-    assert.ok(source.indexOf("updateConfig('colorType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);") !== -1);
-    assert.ok(source.indexOf("updateConfig('glowType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);") !== -1);
-    assert.ok(source.indexOf("updateConfig('glassType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);") !== -1);
-    assert.ok(source.indexOf("updateConfig('fontType', scopeValue.value === 'inherit' ? undefined : scopeValue.value);") !== -1);
-});
+QUnit.test("extension exposes independent color/glow/glass/font scope controls", async assert => {
+    for (const channel of ['color','glow','glass','font']) {
+      for (const scope of ['whole-line','inherit']) {
+        const host = createHost({picks:['scope','scope-'+channel,scope],settings:{'taskvision.highlights.customHighlight':{TODO:{colorType:'tag',glowType:'tag',glassType:'tag',fontType:'tag'}}}});
+        await withHost(host, async load => {
+          load('commands/appearance').registerAppearanceCommands(host.context);
+          host.commands.get('taskvision.customizeAppearance')({tag:'TODO'});
+          await new Promise(resolve => setImmediate(resolve));
+          assert.strictEqual(host.updates.length,1,channel+' updates once');
+          const expected={colorType:'tag',glowType:'tag',glassType:'tag',fontType:'tag'};
+          if(scope==='inherit') delete expected[channel+'Type']; else expected[channel+'Type']=scope;
+          assert.deepEqual(host.updates[0].value.TODO,expected,'only selected channel changes');
+        });
+      }
+    }
+  });
 
 QUnit.test('extension refreshes when regex and global opacity settings change', function (assert) {
-    var source = readSource('src/extension.js');
+    var source = readSource('src/extension.ts');
 
     assert.ok(source.indexOf('if (e.affectsConfiguration("taskvision.regex.regex")) {\n                    return;\n                }') === -1);
     assert.ok(source.indexOf('e.affectsConfiguration("taskvision.highlights.foregroundOpacity")') !== -1);
@@ -43,23 +59,34 @@ QUnit.test('extension refreshes when regex and global opacity settings change', 
     assert.ok(source.indexOf('e.affectsConfiguration("taskvision.highlights.glassBorderOpacity")') !== -1);
 });
 
-QUnit.test('extension updates font appearance in a single customHighlight write', function (assert) {
-    var source = readSource('src/extension.js');
-
-    assert.ok(source.indexOf('var updateConfigValues = function (values)') !== -1);
-    assert.ok(source.indexOf("updateConfig('fontWeight', font.fontWeight);\n                                updateConfig('fontStyle', font.fontStyle);") === -1);
-    assert.ok(source.indexOf('updateConfigValues({ fontWeight: font.fontWeight, fontStyle: font.fontStyle });') !== -1);
+QUnit.test("extension updates font appearance in a single customHighlight write", async assert => {
+    const host = createHost({picks: ['font', '$(bold) Bold'], settings: {
+        'taskvision.highlights.customHighlight': {TODO: {foreground: '#123456'}, CUSTOM: {scheme: 'glass'}}
+    }});
+    await withHost(host, async load => {
+        load('commands/appearance').registerAppearanceCommands(host.context);
+        host.commands.get('taskvision.customizeAppearance')({tag: 'TODO'});
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(host.updates.length, 1, 'font change is atomic');
+        assert.strictEqual(host.updates[0].target, host.vscode.ConfigurationTarget.Workspace);
+        assert.deepEqual(host.updates[0].value, {TODO: {foreground: '#123456', fontWeight: 'bold', fontStyle: 'normal'}, CUSTOM: {scheme: 'glass'}});
+    });
 });
 
-QUnit.test('extension registers a command to set the highlight scheme for all tags', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
-
-    assert.ok(source.indexOf("var highlightScheme = require('./highlightScheme.js');") !== -1, 'requires the highlightScheme module');
-    assert.ok(source.indexOf("vscode.commands.registerCommand('taskvision.setHighlightSchemeForAllTags'") !== -1, 'registers the command');
-    assert.ok(source.indexOf('highlightScheme.applySchemeToAllTags(customHighlight, defaultHighlight, selection.value)') !== -1, 'delegates to the pure helper');
-    assert.ok(source.indexOf('var configTarget = resolveConfigTarget();') !== -1, 'uses resolveConfigTarget for the write target');
-    assert.ok(source.indexOf("currentConfig.update('customHighlight', updated.customHighlight, configTarget)") !== -1, 'writes customHighlight with the resolved target');
-    assert.ok(source.indexOf("currentConfig.update('defaultHighlight', updated.defaultHighlight, configTarget)") !== -1, 'writes defaultHighlight with the resolved target');
+QUnit.test("extension registers a command to set the highlight scheme for all tags", async assert => {
+    const host = createHost({workspaceFolders: undefined, picks: ['neon+glass'], settings: {
+        'taskvision.highlights.customHighlight': {TODO: {colorType: 'tag'}, CUSTOM: {icon: 'check'}},
+        'taskvision.highlights.defaultHighlight': {foreground: '#ff0000'}
+    }});
+    await withHost(host, async load => {
+        load('commands/appearance').registerAppearanceCommands(host.context);
+        host.commands.get('taskvision.setHighlightSchemeForAllTags')();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(host.updates.length, 2);
+        assert.ok(host.updates.every(update => update.target === host.vscode.ConfigurationTarget.Global));
+        assert.deepEqual(host.updates[0].value, {TODO: {colorType: 'tag', scheme: 'neon+glass'}, CUSTOM: {icon: 'check', scheme: 'neon+glass'}});
+        assert.deepEqual(host.updates[1].value, {foreground: '#ff0000', scheme: 'neon+glass'});
+    });
 });
 
 QUnit.test('package contributes the set-scheme-for-all-tags command in the view title overflow menu', function (assert) {
@@ -79,7 +106,7 @@ QUnit.test('package contributes the set-scheme-for-all-tags command in the view 
 });
 
 QUnit.test('extension source accepts built-in taskvision icons during validation', function (assert) {
-    var source = readSource('src/icons.js');
+    var source = readSource('src/icons.ts');
 
     assert.ok(source.indexOf("!octicons[icon] && icon !== 'taskvision' && icon !== 'taskvision-filled'") !== -1);
 });
@@ -168,7 +195,7 @@ QUnit.test('package routes tree context menus by task/context/review node types'
 });
 
 QUnit.test('tree source differentiates task/context/review labels and context values', function (assert) {
-    var source = readSource('src/tree.js');
+    var source = readSource('src/tree.ts');
 
     assert.ok(source.indexOf('treeItem.contextValue = "task";') !== -1);
     assert.ok(source.indexOf('treeItem.contextValue = "context";') !== -1);
@@ -180,40 +207,58 @@ QUnit.test('tree source differentiates task/context/review labels and context va
     assert.ok(source.indexOf('label: "Agent session: " + shortSessionId(sessions[roots[0]])') !== -1);
 });
 
-QUnit.test('extension applies on-demand stable ID tracking policy', function (assert) {
-    var source = readSource('src/extension.js');
-
-    assert.ok(source.indexOf('function shouldEnsureStableIdForNode(node, options, referencedStableIds)') !== -1);
-    assert.ok(source.indexOf('if (ensureOptions.forceStableIds === true)') !== -1);
-    assert.ok(source.indexOf('return status !== \'todo\' && status !== \'idea\';') !== -1);
-    assert.ok(source.indexOf('var initialRootNodes = getSyncNodesForRoot(rootPath, syncOptions);') !== -1);
-    assert.ok(source.indexOf('ensureStableIdsInSource(initialRootNodes, {\n                forceStableIds: syncOptions.forceStableIds === true\n            })') !== -1);
-    assert.ok(source.indexOf('forceStableIds: true') !== -1);
+QUnit.test("extension applies on-demand stable ID tracking policy", async assert => {
+    const host = createHost();
+    await withHost(host, load => {
+        const policy = load('annotationPolicy');
+        const node = {type: 'todo', tag: 'TODO', actualTag: 'TODO', line: 1, column: 1, fsPath: '/tmp/project/a.ts', rootPath: '/tmp/project', label: 'work', after: 'work', priority: 'normal', status: 'todo', extraLines: []};
+        assert.false(policy.shouldEnsureStableIdForNode(node, {}, {}, 'normal'), 'plain pending task remains without source ID');
+        assert.true(policy.shouldEnsureStableIdForNode({...node, status: 'doing'}, {}, {}, 'normal'));
+        assert.true(policy.shouldEnsureStableIdForNode({...node, note: 'reason'}, {}, {}, 'normal'));
+        assert.true(policy.shouldEnsureStableIdForNode({...node, priority: 'high'}, {}, {}, 'normal'));
+        assert.true(policy.shouldEnsureStableIdForNode(node, {forceStableIds: true}, {}, 'normal'));
+        const stableId = policy.deriveStableIdForNode(node);
+        assert.true(policy.shouldEnsureStableIdForNode(node, {}, {[stableId]: true}, 'normal'));
+        assert.true(policy.shouldEnsureStableIdForNode({...node, annotationKind: 'context', contextKind: 'invariant'}, {}, {}, 'normal'));
+        assert.false(policy.shouldEnsureStableIdForNode({...node, annotationKind: 'review'}, {}, {}, 'normal'));
+        const other = {...node, fsPath: '/tmp/project/b.ts'};
+        assert.deepEqual(policy.getSyncNodesForRoot('/tmp/project', [node, other], {scopeNodes: [node]}), [node]);
+        assert.deepEqual(policy.getSyncNodesForRoot('/tmp/project', [node, other], {scopeNodesByRoot: {'/tmp/project': [other]}}), [other]);
+    });
 });
 
-QUnit.test('extension limits forced stable IDs to the AI export scope', function (assert) {
-    var source = readSource('src/extension.js');
+QUnit.test("extension limits forced stable IDs to the AI export scope", async assert => {
+    const host=createHost();
+    await withHost(host,load=>{
+      const policy=load('annotationPolicy');
+      const a={rootPath:'/tmp/a',fsPath:'/tmp/a/a.ts'}, b={rootPath:'/tmp/a',fsPath:'/tmp/a/b.ts'}, other={rootPath:'/tmp/b',fsPath:'/tmp/b/c.ts'};
+      assert.deepEqual(policy.getSyncNodesForRoot('/tmp/a',[a,b,other]),[a,b]);
+      assert.deepEqual(policy.getSyncNodesForRoot('/tmp/a',[a,b,other],{scopeNodes:[a,other]}),[a]);
+      assert.deepEqual(policy.getSyncNodesForRoot('/tmp/a',[a,b],{scopeNodesByRoot:{'/tmp/a':[b]},scopeNodes:[a]}),[b]);
+      assert.deepEqual(policy.getSyncNodesForRoot('/tmp/a',[a,b],{scopeNodes:[]}),[],'empty selected scope stays empty');
+    });
+  });
 
-    assert.ok(source.indexOf('function getSyncNodesForRoot(rootPath, syncOptions)') !== -1);
-    assert.ok(source.indexOf('Array.isArray(options.scopeNodes)') !== -1);
-    assert.ok(source.indexOf('scopeNodesByRoot: grouped') !== -1);
-    assert.ok(source.indexOf('var rootNodes = getSyncNodesForRoot(rootPath, syncOptions);') !== -1);
-});
-
-QUnit.test('extension writes AI status report before updating export baseline', function (assert) {
-    var source = readSource('src/extension.js');
-    var exportStart = source.indexOf('function exportAiContext(node)');
-    var markIndex = source.indexOf('taskMetaStore.markTasksExported', exportStart);
-    var reportIndex = source.indexOf('aiContext.writeStatusReport', exportStart);
-
-    assert.ok(exportStart !== -1, 'exportAiContext exists');
-    assert.ok(reportIndex !== -1, 'export writes status report');
-    assert.ok(markIndex !== -1, 'export marks tasks exported');
-    assert.ok(reportIndex < markIndex, 'status report is written before baseline is updated');
+QUnit.test("extension writes AI status report before updating export baseline", async assert => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'taskvision-export-order-'));
+    const host = createHost();
+    try {
+        await withHost(host, load => {
+            const taskStore = load('taskMetaStore');
+            const ai = load('aiContext');
+            const task = {taskId: 'old-id', stableId: 'task.work', fsPath: path.join(root, 'a.ts'), line: 0, column: 1, label: 'work', tag: 'TODO', status: 'todo', extraLines: []};
+            taskStore.markTasksExported(root, [task], '2026-01-01');
+            ai.exportContextWithBaseline(root, 'test', [{...task, status: 'doing'}], [{...task, status: 'doing'}], '2026-01-02');
+            const report = fs.readFileSync(path.join(root, '.taskvision', 'ai-status-report.md'), 'utf8');
+            assert.ok(report.includes('Previous status: `todo`'));
+            assert.ok(report.includes('Current status: `doing`'));
+            assert.strictEqual(taskStore.getExportBaseline(root)['old-id'].lastExportedStatus, 'doing');
+        });
+    } finally { fs.rmSync(root, {recursive: true, force: true}); }
 });
 
 QUnit.test('extension registers commands even when ripgrep is unavailable', function (assert) {
-    var source = readSource('src/extension.js');
+    var source = readSource('src/extension.ts');
     var missingRipgrepIndex = source.indexOf("TaskVision: Failed to find vscode-ripgrep");
     var firstCommandIndex = source.indexOf("vscode.commands.registerCommand('taskvision.openUrl'");
     var missingRipgrepBlock = source.slice(missingRipgrepIndex, firstCommandIndex);

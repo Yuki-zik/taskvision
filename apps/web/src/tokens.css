@@ -1,0 +1,12 @@
+:root {
+  --font:
+    -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Segoe UI', sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --rail: #1c2935;
+  --paper: #fafbf6;
+  --ink: #2d4037;
+  --muted: #718174;
+  --line: #e0e5dc;
+  --teal: #386b5a;
+}

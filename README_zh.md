@@ -8,9 +8,9 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-2.1.0_preview-3B82F6?style=flat-square" alt="Version 2.1.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.0.0_preview-3B82F6?style=flat-square" alt="Version 3.0.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/tests-145%20passing-22C55E?style=flat-square" alt="145 passing tests" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
 </p>
 
@@ -36,15 +36,24 @@ code --install-extension A-Znk.taskvision
 ---
 
 
-## 2.1.0 本地预览：项目知识工作台
+## 3.0 预览：统一的源码知识与协作工作台
 
-保留原有高亮、任务树与上下文导出，新增 **CORE / REUSE / INTENT / REVIEW** 标签、独立 Web 工作台、10 个 MCP 工具、协作租约和人工 Review。默认不启动服务，也不修改全局 Agent 配置。
+项目已统一为 **严格 TypeScript**：保留旧插件行为，抽离共享领域核心、HTTP/MCP/CLI 适配层，并用 **React、React Flow 和 ELK** 重做交互式项目地图。
 
-在命令面板运行 **TaskVision: 打开项目知识工作台**；需要独立的 Node.js 22.18+。旧用户的自定义标签不会被覆盖，可运行 **启用知识标签**。Web 支持项目结构与标签联动、源码只读预览、带版本检查的注释编辑、共享指导与任务／Review 队列。
+源码中的 CORE／REUSE／INTENT／REVIEW 标签、人类网页指导、Agent 任务认领和实际代码 Review 共用一份模型。页面支持架构概览与深入、源码／知识联动、带冲突保护的编辑、提议采纳、真实差异审阅和知识导入预检。Agent 通过11个MCP工具与专属Skill按需读取、复用和交接。
 
-源码开发：`npm ci`，`npm run workspace:install`，`npm run workspace:start`。插件预览包：`npm run package:preview`。详细使用、存储位置和安全边界见 [workspace/README.md](workspace/README.md)，Agent 工作流见 [专属 Skill](workspace/skills/taskvision-workspace/SKILL.md)。
+```sh
+npm ci
+npm run typecheck
+npm run build
+npm run workspace:start
+```
 
-当前边界：本地优先；结构图为目录与轻量静态 import 索引；租约是协作约定；Web 知识保存在本地数据库，需显式导出，不自动提交 Git；当前不含跨设备同步、自动调度或语义正确性证明。
+VS Code 安装预览VSIX后执行 **TaskVision: 打开项目知识工作台**；外部运行环境需要 **Node.js 22.18+**。原有自定义标签保持不变，可执行 **启用知识标签** 追加新标签。`npm run package:preview` 生成本地安装包，不会发布Marketplace。
+
+详细操作、数据存储与权限边界见 [工作台指南](workspace/README.md)，Agent 工作流见 [专属 Skill](workspace/skills/taskvision-workspace/SKILL.md)，验收标准见 [用户流程验收](agent/refactor-acceptance.md)。代码结构：`src/` 是编辑器适配；`packages/shared` 是类型与协议校验；`packages/core` 是知识、索引和协作；`apps/` 是Web、服务、MCP与CLI。
+
+本地优先，无自动云同步、Agent调度或自动合并。租约属于协作约定，人工验收仍由用户负责；结构图不等同于完整运行时调用图。
 
 ---
 

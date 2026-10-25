@@ -1,4 +1,4 @@
-var settingsMigration = require('../src/settingsMigration.js');
+var settingsMigration = require('../out/legacy/src/settingsMigration.js');
 
 function createStore() {
     return {

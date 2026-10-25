@@ -3,7 +3,7 @@ const https = require('https');
 const path = require('path');
 
 const url = 'https://raw.githubusercontent.com/microsoft/vscode-codicons/main/src/template/mapping.json';
-const outputFile = path.join(__dirname, 'src', 'codiconNames.js');
+const outputFile = path.join(__dirname, 'src', 'codiconNames.ts');
 
 console.log(`Fetching codicon mapping from ${url}...`);
 
@@ -24,7 +24,8 @@ https.get(url, (res) => {
         try {
             const mapping = JSON.parse(data);
             const keys = Object.keys(mapping);
-            const fileContent = `module.exports = ${JSON.stringify(keys, null, 4)};\n`;
+            if (keys.length < 100) { throw new Error("Codicon mapping is unexpectedly small; existing generated source was preserved."); }
+            const fileContent = `const names: string[] = ${JSON.stringify(keys, null, 4)};\nexport default names;\n`;
 
             fs.writeFileSync(outputFile, fileContent);
             console.log(`Successfully wrote ${keys.length} codicon names to ${outputFile}`);

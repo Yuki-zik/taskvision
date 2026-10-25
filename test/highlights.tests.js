@@ -110,9 +110,9 @@ function withHighlightPlan(configOverrides, action) {
     var originalLoad = Module._load;
     var capturedDecorations = [];
     var modules = [
-        '../src/config.js',
-        '../src/attributes.js',
-        '../src/highlights.js'
+        '../out/legacy/src/config.js',
+        '../out/legacy/src/attributes.js',
+        '../out/legacy/src/highlights.js'
     ].map(function (modulePath) {
         return require.resolve(modulePath);
     });
@@ -127,9 +127,9 @@ function withHighlightPlan(configOverrides, action) {
     };
 
     try {
-        var config = require('../src/config.js');
-        var attributes = require('../src/attributes.js');
-        var highlights = require('../src/highlights.js');
+        var config = require('../out/legacy/src/config.js');
+        var attributes = require('../out/legacy/src/attributes.js');
+        var highlights = require('../out/legacy/src/highlights.js');
         config.init({
             workspaceState: {
                 get: function (_key, fallback) {
@@ -157,11 +157,12 @@ function withHighlightRuntime(configOverrides, text, action) {
     var originalLoad = Module._load;
     var originalSetTimeout = global.setTimeout;
     var capturedDecorations = [];
+    var traceMessages = [];
     var modules = [
-        '../src/config.js',
-        '../src/attributes.js',
-        '../src/utils.js',
-        '../src/highlights.js'
+        '../out/legacy/src/config.js',
+        '../out/legacy/src/attributes.js',
+        '../out/legacy/src/utils.js',
+        '../out/legacy/src/highlights.js'
     ].map(function (modulePath) {
         return require.resolve(modulePath);
     });
@@ -181,10 +182,10 @@ function withHighlightRuntime(configOverrides, text, action) {
     };
 
     try {
-        var config = require('../src/config.js');
-        var attributes = require('../src/attributes.js');
-        var utils = require('../src/utils.js');
-        var highlights = require('../src/highlights.js');
+        var config = require('../out/legacy/src/config.js');
+        var attributes = require('../out/legacy/src/attributes.js');
+        var utils = require('../out/legacy/src/utils.js');
+        var highlights = require('../out/legacy/src/highlights.js');
         config.init({
             workspaceState: {
                 get: function (_key, fallback) {
@@ -200,7 +201,7 @@ function withHighlightRuntime(configOverrides, text, action) {
             asAbsolutePath: function (resourcePath) {
                 return resourcePath;
             }
-        }, function () { });
+        }, function (message) { traceMessages.push(message); });
 
         var editor = {
             document: new FakeDocument(text),
@@ -211,7 +212,7 @@ function withHighlightRuntime(configOverrides, text, action) {
         };
 
         highlights.triggerHighlight(editor);
-        action(capturedDecorations);
+        action(capturedDecorations, traceMessages);
     }
     finally {
         Module._load = originalLoad;
@@ -221,19 +222,25 @@ function withHighlightRuntime(configOverrides, text, action) {
 }
 
 QUnit.test('highlights uses gutterIcon attribute for gutter visibility', function (assert) {
-    var source = fs.readFileSync('src/highlights.js', 'utf8');
+    var source = fs.readFileSync('src/highlights.ts', 'utf8');
     assert.ok(source.indexOf("getAttribute(tag, 'gutterIcon'") !== -1);
     assert.ok(source.indexOf("getAttribute(tag, 'icon'") === -1);
 });
 
 QUnit.test('highlights routes trace logs through debug function', function (assert) {
-    var source = fs.readFileSync('src/highlights.js', 'utf8');
-    assert.ok(source.indexOf('function trace(text)') !== -1);
-    assert.ok(source.indexOf('console.log(') === -1);
+    withHighlightRuntime({
+        'taskvision.highlights': {customHighlight: {TODO: {gutterIcon: false, foreground: '#ffffff'}}, defaultHighlight: {}},
+        'taskvision.general': {tags: ['TODO'], tagGroups: {}},
+        'taskvision.regex': {regex: '($TAGS).*', regexCaseSensitive: true, subTagRegex: '(^:\\s*)'}
+    }, '// TODO verify tracing', function (_decorations, messages) {
+        assert.ok(messages.some(function (message) { return message.includes('triggerHighlight()'); }));
+        assert.ok(messages.some(function (message) { return message.includes('highlight()'); }));
+        assert.notOk(messages.some(function (message) { return message.includes('highlighting failed:'); }));
+    });
 });
 
 QUnit.test('highlights uses four independent scope keys', function (assert) {
-    var source = fs.readFileSync('src/highlights.js', 'utf8');
+    var source = fs.readFileSync('src/highlights.ts', 'utf8');
     assert.ok(source.indexOf('function getColorType(') !== -1);
     assert.ok(source.indexOf('function getGlowType(') !== -1);
     assert.ok(source.indexOf('function getGlassType(') !== -1);
@@ -241,7 +248,7 @@ QUnit.test('highlights uses four independent scope keys', function (assert) {
 });
 
 QUnit.test('highlights resolves channel scopes independently of legacy type', function (assert) {
-    var source = fs.readFileSync('src/highlights.js', 'utf8');
+    var source = fs.readFileSync('src/highlights.ts', 'utf8');
     assert.ok(source.indexOf('function getRangeType(') !== -1);
     assert.ok(source.indexOf("attributes.getAttribute(tag, channelAttribute, defaultValue)") !== -1);
     assert.ok(source.indexOf("attributes.getAttribute(tag, 'type'") === -1);
@@ -661,20 +668,20 @@ QUnit.test('highlights supports explicit line glass without full-width editor fi
 });
 
 QUnit.test('highlights no longer uses comment decoration hack path', function (assert) {
-    var source = fs.readFileSync('src/highlights.js', 'utf8');
+    var source = fs.readFileSync('src/highlights.ts', 'utf8');
     assert.ok(source.indexOf('result.comment') === -1);
     assert.ok(source.indexOf('commentHighlights') === -1);
 });
 
 QUnit.test('highlights composes text channels with segment bucketing', function (assert) {
-    var source = fs.readFileSync('src/highlights.js', 'utf8');
+    var source = fs.readFileSync('src/highlights.ts', 'utf8');
     assert.ok(source.indexOf('buildTextSegments(') !== -1);
     assert.ok(source.indexOf('styleComposer.composeTextStyle') !== -1);
     assert.ok(source.indexOf('rangeResolver.resolveRangeOffsets') !== -1);
 });
 
 QUnit.test('highlights resolves per-channel opacity helpers before building schemes', function (assert) {
-    var source = fs.readFileSync('src/highlights.js', 'utf8');
+    var source = fs.readFileSync('src/highlights.ts', 'utf8');
     assert.ok(source.indexOf('function getForegroundOpacity(') !== -1);
     assert.ok(source.indexOf('function getGlowOpacity(') !== -1);
     assert.ok(source.indexOf('function getGlassOpacity(') !== -1);

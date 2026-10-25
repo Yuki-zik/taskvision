@@ -1,4 +1,8 @@
-# TaskVision Knowledge Workspace — implementation contract (2026-10-25)
+# Historical 2.1 preview contract — superseded in 3.0
+
+This file records the earlier implementation plan. Current authoritative architecture and acceptance are `agent/refactor-acceptance.md`, `packages/shared/src/types.ts`, and `workspace/README.md`. The old JavaScript/ownership/build choices below are historical, not instructions for current work.
+
+## Original implementation contract (2026-10-25)
 
 Human explicitly authorized rebuilding TaskVision on Mac mini after agreeing the following scope. This authorization covers the architecture/dependencies below; no Marketplace release, remote push, global agent configuration changes, or unrelated cleanup is authorized in this run.
 

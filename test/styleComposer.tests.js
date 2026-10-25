@@ -1,4 +1,4 @@
-var composer = require('../src/styleComposer.js');
+var composer = require('../out/legacy/src/styleComposer.js');
 
 QUnit.test('styleComposer composes font decoration with glow shadow', function (assert) {
     var decoration = composer.composeTextDecoration('underline', '0 0 4px #fff');

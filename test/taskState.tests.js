@@ -1,6 +1,6 @@
-var utils = require('../src/utils.js');
-var taskState = require('../src/taskState.js');
-var annotationParser = require('../src/annotationParser.js');
+var utils = require('../out/legacy/src/utils.js');
+var taskState = require('../out/legacy/src/taskState.js');
+var annotationParser = require('../out/legacy/src/annotationParser.js');
 var stubs = require('./stubs.js');
 
 QUnit.test("taskState.parseInlineStatus recognises valid inline states", function (assert) {

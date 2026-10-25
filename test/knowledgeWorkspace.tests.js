@@ -1,8 +1,8 @@
 'use strict';
 var fs = require('fs');
 var path = require('path');
-var parser = require('../src/annotationParser.js');
-var state = require('../src/taskState.js');
+var parser = require('../out/legacy/src/annotationParser.js');
+var state = require('../out/legacy/src/taskState.js');
 
 QUnit.test('knowledge tags use the existing semantic annotation model', function (assert) {
     [['CORE', 'context', 'entrypoint'], ['REUSE', 'context', 'reusable'], ['INTENT', 'context', 'constraint']].forEach(function (entry) {
@@ -38,7 +38,7 @@ QUnit.test('knowledge tags and opt-in workspace commands are contributed', funct
 });
 
 QUnit.test('workspace helpers keep MCP process arguments separate and validate runtime', function (assert) {
-    var bridge = require('../src/knowledgeWorkspace.js');
+    var bridge = require('../out/legacy/src/knowledgeWorkspace.js');
     assert.ok(bridge.supportedNodeVersion('v22.22.0'));
     assert.ok(bridge.supportedNodeVersion('v24.1.0'));
     assert.notOk(bridge.supportedNodeVersion('v22.17.0'));
@@ -53,7 +53,7 @@ QUnit.test('workspace helpers keep MCP process arguments separate and validate r
 
 QUnit.test('workspace bridge registers without spawning and rejects an untrusted workspace', function (assert) {
     var done = assert.async();
-    var bridge = require('../src/knowledgeWorkspace.js');
+    var bridge = require('../out/legacy/src/knowledgeWorkspace.js');
     var commands = {}, messages = [], calls = 0;
     var vscode = {
         env: { language: 'en' },
@@ -72,10 +72,10 @@ QUnit.test('workspace bridge registers without spawning and rejects an untrusted
 });
 
 QUnit.test('extension disposal does not register an undefined optional output channel', function (assert) {
-    var source = fs.readFileSync('src/extension.js', 'utf8');
+    var source = fs.readFileSync('src/extension.ts', 'utf8');
     assert.notOk(source.includes('context.subscriptions.push(outputChannel);'));
     assert.ok(source.includes('if (outputChannel) { outputChannel.dispose(); outputChannel = undefined; }'));
-    var treeSource = fs.readFileSync('src/tree.js', 'utf8');
+    var treeSource = fs.readFileSync('src/tree.ts', 'utf8');
     assert.ok(treeSource.includes('    dispose() {'));
     assert.ok(treeSource.includes('this._onDidChangeTreeData.dispose();'));
 });

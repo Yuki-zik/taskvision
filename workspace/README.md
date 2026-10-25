@@ -1,115 +1,110 @@
-# TaskVision Knowledge Workspace · 2.1.0 本地预览
+# TaskVision 3 · 项目知识工作台
 
-本次重构保留原 VS Code 高亮、任务树和上下文导出，在它们旁边增加一个共享知识与协作核心。网页、MCP、CLI 读取同一份源码标记与项目知识。当前是可运行的本地预览，尚未发布 Marketplace。
+TaskVision 将源码标签、历史复用经验、人类指导和 Agent 交付接入同一份可读、可编辑的工程上下文。VS Code 负责源码高亮与导航；Web 负责项目结构、指导与审阅；MCP／Skill 负责 Agent 的检索、协作和交接。
 
-## 运行与安装
+## 安装和打开
 
-开发环境需要 Node.js **22.18+**。Node 22 的 `node:sqlite` 会输出实验性提示；提示位于 stderr，不污染 MCP JSON-RPC。
+使用 Node.js **22.18+**。安装预览 VSIX 后，运行 **TaskVision: Open Knowledge Workspace / 打开项目知识工作台**。服务按需启动，关闭扩展时清理，不在插件激活时执行项目代码。
 
-```sh
-cd /path/to/taskvision
-npm ci
-npm run workspace:install
-npm run workspace:start
-```
-
-默认浏览器地址 `http://127.0.0.1:4317/`。指定其他工程：
-
-```sh
-node workspace/server.mjs --root /path/to/your-project --port 4317
-```
-
-VS Code 中运行 **TaskVision: Open Knowledge Workspace / 打开项目知识工作台**。命令使用外部 Node 子进程，自动挑选空闲端口；插件启动时不会自动运行服务。结束时运行 **Stop Knowledge Workspace**。工作区不受信任时拒绝启动。Mac 图形环境找不到 Node 时，在**用户设置**中配置：
+Mac 图形环境找不到 Node 时，在 VS Code **用户设置**中指定：
 
 ```json
 {"taskvision.workspace.nodePath":"/opt/homebrew/opt/node@22/bin/node"}
 ```
 
-此设置只采用用户／机器配置，忽略仓库覆盖。原有自定义标签列表不会被强制替换；运行 **Enable Knowledge Tags** 可追加四个标签。
+此配置只接受用户／机器层级，不接受仓库覆盖。已有自定义标签不会被替换；使用 **Enable Knowledge Tags / 启用知识标签** 追加 CORE、REUSE、INTENT、REVIEW。
+
+源码开发只需要一套依赖和构建命令：
 
 ```sh
-npm run package:preview
+npm ci
+npm run typecheck
+npm run build
+node workspace/server.mjs --root /path/to/project --port 4317
 ```
 
-输出 `artifacts/taskvision-2.1.0-preview.vsix`。预览打包明确使用仓库已跟踪的 codicon 名单，以避免网络变化影响结果；普通 `vscode:prepublish` 仍刷新上游名单，失败会终止构建。打包包含压缩后的 MCP 运行时，无需在安装目录执行 npm install。
+`workspace/*.mjs`、`workspace/core/index.mjs` 和 `workspace/public/` 是构建产物，真实实现分别在 `apps/` 与 `packages/`。安装包内已包含运行依赖，禁止要求用户到扩展安装目录重新 npm install。
 
-## 四条知识流与协作
+## 结构地图与代码阅读
 
-```js
-// CORE: 项目的训练入口 [tv:id=core.train]
-// REUSE: 新算法通过 training_step 扩展已有循环
-// INTENT: 保留优化器状态与 RNG 恢复契约
-// REVIEW: 请检查负数量化的舍入边界
+默认架构概览突出代码模块，配置／文档等基础设施可显式切换。图中使用真实目录和可解析静态依赖，不生成虚构连线。支持平移、缩放、适合画布、模块深入、展开、邻居聚焦、搜索和标签筛选；图与右侧源码、知识卡片联动。
+
+JS／TS 使用 AST 提取基本符号和静态依赖，其他支持的语言保留明确标识的词法分析。图不代表完整运行时调用关系；动态依赖、全部语言语义和任意跨文件重构锚点迁移仍有边界。
+
+```python
+# CORE: 训练流程唯一入口 [tv:id=core.train]
+# REUSE: 新算法通过 training_step 扩展已有循环
+# INTENT: 断点恢复必须保留优化器和随机数状态
+# REVIEW: 请核查空输入、负数舍入和溢出边界
 ```
 
-新标签复用现有 `annotationParser`、高亮与任务树：CORE→entrypoint，REUSE→reusable，INTENT→constraint，REVIEW→verify。显式 `tv:` 指令优先，普通 TODO 行为不变。
+显式 `tv:` 指令优先于标签默认含义。旧 TODO、任务状态、四通道高亮、任务树和 Markdown／JSON 上下文导出继续保留。
 
-Web 提供目录结构地图、语义索引、源码行预览与标注高亮、共享指导编辑、协作任务和人工审阅队列。当前支持文件／项目级知识；模块级开发范围通过任务 paths 表达。网页对源码的编辑只允许修改选中注释的正文，保留标签、指令和行尾格式；没有任意文件写入入口。
+## 人类指导与知识复用
 
-通过网页新增的指导写入共享知识库，Agent 下一次查询即可看到。直接修改源码注释后，下一次索引读取会更新结果；网页可见时约每两秒刷新。双窗口编辑同一知识使用 expectedRevision，源码编辑使用 SHA-256，过期写入返回冲突，不静默覆盖。
+网页支持项目级或代码锚点指导，Agent 下一次查询即可读取。直接修改源码注释也会更新索引。网页修改源码时只改指定注释正文，保留文件其余内容，并核对源码指纹；知识卡片编辑使用修订号。多窗口冲突保留草稿，要求重新核对，不静默覆盖。
 
-## MCP 与 Skill
+Agent 新知识为提议，需人类采纳；源码事实、历史导入与人工指导有不同来源和状态。相关代码改变会使旧知识需要复核。上下文查询优先返回匹配的复用候选与适用约束，并披露范围或数量限制。
 
-在插件命令面板执行 **Copy Agent MCP Configuration**，复制适合当前工程的配置；不会自动修改全局 Agent 设置。源码开发环境的配置示例：
+导出可携带 JSON；导入先预检，显示重复和冲突。仅知识记录能够转入，导入记录不会继承人工批准身份，也不恢复任务租约。源文件指纹不匹配时不得将旧指导伪装为当前事实。当前没有跨设备自动同步。
+
+## MCP 和 Skill
+
+运行 **Copy Agent MCP Configuration / 复制 Agent MCP 配置** 获取当前工程的配置；此命令不修改全局 Agent 设置。已安装预览版使用包内 `workspace/mcp.bundle.mjs`：
 
 ```json
 {
   "mcpServers": {
     "taskvision": {
       "command": "/opt/homebrew/opt/node@22/bin/node",
-      "args": ["/path/to/taskvision/workspace/mcp.mjs", "--root", "/path/to/project"]
+      "args": ["/path/to/taskvision/workspace/mcp.bundle.mjs", "--root", "/path/to/project"]
     }
   }
 }
 ```
 
-VSIX 安装后的运行入口使用同目录 `mcp.bundle.mjs`。每个 worktree 的 MCP 进程应指向自己的根目录；Git common directory 中的数据库让这些进程共享协调状态。
-
-10 个工具：`taskvision_snapshot`、`taskvision_context`、`taskvision_source`、`taskvision_annotation_upsert`、`taskvision_task_create`、`taskvision_task_claim`、`taskvision_task_heartbeat`、`taskvision_task_release`、`taskvision_review_submit`、`taskvision_updates`。另提供只读资源 `taskvision://project`。
-
-专属 Skill 位于 `skills/taskvision-workspace/SKILL.md`。它要求在开始任务、修改共享接口前、进入下一阶段以及 Review 交接前读取新指导；先检索可复用实现，再认领范围，最后交付证据。MCP 数据更新不保证主动中断模型，检查点需要 Agent 宿主遵循。
-
-CLI 可用于排查或未接 MCP 的 Agent：
+11 个工具覆盖 snapshot、context、source、annotation_upsert、task_create、task_claim、task_heartbeat、task_release、review_submit、review_detail、updates。只读资源为 `taskvision://project`，另提供 onboarding 提示模板。CLI 使用同一领域模型和校验：
 
 ```sh
-node workspace/cli.mjs --root /path/to/project snapshot
 node workspace/cli.mjs --root /path/to/project context '{"tag":"REUSE","query":"checkpoint"}'
 node workspace/cli.mjs --root /path/to/project updates '{"after":12}'
-node workspace/cli.mjs --root /path/to/project export > knowledge-export.json
 ```
 
-## 多 Agent 与人工验收
+Skill 位于 `workspace/skills/taskvision-workspace/SKILL.md`。Agent 应在任务开始、变更接口前、下一阶段编辑前和提交前读取更新。数据更新不保证打断正在运行的模型。
 
-任务必须声明具体文件或目录。任务认领在 SQLite `BEGIN IMMEDIATE` 事务中处理：已有有效认领、重叠范围、未完成前置依赖都会拒绝。租约有到期时间与随机 fencing token；续租、释放、提交 Review 要携带有效 token，过期 token 不得重新生效。公共快照不返回 token。
+## 多 Agent 协作与跨会话恢复
 
-Agent 的知识写入为 `proposed`，不能覆盖已确认的人类指导。Review 记录绑定工作区、Git HEAD 和范围内全部可读源码哈希。人工接受时重新核对；文件改变、缺失、扫描被截断或切换 worktree 时拒绝验收。测试证据只是 Agent 提供的文本，服务不声称其已经执行或验证。MCP／CLI 不提供人工批准工具。
+任务声明具体文件／目录和前置依赖。认领通过数据库事务协调：重叠有效范围、重复认领和未完成依赖都会拒绝。不同 Git worktree 共享协调状态，各自源码和 Review 仍绑定工作区。
 
-范围租约属于协作约定，外部 shell 仍能改文件。应用角色同样无法隔离拥有同一操作系统账户和文件权限的任意 Agent。此版本不管理 Agent 进程、自动创建 worktree、执行仓库脚本、自动合并或推送。
+**认领成功后必须持久化私有租约凭证。** Agent 将 taskId、agentId、token、expiresAt、workspaceId 写入当前 worktree 的 `.taskvision/agent-leases/<agentId>.json`，目录权限0700、文件0600。该目录保持 Git 忽略并排除在知识索引之外。不能只依赖模型上下文或本轮解释器变量；续接后读私有文件并 heartbeat 验证，成功交接／释放后删除。禁止把 token 放入源码、知识、回复或证据。
 
-## 数据与权限
+租约是协作约定，不是操作系统锁；它不隔离同一系统用户下任意 shell 进程。TaskVision 不自动启动 Agent、合并分支、执行测试或推送代码。
 
-- 源码注释保留在源文件里，随 Git 版本化；索引不会擅自补 ID。
-- Git 项目的知识、任务、租约、Review 和事件存储在 `git rev-parse --git-common-dir` 下的 `taskvision/workspace.sqlite`。非 Git 项目使用 `.taskvision/workspace.sqlite`。
-- Web 知识与协作状态不会自动进入 Git、跨机器同步或推送到远端。需要可移交副本时显式导出 JSON。当前尚无导入／自动合并机制。
-- 旧 `.taskvision/context-index.json` 只读导入，标为待复核历史知识；不会覆盖旧 sidecar 或复用其进程内缓存。
-- HTTP 只监听 `127.0.0.1`，校验 Host／Origin；写入需要同源会话 token。禁止任意跨源访问，限制请求大小，使用 CSP。token 用于防止跨站请求，不是面向互联网的身份认证。
-- 源码接口拒绝路径穿越、软链接、已知敏感文件、生成目录和超大／二进制文件。该规则不等同于自动发现所有秘密内容。
+## 人工 Review
 
-## 目前明确的限制
+认领时记录范围内代码基线；提交时保存实际前后版本、完整任务范围的哈希及 Agent 报告的证据。网页展示真实差异、源码与证据来源。验收绑定 worktree、Git HEAD 和源码指纹；版本变化后拒绝旧批准。
 
-结构图使用目录与轻量词法 import／symbol 分析，无法保证完整调用关系。源码标记支持独立注释行；复杂语法、嵌入式语言和全部行尾注释尚未覆盖。没有 embedding 检索或完整 LSP 集成。
+Agent 可以提交与读取 Review，不能通过 MCP／CLI 自行批准。测试命令和结果文本属于 Agent 报告，服务不将其视为自动证明。历史记录缺少基线或内容超过捕获预算时会明确提示。
 
-带 `tv:id` 的注释可保留内容编辑后的身份；跨文件重构、任意符号重命名和无 ID 注释重写没有完整的锚点迁移保证。源码指纹变化会使相关 Web 知识过时，仍需人工判断实际影响。
+## 存储、安全与运行边界
 
-默认最多扫描 2,000 个文件，单文件 512 KiB；超限会明确标记，Review 不接受不完整扫描。大型仓库的增量性能、多平台真实 Extension Host 和长时间并发压力仍需进一步验证。
+源码注释随 Git 版本化。Git 工程的知识／协调数据库在 Git common directory 的 `taskvision/workspace.sqlite`；普通目录使用 `.taskvision/workspace.sqlite`。旧数据库进行兼容、幂等升级，不覆盖旧 sidecar。网页知识不会自动推送远端。
 
-## 验证
+HTTP 只监听127.0.0.1；校验 Host／Origin，写入需要同源 token；脚本CSP不允许内联或eval。图组件的节点定位需要内联样式。文件接口拒绝路径穿越、软链接、已知秘密文件、忽略文件和二进制／超大内容。这些规则不等同于识别任意源码中的秘密，也不提供互联网身份认证。
+
+单文件读取上限512KiB；默认结构扫描2,000文件，超限显式披露。索引复用未变文件的解析缓存，Review 指纹独立读取实际内容。长期大规模分布式部署、所有语言语义和不同系统的图形宿主仍需各自验证。
+
+## 开发与验收
 
 ```sh
-npm test                  # 旧插件回归与新标签／桥接测试
-npm run webpack           # 原有扩展构建
-npm run workspace:test    # 核心、真实 MCP、HTTP、安全和进程并发测试
-npm run package:preview   # 本地 VSIX，不发布
+npm run typecheck
+npm run test:legacy
+npm run test:core
+npm run test:web
+npm run build:production
+npm run test:e2e
+node scripts/verify-index-workload.mjs
+npm run package:preview
 ```
 
-验收覆盖真实 MCP initialize／tools/list／tools/call、Web→Agent 指导同步、过期写入、独立进程抢占、worktree 共享、lease fencing、人工批准权限、Review 指纹变化、路径逃逸与跨源请求等。浏览器测试在隔离 fixture 上执行人工批准，真实项目的交付仍等待用户 Review。
+浏览器验收使用真实服务与隔离仓库，覆盖结构阅读、指导保存／重载／冲突、实际diff和过期验收、知识导入与人工采纳。真实Codex验收覆盖发现复用点、读取中途指导、并行认领、跨会话凭证恢复、测试与Review交接。真实项目的最终人工批准仍留给用户。

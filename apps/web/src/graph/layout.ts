@@ -1,0 +1,111 @@
+import type { ELK, ElkNode } from 'elkjs/lib/elk-api';
+import type { XYPosition } from '@xyflow/react';
+import type { GraphModel, KnowledgeEdge, KnowledgeNode } from './model';
+
+let engine: Promise<ELK> | undefined;
+export interface LaidOutGraph {
+  nodes: KnowledgeNode[];
+  edges: KnowledgeEdge[];
+}
+// Existing positions survive data/topology updates. Additions occupy free space around the remembered nodes.
+export function retainPositions(
+  items: KnowledgeNode[],
+  remembered: Map<string, XYPosition>,
+): KnowledgeNode[] {
+  const settled = items
+    .filter((node) => remembered.has(node.id))
+    .map((node) => ({ ...node, position: remembered.get(node.id)! }));
+  for (const item of items.filter((node) => !remembered.has(node.id))) {
+    const node = { ...item, position: { ...item.position } };
+    while (
+      settled.some(
+        (other) =>
+          node.position.x < other.position.x + other.width! + 20 &&
+          node.position.x + node.width! + 20 > other.position.x &&
+          node.position.y < other.position.y + other.height! + 20 &&
+          node.position.y + node.height! + 20 > other.position.y,
+      )
+    )
+      node.position.y += node.height! + 30;
+    settled.push(node);
+  }
+  const positions = new Map(settled.map((node) => [node.id, node.position]));
+  return items.map((node) => ({ ...node, position: positions.get(node.id)! }));
+}
+export async function layoutGraph(model: GraphModel): Promise<LaidOutGraph> {
+  const elk = await (engine ??= import('elkjs/lib/elk.bundled.js').then(
+    (module) => new module.default(),
+  ));
+  const input: ElkNode = {
+    id: 'workspace',
+    layoutOptions: {
+      'elk.algorithm': 'layered',
+      'elk.direction': 'RIGHT',
+      'elk.edgeRouting': 'ORTHOGONAL',
+      'elk.spacing.nodeNode': '26',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '64',
+      'elk.spacing.edgeNode': '20',
+      'elk.layered.spacing.edgeNodeBetweenLayers': '20',
+      'elk.separateConnectedComponents': 'true',
+      'elk.spacing.componentComponent': '32',
+      'elk.aspectRatio': '1.35',
+      'elk.layered.compaction.connectedComponents': 'true',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.padding': '[top=24,left=24,bottom=24,right=24]',
+      'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+    },
+    children: model.nodes.map((node) => ({
+      id: node.id,
+      width: node.width,
+      height: node.height,
+      layoutOptions: { 'elk.portConstraints': 'FIXED_POS' },
+      ports: [
+        {
+          id: `${node.id}:in`,
+          x: 0,
+          y: (node.height ?? 178) / 2,
+          width: 0,
+          height: 0,
+          layoutOptions: { 'elk.port.side': 'WEST' },
+        },
+        {
+          id: `${node.id}:out`,
+          x: node.width ?? 268,
+          y: (node.height ?? 178) / 2,
+          width: 0,
+          height: 0,
+          layoutOptions: { 'elk.port.side': 'EAST' },
+        },
+      ],
+    })),
+    edges: model.edges.map((edge) => ({
+      id: edge.id,
+      sources: [`${edge.source}:out`],
+      targets: [`${edge.target}:in`],
+    })),
+  };
+  const graph = await elk.layout(input);
+  const positions = new Map(
+    graph.children?.map((node) => [node.id, { x: node.x ?? 0, y: node.y ?? 0 }]),
+  );
+  const routes = new Map(
+    graph.edges?.map((edge) => [
+      edge.id,
+      edge.sections?.flatMap((section) => [
+        section.startPoint,
+        ...(section.bendPoints ?? []),
+        section.endPoint,
+      ]),
+    ]),
+  );
+  return {
+    nodes: model.nodes.map((node) => ({
+      ...node,
+      position: positions.get(node.id) ?? node.position,
+    })),
+    edges: model.edges.map((edge) => ({
+      ...edge,
+      data: { count: edge.data?.count ?? 1, ...edge.data, points: routes.get(edge.id) },
+    })),
+  };
+}

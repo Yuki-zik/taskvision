@@ -1,0 +1,5 @@
+{
+  "name": "@taskvision/web",
+  "private": true,
+  "type": "module"
+}

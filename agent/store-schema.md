@@ -1,4 +1,6 @@
-# TaskVision Store Schema
+# TaskVision Legacy Sidecar Store Schema
+
+This remains the compatibility contract for the original extension exports. TaskVision3 live knowledge, canonical repository scopes, leases and Review use the additive SQLite schema in `packages/core/src/store.ts`; see `workspace/README.md`. Do not use sidecar files as the multi-agent coordination database.
 
 This document is the durable contract for files generated under `.taskvision/`.
 Source comments remain the human-readable source of task facts; sidecar files store metadata, context cards, sessions, and export baselines.

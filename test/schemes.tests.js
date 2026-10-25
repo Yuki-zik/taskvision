@@ -1,5 +1,5 @@
 var fs = require('fs');
-var schemes = require('../src/schemes.js');
+var schemes = require('../out/legacy/src/schemes.js');
 
 QUnit.test('package schema allows neon+glass for highlight schemes', function (assert) {
     var pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -56,7 +56,7 @@ QUnit.test('package schema keeps AI context output directory workspace-relative'
 QUnit.test('package and config agree on built-in file excludes enum value', function (assert) {
     var pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     var props = pkg.contributes.configuration[2].properties;
-    var source = fs.readFileSync('src/config.js', 'utf8');
+    var source = fs.readFileSync('src/config.ts', 'utf8');
 
     assert.ok(props['taskvision.filtering.useBuiltInExcludes'].enum.indexOf('file excludes') !== -1);
     assert.ok(source.indexOf('useBuiltInExcludes === "file excludes"') !== -1);

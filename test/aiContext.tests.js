@@ -2,10 +2,10 @@ var fs = require('fs');
 var os = require('os');
 var path = require('path');
 
-var aiContext = require('../src/aiContext.js');
-var taskMetaStore = require('../src/taskMetaStore.js');
-var contextStore = require('../src/contextStore.js');
-var changeSessionStore = require('../src/changeSessionStore.js');
+var aiContext = require('../out/legacy/src/aiContext.js');
+var taskMetaStore = require('../out/legacy/src/taskMetaStore.js');
+var contextStore = require('../out/legacy/src/contextStore.js');
+var changeSessionStore = require('../out/legacy/src/changeSessionStore.js');
 
 function makeTempRoot() {
     return fs.mkdtempSync(path.join(os.tmpdir(), 'taskvision-ai-'));

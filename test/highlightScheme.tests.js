@@ -1,4 +1,4 @@
-var highlightScheme = require('../src/highlightScheme.js');
+var highlightScheme = require('../out/legacy/src/highlightScheme.js');
 
 QUnit.test('applySchemeToAllTags sets scheme on every existing customHighlight entry and defaultHighlight', function (assert) {
     var customHighlight = {

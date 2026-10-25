@@ -19,7 +19,7 @@ description: Use TaskVision source annotations and human guidance to understand 
 
 先查看已有 tasks，避免重复建任务。缺少任务时调用 `taskvision_task_create`，提供具体文件或目录 paths 和 dependsOn。使用稳定、唯一的 agentId 调用 `taskvision_task_claim`；仅在取得有效租约后开始约定范围内的修改。
 
-认领返回的 token 是 fencing token，不能写入源码、文档、公开日志或共享知识。冲突时重新划分范围或等待前置任务完成，不绕过认领直接并行覆盖。定期 `taskvision_task_heartbeat`；token 被拒绝或租约过期时停止协作范围内的后续写入并重新协调。独立 worktree 共享协调数据库，但源码状态和 review 指纹属于各自 checkout。
+认领返回的 token 是 fencing token，不能写入源码、文档、公开日志或共享知识。 **不要只把 token 放在模型记忆、临时解释器变量或本轮上下文中。** 认领成功后立即写入当前 worktree 的 `.taskvision/agent-leases/<agentId>.json`，仅保存 taskId、agentId、token、expiresAt、workspaceId，文件权限设为 `0600`，目录设为 `0700`；该目录必须保持 Git 忽略且被知识扫描器排除。续接会话先读该私有文件，再调用 heartbeat 验证。释放或成功提交 Review 后删除对应凭证。不得把文件内容附在回复、笔记、证据或导出中。凭证缺失时明确报告并等待租约到期／由原持有者释放，不通过公共快照找回或窃取其他 Agent 的 token。冲突时重新划分范围或等待前置任务完成，不绕过认领直接并行覆盖。定期 `taskvision_task_heartbeat`；token 被拒绝或租约过期时停止协作范围内的后续写入并重新协调。独立 worktree 共享协调数据库，但源码状态和 review 指纹属于各自 checkout。
 
 不要自动创建／删除分支、worktree、远端 PR、部署或外部通知。此类动作分别需要用户授权。
 

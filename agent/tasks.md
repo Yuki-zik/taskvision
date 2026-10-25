@@ -1,5 +1,22 @@
 # Current Tasks
 
+## TypeScript + UX refactor delivered — 2026-10-26
+
+User-authorized full refactor on Mac mini, branch `refactor/typescript-workbench-20261026`, baseline `f012814`. Version3.0.0 preview. Old VSIX and consistent SQLite backup retained; no remote push/publication or default-profile replacement.
+
+| Area | Verified outcome |
+|---|---|
+| Typed architecture | All handwritten extension/core/transport/Web source migrated to strict TypeScript; generated JS is not a second source of truth |
+| Compatibility | 170 QUnit behavior tests; installed extension activation, editor, old/new commands and custom tags preserved |
+| Core and protocol | 47 tests, including canonical nested-root scopes, legacy lease handoff, scope-preserving human adoption, import freshness and scoped review baselines |
+| Graph/UI | React Flow+ELK; 13 graph/diff tests; four real-browser workflows pass with no test retries |
+| Actual Agent use | Two real Mac-mini Codex threads, two worktrees: context/reuse, human mid-task update, claim conflict, private credential recovery, tests and Review; combined fixture independently passes4 tests |
+| Human Review | Actual Codex diff inspected in Web; approval exercised only in isolated acceptance fixture; real project approval remains user-owned |
+| Independent review | Four read-only review rounds; reproduced/fixed the eight concrete scope/coordination/knowledge findings, final targeted PASS |
+| Packaging | Production VSIX with dependencies bundled; installed Web/MCP works without node_modules; original daily2.0.1 preserved |
+
+Evidence: local `agent/reports/taskvision-3.0-acceptance-20261026.md`, plus `~/agent-machine/workbench/taskvision-refactor-20261026/`. Source guide: `workspace/README.md`. Reviewer and raw agent logs are local/private; export only sanitized summaries. Remaining limits: local/cooperative coordination, static graph coverage, explicit budgets, no remote CI or other-OS graphical Host claim.
+
 ## Local preview delivered — 2026-10-25
 
 User authorized rebuilding TaskVision on Mac mini. Local repository: `~/Code/taskvision`; feature branch `feat/knowledge-workspace-20261025`, base `e4c923c`. Preview version 2.1.0. No remote push, Marketplace publication, user-profile extension replacement or global Agent configuration change.

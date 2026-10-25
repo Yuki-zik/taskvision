@@ -1,5 +1,14 @@
 # TaskVision Change Log
 
+## 3.0.0 Preview
+
+- Migrated extension, knowledge core, HTTP/MCP/CLI and Web source to strict TypeScript with shared contracts.
+- Replaced the hand-written graph with React Flow and ELK; added architecture drilldown, source-linked knowledge and version-preserving editing.
+- Added incremental AST-backed JS/TS indexing, portable knowledge import previews, proposal adoption and captured review diffs.
+- Added real Codex/Skill/MCP acceptance with two scoped worktrees, mid-task guidance, conflict rejection and durable private lease recovery.
+- Replaced duplicated build paths with esbuild/Vite; retained old task/highlight/context-export behavior.
+- Preserved inherited license notices and packaged third-party notices.
+
 ## Unreleased
 
 ### 2.1.0 local preview (2026-10-25)

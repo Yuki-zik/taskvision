@@ -5,14 +5,15 @@ import path from 'node:path';
 import os from 'node:os';
 import { spawn, execFileSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
-import { createWorkspace } from '../core/index.mjs';
+const coreModule = process.env.TASKVISION_CORE_MODULE || new URL('../core/index.mjs', import.meta.url).href;
+const { createWorkspace } = await import(coreModule);
 
 function fixture(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'taskvision-safety-'));fs.writeFileSync(path.join(root,'main.js'),'// CORE: Entry [tv:id=main]\nexport function main() { return 1; }\n');const w=createWorkspace(root);t.after(()=>{w.close();fs.rmSync(root,{recursive:true,force:true});});return {root,w,run:(op,args={},actor={role:'agent',id:'test'})=>w.dispatch(op,args,actor)};}
 const human={role:'human',id:'human'};
 
 test('independent processes racing for a lease yield exactly one winner',async t=>{
   const {root,run}=fixture(t),task=run('task_create',{title:'Concurrent claim',paths:['main.js']}).task;
-  const module=new URL('../core/index.mjs',import.meta.url).href;
+  const module=coreModule;
   function child(id){return new Promise((resolve,reject)=>{
     const code=`import {createWorkspace} from ${JSON.stringify(module)};const w=createWorkspace(${JSON.stringify(root)});try{const r=w.dispatch('task_claim',{taskId:${JSON.stringify(task.id)},agentId:${JSON.stringify(id)}});console.log(JSON.stringify({ok:true,owner:r.claim.agentId}));}catch(e){console.log(JSON.stringify({ok:false,code:e.code}));}finally{w.close();}`;
     const p=spawn(process.execPath,['--input-type=module','-e',code],{stdio:['ignore','pipe','pipe']});let out='',err='';p.stdout.on('data',d=>out+=d);p.stderr.on('data',d=>err+=d);p.on('error',reject);p.on('exit',exit=>{try{if(exit!==0)throw new Error(err);resolve(JSON.parse(out));}catch(e){reject(e);}});

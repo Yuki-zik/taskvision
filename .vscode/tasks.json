@@ -2,16 +2,31 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "TaskVision: typecheck",
             "type": "npm",
-            "script": "webpack",
+            "script": "typecheck",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "TaskVision: build outputs",
+            "type": "npm",
+            "script": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "TaskVision: build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "TaskVision: typecheck",
+                "TaskVision: build outputs"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "label": "npm: webpack",
-            "problemMatcher": [
-                "$webpack"
-            ]
+            "problemMatcher": []
         }
     ]
 }

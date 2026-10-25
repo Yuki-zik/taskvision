@@ -2,7 +2,7 @@ var fs = require('fs');
 var os = require('os');
 var path = require('path');
 var events = require('events');
-var ripgrep = require('../src/ripgrep.js');
+var ripgrep = require('../out/legacy/src/ripgrep.js');
 
 QUnit.test("package default ripgrep buffer is large enough for workspace scans", function (assert) {
     var packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));

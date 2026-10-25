@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
-import { createWorkspace } from '../core/index.mjs';
+const coreModule = process.env.TASKVISION_CORE_MODULE || new URL('../core/index.mjs', import.meta.url).href;
+const { createWorkspace } = await import(coreModule);
 
 const human = { role: 'human', id: 'human' };
 const agent = { role: 'agent', id: 'worker-a' };

@@ -1,10 +1,10 @@
 var os = require('os');
 var path = require('path');
 var strftime = require('fast-strftime');
-var utils = require('../src/utils.js');
-var attributes = require('../src/attributes.js');
+var utils = require('../out/legacy/src/utils.js');
+var attributes = require('../out/legacy/src/attributes.js');
 var stubs = require('./stubs.js');
-var searchResults = require('../src/searchResults.js');
+var searchResults = require('../out/legacy/src/searchResults.js');
 
 QUnit.test("utils.isHexColour", function (assert) {
     assert.ok(utils.isHexColour({}) === false);

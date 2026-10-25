@@ -5,7 +5,7 @@ var Module = require('module');
 
 function withMockedVscode(appRoot, configuredRipgrep, action) {
     var originalLoad = Module._load;
-    var configPath = require.resolve('../src/config.js');
+    var configPath = require.resolve('../out/legacy/src/config.js');
 
     delete require.cache[configPath];
     Module._load = function (request) {
@@ -18,7 +18,8 @@ function withMockedVscode(appRoot, configuredRipgrep, action) {
                     getConfiguration: function (section) {
                         if (section === 'taskvision.ripgrep') {
                             return {
-                                ripgrep: configuredRipgrep || ''
+                                ripgrep: configuredRipgrep || '',
+                                get: function (key, fallback) { return key === 'ripgrep' ? (configuredRipgrep || '') : fallback; }
                             };
                         }
                         return {
@@ -34,7 +35,7 @@ function withMockedVscode(appRoot, configuredRipgrep, action) {
     };
 
     try {
-        action(require('../src/config.js'));
+        action(require('../out/legacy/src/config.js'));
     }
     finally {
         Module._load = originalLoad;

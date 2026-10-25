@@ -22,8 +22,8 @@ function loadHighlightsWithVscodeStub() {
     };
 
     try {
-        delete require.cache[require.resolve('../src/highlights.js')];
-        return require('../src/highlights.js');
+        delete require.cache[require.resolve('../out/legacy/src/highlights.js')];
+        return require('../out/legacy/src/highlights.js');
     } finally {
         Module.prototype.require = originalRequire;
     }

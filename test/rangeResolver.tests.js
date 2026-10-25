@@ -1,4 +1,4 @@
-var resolver = require('../src/rangeResolver.js');
+var resolver = require('../out/legacy/src/rangeResolver.js');
 
 QUnit.test('rangeResolver normalises legacy subtag scope token', function (assert) {
     assert.strictEqual(resolver.normaliseRangeType('tag-and-subtag'), 'tag-and-subTag');

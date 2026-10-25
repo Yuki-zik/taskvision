@@ -86,3 +86,11 @@ Example:
 ```text
 docs(agent): sync root instructions with governance docs
 ```
+
+## TaskVision3 source and Agent workflow
+
+- Runtime source lives in `src/`, `packages/`, and `apps/` as TypeScript. Do not edit generated `dist/`, `out/`, `workspace/*.mjs`, `workspace/core/index.mjs`, or `workspace/public/`.
+- Start with `workspace/README.md`, `agent/project.md`, and the shared types/schemas when changing cross-surface behavior.
+- When TaskVision MCP is configured for the current checkout, use `workspace/skills/taskvision-workspace/SKILL.md` for source discovery, reusable-module lookup, human guidance refresh, scoped leases and review handoff. Do not assume the server is configured or start unrelated Agent processes.
+- Persist lease capabilities only in the excluded private per-worktree credential file described by that Skill; never export them or rely on transient model memory.
+- Core checks are `npm run typecheck`, `npm run test:legacy`, `npm run test:core`, `npm run test:web`; `npm run test:e2e` covers real user flows. Build and package using the root scripts.
