@@ -36,7 +36,7 @@ code --install-extension A-Znk.taskvision
 ---
 
 
-## 3.1 预览：语义关系图与人机协作工作台
+## 3.2 预览：语义关系图、依赖影响与人机协作工作台
 
 项目已统一为 **严格 TypeScript**：保留旧插件行为，抽离共享领域核心、HTTP/MCP/CLI 适配层，并用 **React、React Flow、ELK 和 Smart Edge** 重做交互式项目地图。
 

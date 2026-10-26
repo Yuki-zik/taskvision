@@ -10,7 +10,7 @@
         "ai-agents",
         "code-reuse"
     ],
-    "version": "3.1.0",
+    "version": "3.2.0",
     "license": "MIT",
     "icon": "resources/taskvision.png",
     "publisher": "A-Znk",
@@ -46,7 +46,9 @@
         "format:check": "prettier --check \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\"",
         "test:web": "node --import tsx --test apps/web/test/*.test.ts",
         "dev:web": "vite --config apps/web/vite.config.ts",
-        "verify:index": "node scripts/verify-index-workload.mjs"
+        "verify:index": "node scripts/verify-index-workload.mjs",
+        "graph:compare-layouts": "node scripts/compare-architecture-layouts.mjs",
+        "graph:compare-layouts:test": "node scripts/compare-architecture-layouts.mjs --self-test"
     },
     "categories": [
         "Other"

@@ -38,7 +38,7 @@ code --install-extension A-Znk.taskvision
 ---
 
 
-## 3.1 preview: semantic architecture graph and human-agent collaboration
+## 3.2 preview: semantic architecture, dependency impact and human-agent collaboration
 
 The project now uses **strict TypeScript** throughout the extension and domain services. **React, React Flow, ELK and Smart Edge** power the interactive architecture workbench. Existing highlighting, task navigation and AI context export remain compatible.
 

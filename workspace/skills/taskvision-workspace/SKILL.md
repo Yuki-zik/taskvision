@@ -15,6 +15,12 @@ description: Use TaskVision source annotations and human guidance to understand 
 
 知识状态：`source` 来自当前源码；`web` 是共享知识库；`legacy` 是只读导入。`proposed` 尚未得到人类确认，`stale/missing` 需要回到代码核实。已确认的人类约束优先于 Agent 猜测，但与当前请求冲突时必须明确指出。
 
+## 修改共享模块前：静态反向依赖
+
+通过 `taskvision_snapshot` 的 `edges`，查询修改范围内真实的文件依赖。每条边的 `from` 是引用方，`to` 是提供方；寻找“谁依赖这个模块”时需要从 `to` 反查 `from`，寻找潜在影响链时按反向引用迭代，避免重复节点和循环。严格区分 `type-import` 与 `runtime-import`；不要把未知符号、AI 推断关系或 REUSE/INTENT 标签编造成源码边。
+
+这只能标记**可能需要审查的静态调用者**，动态导入执行结果、数据流和真正运行时故障需要额外证据。对高风险模块，先在 Web 的“潜在影响”透镜中与人类确认，再改代码和提交 Review。独立 Worktree 应分别读取自己工作区的实时图，不能把别的工作区的源码指纹当作当前版本。只使用已有 snapshot/context/source/updates 工具，避免新增只为图分析设计的重复 MCP 接口。
+
 ## 并行开发
 
 先查看已有 tasks，避免重复建任务。缺少任务时调用 `taskvision_task_create`，提供具体文件或目录 paths 和 dependsOn。使用稳定、唯一的 agentId 调用 `taskvision_task_claim`；仅在取得有效租约后开始约定范围内的修改。

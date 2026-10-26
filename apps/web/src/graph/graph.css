@@ -661,3 +661,133 @@
     width: calc(100% - 24px);
   }
 }
+/* CodeMap-inspired impact lens: contextual static dependency exploration.
+   A→B always means A imports B; reverse impact is represented by highlighted
+   existing arrows, never by drawing fictional reverse dependencies. */
+.impact-toolbar {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  background: #edf2eb;
+  border-bottom: 1px solid #d8e2d5;
+  color: #435745;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.impact-target {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 145px;
+  min-width: 90px;
+  font-size: 11px;
+}
+.impact-target strong {
+  display: block;
+  max-width: 125px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 620;
+}
+.impact-target svg {
+  flex: 0 0 auto;
+  color: #60806c;
+}
+.impact-buttons {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+}
+.impact-buttons button {
+  white-space: nowrap;
+  padding: 5px 9px;
+  min-height: 27px;
+  border-radius: 3px;
+  background: transparent;
+  color: #546c5a;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.impact-buttons button:hover:not(:disabled) {
+  background: #dae8dc;
+  color: #28513c;
+}
+.impact-buttons button.active {
+  background: #3c7054;
+  color: #fff;
+}
+.impact-buttons button:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+.impact-buttons button:focus-visible {
+  outline: 2px solid #397b63;
+  outline-offset: 2px;
+}
+.impact-summary {
+  flex: 1 0 auto;
+  min-width: max-content;
+  text-align: right;
+  color: #6d806e;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.graph-workspace .react-flow__node.impact-muted .graph-node {
+  opacity: 0.2;
+  border-color: #cfd8c8;
+  box-shadow: none;
+  filter: saturate(0.65);
+}
+.graph-workspace .react-flow__node.impact-focus .graph-node {
+  border-color: #2c7756;
+  box-shadow:
+    0 0 0 2px rgba(42, 125, 83, 0.19),
+    0 4px 18px rgba(52, 81, 57, 0.12);
+}
+.graph-workspace .react-flow__node.impact-direct .graph-node {
+  border-color: #4a8c71;
+  background: #f6fbf5;
+  box-shadow: 0 0 0 1px rgba(55, 119, 83, 0.19);
+}
+.graph-workspace .react-flow__node.impact-indirect .graph-node {
+  border-color: #a98952;
+  background: #fffaf0;
+  box-shadow: 0 0 0 1px rgba(161, 132, 80, 0.19);
+}
+@media (max-width: 900px) {
+  .impact-toolbar {
+    gap: 8px;
+    padding: 6px 11px;
+  }
+  .impact-target {
+    min-width: 85px;
+    max-width: 135px;
+  }
+  .impact-summary {
+    margin-left: auto;
+  }
+}
+@media (max-width: 600px) {
+  .impact-toolbar {
+    min-height: 44px;
+    gap: 8px;
+    padding: 5px 9px;
+  }
+  .impact-target {
+    min-width: 85px;
+    max-width: 95px;
+  }
+  .impact-buttons button {
+    font-size: 10px;
+    min-height: 31px;
+    padding: 5px 7px;
+  }
+  .impact-summary {
+    font-size: 10px;
+  }
+}

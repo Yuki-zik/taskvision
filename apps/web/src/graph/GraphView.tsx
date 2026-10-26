@@ -51,11 +51,12 @@ import {
   type RelationCategory,
   type RelationMode,
 } from './model';
-import { filesForScope, ROOT_SCOPE, scopeLabel, TEST_SCOPE } from './scopes';
+import { filesForScope, groupForPath, ROOT_SCOPE, scopeLabel, TEST_SCOPE } from './scopes';
 import { layoutGraph, retainPositions } from './layout';
 import { RELATIONS, SUMMARY_RELATION, relationPresentation } from './relations';
 import { RelationDetails } from './RelationDetails';
 import { matchingRoute, roundedRoute, routeMidpoint } from './routing';
+import { analyzeImpact, type ImpactMode } from './impact';
 
 const fitOptions = {
   padding: {
@@ -278,6 +279,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const [infrastructure, setInfrastructure] = useState(false);
   const [detailed, setDetailed] = useState(false);
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [impactMode, setImpactMode] = useState<ImpactMode>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
@@ -329,6 +331,24 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       visibleRelations,
     ],
   );
+  // Expanded files replace their module's imports with file-level connectors.
+  // Treat those visible file representatives as zero-hop sources belonging to
+  // the selected module; expanding it must not make its callers disappear.
+  const analysis = useMemo(() => {
+    const selectedNode = model.nodes.find((node) => node.id === selectedId);
+    const additionalSeeds =
+      selectedNode?.data.kind === 'module'
+        ? model.nodes
+            .filter(
+              (node) =>
+                node.data.kind === 'file' &&
+                groupForPath(node.data.path, scope) === selectedNode.data.path,
+            )
+            .map((node) => node.id)
+        : [];
+    return analyzeImpact(model.nodes, model.edges, selectedId, impactMode, additionalSeeds);
+  }, [model, scope, selectedId, impactMode]);
+  const impactActive = impactMode !== 'all' && analysis.focusId !== null;
   const latest = useRef(model);
   latest.current = model;
   const rememberViewport = useCallback(() => {
@@ -342,6 +362,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       setFocusId(null);
       setSelectedId(null);
       setSelectedEdgeId(null);
+      setImpactMode('all');
       onModule(path);
     },
     [rememberViewport, onModule],
@@ -454,6 +475,18 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       decorate(previous.map((node) => ({ ...node, data: currentData.get(node.id) ?? node.data }))),
     );
   }, [model, decorate]);
+  // One activation path for mouse and keyboard. The parent inspector selection must
+  // change with the graph center, otherwise its reconciliation effect restores the
+  // previously selected file after the next graph update.
+  const activateNode = useCallback(
+    (node: KnowledgeNode) => {
+      setSelectedEdgeId(null);
+      setSelectedId(node.id);
+      if (node.data.kind === 'file') onSelect({ path: node.data.path, line: 1 });
+      else onModule(node.data.path);
+    },
+    [onSelect, onModule],
+  );
   // Polling may change evidence/counts without changing topology or the saved view.
   useEffect(() => {
     const fresh = new Map(model.edges.map((edge) => [edge.id, edge.data!]));
@@ -491,6 +524,11 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
     if (visible) setSelectedId(visible.id);
   }, [selection, nodes, selectedEdgeId]);
   const onNodesChange: OnNodesChange<KnowledgeNode> = useCallback((changes) => {
+    // React Flow keyboard Enter/Space emits a select change without onNodeClick.
+    // Keep the human's analysis center in sync with mouse and keyboard actions.
+    for (const change of changes) {
+      if (change.type === 'select' && change.selected) setSelectedId(change.id);
+    }
     if (changes.some((change) => change.type === 'position' && change.position))
       setEdges((previous) =>
         previous.map((edge) => ({ ...edge, data: { ...edge.data!, points: undefined } })),
@@ -508,13 +546,14 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const onEdgesChange: OnEdgesChange<KnowledgeEdge> = useCallback((changes) => {
     for (const change of changes)
       if (change.type === 'select') {
-        if (change.selected) setSelectedId(null);
+        // A dependency detail is part of the selected module's impact context.
+        // Selecting its arrow must not silently erase the current lens target.
         setSelectedEdgeId((previous) =>
           change.selected ? change.id : previous === change.id ? null : previous,
         );
       }
   }, []);
-  const activeNode = hoveredId ?? selectedId;
+  const activeNode = impactActive ? null : (hoveredId ?? selectedId);
   const displayedEdges = useMemo(
     () =>
       edges.map((edge) => ({
@@ -527,16 +566,41 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
           emphasized:
             edge.id === hoveredEdge ||
             edge.id === focusedEdge ||
-            (!!activeNode && (edge.source === activeNode || edge.target === activeNode)),
-          muted: !!activeNode && edge.source !== activeNode && edge.target !== activeNode,
+            (impactActive
+              ? analysis.edgeIds.has(edge.id)
+              : !!activeNode && (edge.source === activeNode || edge.target === activeNode)),
+          muted: impactActive
+            ? !analysis.edgeIds.has(edge.id) && edge.id !== hoveredEdge && edge.id !== focusedEdge
+            : !!activeNode && edge.source !== activeNode && edge.target !== activeNode,
         },
       })),
-    [edges, activeNode, hoveredEdge, focusedEdge, selectedEdgeId],
+    [edges, activeNode, hoveredEdge, focusedEdge, selectedEdgeId, impactActive, analysis],
   );
   const selectedEdge = displayedEdges.find((edge) => edge.id === selectedEdgeId);
+  // Apply impact colors as an overlay without editing source knowledge or relaying out nodes.
+  // This preserves the user's pan/zoom and keeps the original directed edges inspectable.
   const controlledNodes = useMemo(
-    () => nodes.map((node) => ({ ...node, selected: node.id === selectedId })),
-    [nodes, selectedId],
+    () =>
+      nodes.map((node) => {
+        const depth = impactActive ? analysis.depths.get(node.id) : undefined;
+        const lensClass = !impactActive
+          ? ''
+          : depth === undefined
+            ? 'impact-muted'
+            : depth === 0
+              ? 'impact-focus'
+              : depth === 1
+                ? 'impact-direct'
+                : 'impact-indirect';
+        return {
+          ...node,
+          selected: node.id === selectedId,
+          className: [node.className, lensClass].filter(Boolean).join(' '),
+          ariaLabel: `${node.data.label}${depth === undefined ? (impactActive ? '，不在当前静态分析范围' : '') : depth === 0 ? '，分析中心' : `，静态依赖距离${depth}跳`}`,
+          data: { ...node.data, impactDepth: depth },
+        };
+      }),
+    [nodes, selectedId, impactActive, analysis],
   );
   const closeRelation = useCallback(() => {
     const id = selectedEdgeId;
@@ -716,8 +780,65 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
           })}
         </div>
       </div>
+      <section className="impact-toolbar" role="region" aria-label="依赖与影响分析">
+        <div
+          className="impact-target"
+          title={selectedId?.replace(/^(module|file):/, '') ?? '请先点击一个模块或文件'}
+        >
+          <Network size={14} aria-hidden="true" />
+          <strong>{selectedId ? selectedId.replace(/^(module|file):/, '') : '先选中模块'}</strong>
+        </div>
+        <div className="impact-buttons" role="group" aria-label="依赖分析模式">
+          {(
+            [
+              ['all', '全图', '显示全部源码依赖'],
+              ['dependencies', '它依赖', '当前模块直接引用的其他模块'],
+              ['dependents', '依赖它', '直接引用当前模块的其他模块'],
+              ['impact', '潜在影响', '从被引用模块出发，沿反向依赖递归寻找可能需要复核的模块'],
+              ['neighborhood', '一跳邻域', '直接上游和下游，保留源码箭头方向'],
+            ] as const
+          ).map(([mode, label, hint]) => (
+            <button
+              key={mode}
+              type="button"
+              disabled={mode !== 'all' && !selectedId}
+              aria-pressed={impactMode === mode}
+              title={hint}
+              className={impactMode === mode ? 'active' : ''}
+              onClick={() => {
+                setFocusId(null);
+                setImpactMode(mode);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <span className="impact-summary" aria-live="polite">
+          {impactActive
+            ? `${analysis.directCount} 个直接 · ${analysis.indirectCount} 个间接`
+            : '依据已解析的源码依赖'}
+        </span>
+      </section>
       <div
         className="flow-container"
+        onKeyDownCapture={(event) => {
+          // React Flow's built-in Enter/Space handler can update its internal
+          // selection without emitting a usable controlled onNodesChange.
+          // Select only when the focused element is the node container itself;
+          // Enter on its drill/expand/source buttons must retain their action.
+          const target = event.target;
+          if (!(target instanceof HTMLElement) || !target.matches('.react-flow__node[data-id]'))
+            return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            const node = nodes.find((item) => item.id === target.getAttribute('data-id'));
+            if (node) activateNode(node);
+          }
+          if (event.key === 'Escape') {
+            setSelectedId(null);
+            setImpactMode('all');
+          }
+        }}
         onFocusCapture={(event) => {
           const edge = event.target.closest('.react-flow__edge');
           setFocusedEdge(edge?.getAttribute('data-id') ?? null);
@@ -740,12 +861,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
             onEdgesChange={onEdgesChange}
             onEdgeClick={(_, edge) => setSelectedEdgeId(edge.id)}
             onPaneClick={() => setSelectedEdgeId(null)}
-            onNodeClick={(_, node) => {
-              setSelectedEdgeId(null);
-              setSelectedId(node.id);
-              if (node.data.kind === 'file') onSelect({ path: node.data.path, line: 1 });
-              else onModule(node.data.path);
-            }}
+            onNodeClick={(_, node) => activateNode(node)}
             onNodeDoubleClick={(_, node) => {
               if (node.data.kind === 'module') drill(node.data.path);
             }}
@@ -812,7 +928,10 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               <button
                 className={`canvas-button${focusId ? ' active' : ''}`}
                 disabled={!selectedId}
-                onClick={() => setFocusId((previous) => (previous ? null : selectedId))}
+                onClick={() => {
+                  setImpactMode('all');
+                  setFocusId((previous) => (previous ? null : selectedId));
+                }}
               >
                 <Focus size={14} />
                 {focusId ? '显示全图' : '聚焦邻居'}
@@ -859,7 +978,11 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       <footer className="canvas-footer">
         <span>双击进入模块 · 右上角查看全部文件 · 拖动画布平移</span>
         <span>
-          {infrastructure ? '配置 / 文档 / 构建 / 资源' : '源码引用关系 · 词法估计已标记'}
+          {impactActive
+            ? '静态潜在影响范围 · 只基于当前已解析引用，不证明程序会出错'
+            : infrastructure
+              ? '配置 / 文档 / 构建 / 资源'
+              : '源码引用关系 · 词法估计已标记'}
           {snapshot.limits.truncated ? ' · 索引未完整' : ''}
         </span>
       </footer>

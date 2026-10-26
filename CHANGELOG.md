@@ -1,5 +1,13 @@
 # TaskVision Change Log
 
+## 3.2.0 Preview — Source-grounded Dependency Impact Lens (2026-10-26)
+
+- Borrowed CodeMap's direct dependency, reverse dependency and transitive possible-impact explorer while **retaining original importer → provider arrows**. A change's potential reachability is not a statement of runtime failure.
+- Added a compact context toolbar with 全图 / 它依赖 / 依赖它 / 潜在影响 / 一跳邻域, direct/indirect counts and non-disruptive node/edge highlighting. Zoom and remembered positions stay intact when switching lenses.
+- Preserved impact target through module expansion, keyboard Enter/Space selection and edge evidence inspection. Narrow screens can close the existing source-detail drawer to return to the graph.
+- Added deterministic D2 source export and reusable ELK geometry measurement for reproducible layout comparison, with 6 self-tests. **TALA is available officially but was not executed** because the binary/WASM could not be downloaded; production continues using the verified ELK + Smart Edge stack.
+- Added source-grounded impact tests and a real browser workflow alongside original plugin, MCP and graph regression tests.
+
 ## 3.1.0 Preview — Semantic Architecture Graph (2026-10-26)
 
 - Adopted the MIT React Flow Smart Edge v5 worker-based obstacle router, preserving React Flow and ELK layout.

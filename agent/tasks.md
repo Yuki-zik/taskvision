@@ -1,5 +1,19 @@
 # Current Tasks
 
+## Dependency impact lens and ELK/D2 export delivered — 2026-10-26
+
+User-requested continued TaskVision graph improvement on `feat/graph-impact-tala-20261026`. Direct dependency, direct reverse dependents, reverse-transitive possible-impact and neighborhood lenses now run on the existing source-grounded React Flow graph. Actual geometry and zoom persist across lens changes/polls, source relationship evidence stays truthful. Selected modules retain expanded file representatives and keyboard activation synchronizes the parent inspector. Version 3.2.0 local preview, not published/pushed; daily 2.0.1 preserved.
+
+| Verified boundary | Result |
+|---|---|
+| Legacy, domain/MCP, Web, browser, geometry tool | 170 / 52 / 48 / 6 / 6 passed, strict TS and Prettier passed |
+| Independent read-only review | Three P2 bugs found, reproduced and fixed; final targeted review VERIFIED |
+| Actual Mac mini built-core/ELK geometry | 161 indexed files; 8 modules; 11 edges; 0 node overlaps / 0 unrelated-node intrusions / 1 proper crossing / 22 bends |
+| TALA | Official D2/TALA verified as possible alternative, but no CLI/WASM downloaded; **not executed**, no comparison metric claimed |
+| VSIX 3.2 isolated Host and MCP | Extension activated, tags/commands/launch-stop passed; packaged Web and 11 MCP tools work without installed node_modules |
+
+Evidence and limitations: `agent/impact-layout-research.md`, `agent/impact-layout-acceptance.md`, `agent/project.md`, sanitized report `agent/reports/taskvision-3.2-acceptance-20261026.md`; raw logs in ignored local workbench. The preexisting `.taskvision/ai-status-report.md` user edit was not modified or staged. No remote push, Marketplace or default-profile replacement.
+
 ## Semantic graph refinement delivered — 2026-10-26
 
 User-requested OSS research and connection/relationship design improvement. Branch `feat/semantic-graph-20261026`, local preview 3.1.0. Reused React Flow + ELK, adopted pinned MIT Smart Edge v5 A* routing, and borrowed LikeC4's merge-versus-classify relationship UX. Code AST now records exact source relation kind, 1-based line, specifier and provenance; click a bundled edge to inspect accurate evidence. Default top-level summary reduced real-module links from 15 category lines to 10 grouped lines with all categories recoverable.
