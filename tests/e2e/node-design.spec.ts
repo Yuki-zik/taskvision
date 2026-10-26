@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { NODE_SIZES } from '../../apps/web/src/graph/presentation';
 
 const { startServer } = await import(pathToFileURL(path.resolve('workspace/server.mjs')).href);
 let root: string;
@@ -83,7 +84,9 @@ test('architecture cards show genuine information with accessible source/drill/e
   for (const card of cards) {
     expect(card.title?.trim().length).toBeGreaterThan(0);
     expect(card.width).toBeGreaterThanOrEqual(225);
-    expect(card.height).toBeGreaterThanOrEqual(148);
+    // Official kit overview intentionally reduces the former168px detail card.
+    // Verify the current shared layout contract instead of pinning obsolete density.
+    expect(card.height).toBeGreaterThanOrEqual(NODE_SIZES.module.overview.height - 2);
     expect(Math.abs(card.width - (card.modelWidth ?? 0))).toBeLessThanOrEqual(2);
     expect(Math.abs(card.height - (card.modelHeight ?? 0))).toBeLessThanOrEqual(2);
     expect(card.scrollOverflow).toBe(false);
@@ -91,10 +94,16 @@ test('architecture cards show genuine information with accessible source/drill/e
     expect(card.summaryInBounds).toBe(true);
     expect(card.footerInBounds).toBe(true);
   }
-  const core = page.locator('[data-id="module:packages/core"]');
-  await expect(page.locator('[data-id="module:apps/web"]')).toContainText('CORE');
-  await expect(core).toContainText('REUSE');
-  await expect(core).toContainText('INTENT');
+  const core = page.locator('.react-flow__node[data-id="module:packages/core"]');
+  // Overview deliberately shows only the most urgent marker. Full truthful
+  // labels must remain visible in the official unscaled detail panel.
+  await page.locator('.react-flow__node[data-id="module:apps/web"]').hover();
+  await expect(page.locator('.tv-node-detail')).toContainText('CORE');
+  await page.keyboard.press('Escape');
+  await core.hover();
+  await expect(page.locator('.tv-node-detail')).toContainText('REUSE');
+  await expect(page.locator('.tv-node-detail')).toContainText('INTENT');
+  await page.keyboard.press('Escape');
   await core.getByRole('button', { name: '展开 packages/core' }).click();
   await expect(page.locator('.graph-node.file-node')).toHaveCount(2);
   const file = page.locator(
@@ -102,7 +111,9 @@ test('architecture cards show genuine information with accessible source/drill/e
   );
   await expect(file).toBeVisible();
   // An existing source tag must still open the actual code after the visual redesign.
-  const sourceLink = page.locator('[data-id="module:apps/web"] .node-summary-link');
+  const sourceLink = page.locator(
+    '.react-flow__node[data-id="module:apps/web"] .node-summary-link',
+  );
   await sourceLink.click();
   await page.getByRole('tab', { name: /^源码/ }).click();
   await expect(page.locator('.source-code')).toContainText('Entry routing and user workspace');
@@ -123,7 +134,7 @@ test('module cards preserve visibility and primary actions at laptop and narrow 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    const node = page.locator('[data-id="module:apps/web"]');
+    const node = page.locator('.react-flow__node[data-id="module:apps/web"]');
     await expect(node.getByRole('button', { name: '进入 apps/web 模块' })).toBeVisible();
     await expect(node.getByRole('button', { name: '展开 apps/web' })).toBeVisible();
   }

@@ -65,3 +65,7 @@ npm run package:preview
 ```
 
 `workspace/README.md` is the user guide; `workspace/skills/taskvision-workspace/SKILL.md` is the Agent workflow. `agent/refactor-acceptance.md` defines the user-flow acceptance criteria. Reports stay in the existing ignored `agent/reports/` folder; raw Agent logs/lease credentials must never be published.
+
+## Official node UI adoption (3.4)
+
+Actual React Flow UI registry components live in `apps/web/src/components/react-flow-ui`, with original source hashes under `third_party/react-flow-ui`. The graph-specific `ArchitectureNode` composes these components using shared measured geometry and semantic zoom from `graph/presentation.ts`. Floating UI DOM is the collision/viewport positioning boundary for screen-sized node panels. Tailwind utilities are compiled without Preflight and only scan those component sources. App context is opt-in in map view. Do not reintroduce parallel handwritten node renderers or all-detail shrinking at low zoom.

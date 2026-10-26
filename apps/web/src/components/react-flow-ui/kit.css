@@ -1,0 +1,14 @@
+/* Actual React Flow UI utilities, without Tailwind Preflight or whole-app scanning. */
+@layer theme, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@source "./*.tsx";
+@source "../../graph/ArchitectureNode.tsx";
+@theme inline {
+  --color-card: var(--rfui-card, #ffffff);
+  --color-card-foreground: var(--rfui-foreground, #22342e);
+  --color-muted-foreground: var(--rfui-muted, #5c7067);
+  --color-primary: var(--rfui-primary, #254d40);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #edf2ee;
+}

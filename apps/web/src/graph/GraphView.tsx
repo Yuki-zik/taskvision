@@ -1,14 +1,12 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   BackgroundVariant,
   BaseEdge,
   Controls,
-  Handle,
   MarkerType,
   MiniMap,
   Panel,
-  Position,
   ReactFlow,
   ReactFlowProvider,
   applyNodeChanges,
@@ -16,7 +14,6 @@ import {
   useNodesInitialized,
   useReactFlow,
   type EdgeProps,
-  type NodeProps,
   type OnNodesChange,
   type OnEdgesChange,
   type Viewport,
@@ -26,26 +23,19 @@ import { SmartEdgeProvider, useSmartEdgePath } from '@tisoap/react-flow-smart-ed
 import {
   ArrowLeft,
   ArrowUpRight,
-  ChevronDown,
   ChevronRight,
   Expand,
-  FileCode2,
   Focus,
-  Folder,
   Layers3,
-  Minus,
   Network,
   RotateCcw,
-  UserRound,
 } from 'lucide-react';
-import type { Filter, Selection, Snapshot, Tag } from '../domain';
-import { Empty, IconButton, Notice, TagChip } from '../components/ui';
+import type { Filter, Selection, Snapshot } from '../domain';
+import { Empty, IconButton, Notice } from '../components/ui';
 import {
   buildGraph,
   defaultRelationMode,
   RELATION_CATEGORIES,
-  relationHandle,
-  relationOffset,
   type KnowledgeEdge,
   type KnowledgeNode,
   type RelationCategory,
@@ -57,15 +47,16 @@ import { RELATIONS, SUMMARY_RELATION, relationPresentation } from './relations';
 import { RelationDetails } from './RelationDetails';
 import { matchingRoute, roundedRoute, routeMidpoint } from './routing';
 import { analyzeImpact, type ImpactMode } from './impact';
+import { ArchitectureNode } from './ArchitectureNode';
 
 const fitOptions = {
   padding: {
-    top: '76px' as const,
-    bottom: '80px' as const,
+    top: '64px' as const,
+    bottom: '68px' as const,
     left: '24px' as const,
     right: '24px' as const,
   },
-  minZoom: 0.75,
+  minZoom: 0.7,
   maxZoom: 1.05,
   duration: 200,
 };
@@ -90,178 +81,6 @@ function responsiveFitOptions(nodes: KnowledgeNode[]) {
   );
   return { ...fitOptions, minZoom: Math.min(fitOptions.minZoom, Math.max(0.3, readableZoom)) };
 }
-const GraphNode = memo(function GraphNode({ data, selected }: NodeProps<KnowledgeNode>) {
-  const module = data.kind === 'module';
-  const tags = (['REVIEW', 'CORE', 'REUSE', 'INTENT', 'TODO'] as Tag[]).filter(
-    (tag) => data.counts[tag] > 0,
-  );
-  const parentPath = data.path.slice(0, Math.max(0, data.path.lastIndexOf('/')));
-  const virtualScope = data.path === ROOT_SCOPE || data.path === TEST_SCOPE;
-  const name = module && !virtualScope ? data.path.split('/').at(-1) : data.label;
-  const namespace =
-    data.path === TEST_SCOPE
-      ? 'tests'
-      : data.path === ROOT_SCOPE
-        ? 'root'
-        : data.path.split('/')[0];
-  const location = virtualScope
-    ? data.path === TEST_SCOPE
-      ? '跨目录测试'
-      : '项目根目录'
-    : parentPath || '根目录';
-  const extension = !module && data.label.includes('.') ? (data.label.split('.').at(-1) ?? '') : '';
-  const hiddenTags = tags.slice(2);
-  const sourceLocation = `${data.summaryPath}:${data.summaryLine}`;
-  const footerTitle = data.reviews
-    ? `${data.reviews} 项待验收`
-    : data.owners.length
-      ? data.owners.join('、')
-      : data.expanded
-        ? `${data.shownFiles} / ${data.files} 个文件`
-        : `${data.annotations.length} 条知识`;
-  return (
-    <article
-      className={`graph-node ${module ? 'module-node' : 'file-node'} ${data.detailed ? 'detailed-node' : 'overview-node'}${selected ? ' is-selected' : ''}`}
-      data-namespace={namespace}
-      data-pending-review={data.reviews > 0 || undefined}
-    >
-      {RELATION_CATEGORIES.map((category) => (
-        <Handle
-          key={category}
-          type="target"
-          id={relationHandle('in', category)}
-          position={Position.Left}
-          isConnectable={false}
-          style={{ top: `calc(50% + ${relationOffset(category)}px)` }}
-        />
-      ))}
-      {/* Local BaseNode composition: header, content and footer share one measured shell. */}
-      <header className="node-heading">
-        <span className={`node-icon ${module ? 'module-icon' : ''}`} aria-hidden="true">
-          {module ? (
-            <Folder size={19} strokeWidth={1.6} />
-          ) : (
-            <FileCode2 size={19} strokeWidth={1.6} />
-          )}
-        </span>
-        <div className="node-title">
-          <strong title={virtualScope ? data.label : data.path}>{name}</strong>
-          <span className="node-metadata" title={virtualScope ? location : data.path}>
-            <span className="node-path">{location}</span>
-            <span className="node-kind">
-              {module ? `模块 · ${data.files} 个文件` : `${extension.toUpperCase() || '源码'} 文件`}
-            </span>
-          </span>
-        </div>
-        {module && (
-          <button
-            type="button"
-            className="node-drill nodrag nopan"
-            title={`查看 ${data.label} 全部文件`}
-            aria-label={`进入 ${data.label} 模块`}
-            onClick={(event) => {
-              event.stopPropagation();
-              data.onDrill?.(data.path);
-            }}
-          >
-            <ArrowUpRight size={17} />
-          </button>
-        )}
-      </header>
-      <div className="node-content">
-        {data.summaryPath ? (
-          <button
-            type="button"
-            className="node-summary node-summary-link nodrag nopan"
-            title={`${data.summary}\n${sourceLocation}`}
-            aria-label={`${data.summary}，查看源码 ${sourceLocation}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              data.onSource?.(data.summaryPath, data.summaryLine);
-            }}
-          >
-            <span className="node-summary-text">{data.summary}</span>
-            {data.detailed && (
-              <span className="node-source" aria-hidden="true">
-                <span>{`${data.summaryPath.split('/').at(-1)}:${data.summaryLine}`}</span>
-                <ArrowUpRight size={12} />
-              </span>
-            )}
-          </button>
-        ) : (
-          <p className="node-summary" title={data.summary}>
-            <span className="node-summary-text">{data.summary}</span>
-          </p>
-        )}
-        <div className="node-tags">
-          {tags.length ? (
-            <>
-              {tags.slice(0, 2).map((tag) => (
-                <TagChip key={tag} tag={tag} count={data.counts[tag]} />
-              ))}
-              {hiddenTags.length > 0 && (
-                <span
-                  className="node-tag-overflow"
-                  title={hiddenTags.map((tag) => `${tag} ${data.counts[tag]}`).join(' · ')}
-                  aria-label={`另有 ${hiddenTags.length} 类标签：${hiddenTags.map((tag) => `${tag} ${data.counts[tag]}`).join('，')}`}
-                >
-                  +{hiddenTags.length}
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="node-unannotated">
-              {data.lines.toLocaleString()} 行 · {data.annotations.length} 条知识
-            </span>
-          )}
-        </div>
-      </div>
-      <footer className="node-footer">
-        <span className={data.reviews ? 'review-color' : 'node-ownership'} title={footerTitle}>
-          {data.reviews ? (
-            <Focus size={12} />
-          ) : data.owners.length ? (
-            <UserRound size={12} />
-          ) : !data.expanded ? (
-            <Network size={12} />
-          ) : null}
-          <span className="node-footer-text">{footerTitle}</span>
-        </span>
-        {module && (
-          <button
-            type="button"
-            className="node-expand nodrag nopan"
-            onClick={(event) => {
-              event.stopPropagation();
-              data.onExpand?.(data.path);
-            }}
-            title={
-              data.expanded
-                ? '收起文件，右上角查看全部'
-                : `展开最相关的 ${Math.min(4, data.files)} / ${data.files} 个文件，右上角查看全部`
-            }
-            aria-label={`${data.expanded ? '收起' : '展开'} ${data.label}`}
-            aria-expanded={data.expanded}
-          >
-            {data.expanded ? <Minus size={12} /> : <ChevronDown size={12} />}
-            {data.expanded ? '收起' : `展开 ${Math.min(4, data.files)}/${data.files}`}
-          </button>
-        )}
-      </footer>
-      {RELATION_CATEGORIES.map((category) => (
-        <Handle
-          key={category}
-          type="source"
-          id={relationHandle('out', category)}
-          position={Position.Right}
-          isConnectable={false}
-          style={{ top: `calc(50% + ${relationOffset(category)}px)` }}
-        />
-      ))}
-    </article>
-  );
-});
-
 function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
   const { data, sourceX, sourceY, targetX, targetY } = props;
   const { route, isDragging } = useSmartEdgePath({
@@ -296,7 +115,7 @@ function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
   const emphasized = data?.emphasized || props.selected;
   const kindCount = Object.values(data?.kindCounts ?? {}).filter((count) => count > 0).length;
   const label = data?.grouped
-    ? data.hovered || emphasized || kindCount > 1
+    ? data.hovered || emphasized
       ? `${kindCount}类·${data.count}处`
       : undefined
     : data?.hovered || emphasized || (data?.parallelCount ?? 1) > 1
@@ -322,13 +141,13 @@ function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
         strokeDasharray: relation.dash,
         strokeLinecap: 'round',
         strokeLinejoin: 'round',
-        strokeWidth: emphasized ? 2.5 : 1.6,
-        opacity: data?.muted && !emphasized ? 0.25 : 1,
+        strokeWidth: emphasized ? 2.2 : 1.35,
+        opacity: data?.muted && !emphasized ? 0.2 : emphasized ? 1 : 0.78,
       }}
     />
   );
 }
-const nodeTypes = { knowledge: GraphNode };
+const nodeTypes = { knowledge: ArchitectureNode };
 const edgeTypes = { routed: RoutedEdge };
 interface Props {
   snapshot: Snapshot;
@@ -845,7 +664,12 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
           })}
         </div>
       </div>
-      <section className="impact-toolbar" role="region" aria-label="依赖与影响分析">
+      <section
+        className="impact-toolbar"
+        role="region"
+        aria-label="依赖与影响分析"
+        hidden={!selectedId}
+      >
         <div
           className="impact-target"
           title={selectedId?.replace(/^(module|file):/, '') ?? '请先点击一个模块或文件'}

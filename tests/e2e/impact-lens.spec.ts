@@ -56,7 +56,7 @@ test('actual reverse-impact exploration distinguishes direct and transitive cons
   await expect(page.locator('.react-flow__node')).toHaveCount(5);
   await expect(page.getByText('正在整理结构…', { exact: true })).toHaveCount(0);
   await page.waitForTimeout(500);
-  const core = page.locator('[data-id="module:packages/core"]');
+  const core = page.locator('.react-flow__node[data-id="module:packages/core"]');
   await core.click();
   const lens = page.getByRole('region', { name: '依赖与影响分析' });
   await expect(lens).toBeVisible();
@@ -65,17 +65,17 @@ test('actual reverse-impact exploration distinguishes direct and transitive cons
   await lens.getByRole('button', { name: '潜在影响', exact: true }).click();
   await expect(lens).toContainText('2 个直接');
   await expect(lens).toContainText('1 个间接');
-  await expect(page.locator('[data-id="module:apps/api"]')).toHaveClass(/impact-direct/);
-  await expect(page.locator('[data-id="module:apps/admin"]')).toHaveClass(/impact-direct/);
-  await expect(page.locator('[data-id="module:apps/web"]')).toHaveClass(/impact-indirect/);
-  await expect(page.locator('[data-id="module:apps/unused"]')).toHaveClass(/impact-muted/);
+  await expect(page.locator('.react-flow__node[data-id="module:apps/api"]')).toHaveClass(/impact-direct/);
+  await expect(page.locator('.react-flow__node[data-id="module:apps/admin"]')).toHaveClass(/impact-direct/);
+  await expect(page.locator('.react-flow__node[data-id="module:apps/web"]')).toHaveClass(/impact-indirect/);
+  await expect(page.locator('.react-flow__node[data-id="module:apps/unused"]')).toHaveClass(/impact-muted/);
   await expect(viewport).toHaveAttribute('style', before!);
   // Expanding the target replaces module connectors with file connectors.
   // The reverse-impact traversal must keep using those displayed source files.
   await core.getByRole('button', { name: '展开 packages/core' }).click();
   await expect(lens).toContainText('2 个直接');
   await expect(lens).toContainText('1 个间接');
-  await expect(page.locator('[data-id="file:packages/core/src/base.ts"]')).toHaveClass(
+  await expect(page.locator('.react-flow__node[data-id="file:packages/core/src/base.ts"]')).toHaveClass(
     /impact-focus/,
   );
   await core.getByRole('button', { name: '收起 packages/core' }).click();
@@ -83,7 +83,7 @@ test('actual reverse-impact exploration distinguishes direct and transitive cons
   await lens.getByRole('button', { name: '依赖它', exact: true }).click();
   await expect(lens).toContainText('2 个直接');
   await expect(lens).toContainText('0 个间接');
-  await expect(page.locator('[data-id="module:apps/web"]')).toHaveClass(/impact-muted/);
+  await expect(page.locator('.react-flow__node[data-id="module:apps/web"]')).toHaveClass(/impact-muted/);
   await lens.getByRole('button', { name: '它依赖', exact: true }).click();
   await expect(lens).toContainText('0 个直接');
   await lens.getByRole('button', { name: '全图', exact: true }).click();
@@ -92,9 +92,9 @@ test('actual reverse-impact exploration distinguishes direct and transitive cons
   // Start from an *actual selected file*, not just a module: the parent inspector
   // must not restore stale file selection after keyboard activation.
   await core.getByRole('button', { name: '展开 packages/core' }).click();
-  await page.locator('[data-id="file:packages/core/src/base.ts"]').click();
+  await page.locator('.react-flow__node[data-id="file:packages/core/src/base.ts"]').click();
   await expect(page.getByRole('heading', { name: '文件详情' })).toBeVisible();
-  await page.locator('[data-id="module:apps/web"]').focus();
+  await page.locator('.react-flow__node[data-id="module:apps/web"]').focus();
   await page.keyboard.press('Enter');
   await expect(lens).toContainText('apps/web');
   await page.waitForTimeout(2250);

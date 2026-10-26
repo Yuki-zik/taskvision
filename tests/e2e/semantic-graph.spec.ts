@@ -78,7 +78,7 @@ test('real architecture links explain type/runtime/reexport/dynamic evidence and
   await expect(typeToggle).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('.react-flow__edge[data-id^="dependency:type:"]')).toHaveCount(0);
   // User dragging a module must invalidate obsolete geometry and retain the changed location.
-  const node = page.locator('[data-id="module:apps/web"]');
+  const node = page.locator('.react-flow__node[data-id="module:apps/web"]');
   const trackedEdge = page.locator('.react-flow__edge[data-id^="dependency:runtime:module:apps/web→module:packages/core"] path.react-flow__edge-path').first();
   const beforePath = await trackedEdge.getAttribute('d');
   const initial = await node.boundingBox();

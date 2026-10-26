@@ -1,0 +1,405 @@
+/* Loaded after legacy CSS; every override belongs to the adopted node kit. */
+.tv-node-kit.graph-node {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #cad0c6;
+  border-radius: 12px;
+  background: #fffefa;
+  color: #27362e;
+  overflow: visible; /* Relation handles remain outside the measured shell. */
+  box-shadow: none;
+}
+
+.tv-node-kit.graph-node:hover {
+  border-color: #829987;
+}
+
+.tv-node-kit.graph-node.is-selected {
+  border: 1px solid #386b5a;
+  box-shadow: 0 3px 10px #243c3014;
+}
+
+.tv-node-kit.graph-node .node-heading,
+.tv-node-kit.graph-node.detailed-node .node-heading {
+  flex: 0 0 auto;
+  gap: 9px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 15px 0;
+  align-items: flex-start;
+  background: transparent;
+  border-radius: 0;
+}
+
+.tv-node-kit.graph-node .node-icon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 24px;
+  border-radius: 0;
+  background: transparent;
+  color: #547360;
+}
+
+.tv-node-kit.graph-node .node-title {
+  min-width: 0;
+  margin: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.tv-node-kit.graph-node .node-title strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #26352d;
+  font-size: 19px;
+  line-height: 24px;
+  font-weight: 680;
+  letter-spacing: -0.025em;
+  font-family: var(--font);
+}
+
+.tv-node-kit.graph-node .node-title .node-metadata {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #627064;
+  font: 11px/15px var(--font);
+}
+
+.tv-node-kit.graph-node .node-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  gap: 6px;
+  padding: 6px 15px 0;
+}
+
+.tv-node-kit.graph-node .node-summary {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #4d5e51;
+  text-align: left;
+  font: 13px/19px var(--font);
+  overflow: hidden;
+}
+
+.tv-node-kit.graph-node .node-summary-text {
+  display: block;
+  height: auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tv-node-kit.graph-node .node-summary-link:hover .node-summary-text {
+  color: #2f654d;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tv-node-kit.graph-node .node-source {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  color: #627064;
+  font: 11px/15px var(--mono);
+}
+
+.tv-node-kit.graph-node .node-source > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv-node-kit.graph-node .node-tags {
+  flex: 0 0 auto;
+  padding: 0;
+  min-height: 0;
+  gap: 7px;
+}
+
+.tv-node-kit .node-marker {
+  font: 600 10px/17px var(--font);
+  color: #4c6757;
+  white-space: nowrap;
+}
+
+.tv-node-kit .node-tag-overflow {
+  color: #627064;
+  font-size: 10px;
+}
+
+.tv-node-kit.graph-node .node-footer {
+  flex: 0 0 auto;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  min-height: 29px;
+  margin-top: auto;
+  padding: 4px 15px 8px;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.tv-node-kit.graph-node .node-footer > span {
+  min-width: 0;
+  max-width: none;
+  gap: 4px;
+  color: #627064;
+  font: 11px/17px var(--font);
+}
+
+.tv-node-kit .node-footer .node-state {
+  margin-left: auto;
+}
+
+.tv-node-kit .node-state > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv-node-kit .node-file-count {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tv-node-kit.graph-node .node-drill,
+.tv-node-kit.graph-node .node-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #4e6a57;
+  opacity: 0;
+}
+
+.tv-node-kit.graph-node .node-expand {
+  height: 20px;
+  min-height: 20px;
+}
+
+.tv-node-kit.graph-node:hover .node-drill,
+.tv-node-kit.graph-node:hover .node-expand,
+.tv-node-kit.graph-node:focus-within .node-drill,
+.tv-node-kit.graph-node:focus-within .node-expand,
+.tv-node-kit.graph-node.is-selected .node-drill,
+.tv-node-kit.graph-node.is-selected .node-expand {
+  opacity: 1;
+}
+
+.tv-node-kit .node-drill:hover,
+.tv-node-kit .node-expand:hover {
+  background: #edf1e7;
+  color: #274f3c;
+}
+
+.tv-node-kit[data-reading-mode='detail'] .node-summary-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-heading {
+  flex: 1;
+  align-items: center;
+  padding-top: 15px;
+  padding-bottom: 9px;
+}
+
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-title strong {
+  font-size: 23px;
+  line-height: 29px;
+  font-weight: 720;
+}
+
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-metadata,
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-content,
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-marker {
+  display: none;
+}
+
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-footer {
+  padding-bottom: 15px;
+}
+
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-footer > span {
+  font-size: 15px;
+  line-height: 21px;
+}
+
+.tv-node-kit.graph-node[data-reading-mode='map'] .node-state:not(.review-color) {
+  display: none;
+}
+
+.tv-node-kit.tv-node-detail,
+.tv-node-kit.tv-node-actions {
+  box-sizing: border-box;
+  border: 1px solid #cad0c6;
+  border-radius: 10px;
+  background: #fffefa;
+  color: #27362e;
+  font: 13px/1.55 var(--font);
+  box-shadow: 0 8px 24px #243c301a;
+}
+
+.tv-node-kit.tv-node-detail {
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(420px, 60vh);
+  padding: 16px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+
+.tv-node-kit .node-detail-name {
+  display: block;
+  color: #26352d;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.tv-node-kit .node-detail-path {
+  margin: 4px 0 12px;
+  color: #627064;
+  font: 11px/1.5 var(--mono);
+}
+
+.tv-node-kit .node-detail-summary {
+  margin: 0 0 12px;
+  white-space: pre-wrap;
+}
+
+.tv-node-kit .node-detail-facts {
+  margin: 0;
+  font-size: 12px;
+  color: #627064;
+}
+
+.tv-node-kit .node-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 8px;
+}
+
+.tv-node-kit .node-detail-tags .node-marker {
+  font-size: 12px;
+}
+
+.tv-node-kit .node-detail-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.tv-node-kit .review-color,
+.tv-node-kit.graph-node .node-footer .review-color {
+  color: #93532f;
+}
+
+.tv-node-kit .node-detail-source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 8px;
+  border: 0;
+  border-radius: 5px;
+  background: #edf1e7;
+  color: #355e46;
+  text-align: left;
+  font: 12px/1.5 var(--mono);
+}
+
+.tv-node-kit .node-detail-source > span {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.tv-node-kit.tv-node-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: calc(100vw - 24px);
+  padding: 5px;
+}
+
+.tv-node-kit.tv-node-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #355e46;
+  padding: 6px 9px;
+  font: 12px/1.5 var(--font);
+  white-space: nowrap;
+}
+
+.tv-node-kit.tv-node-actions > button:hover,
+.tv-node-kit .node-detail-source:hover {
+  background: #e4ecdf;
+}
+
+.tv-node-kit:focus-visible,
+.tv-node-kit button:focus-visible {
+  outline: 2px solid #386b5a;
+  outline-offset: 2px;
+}
+
+@media (hover: none) {
+  .tv-node-kit.graph-node .node-drill,
+  .tv-node-kit.graph-node .node-expand {
+    opacity: 1;
+  }
+}
+
+/* Neutral header surfaces keep the upstream BaseNode hierarchy clean; old3.3
+   namespace tints must not repaint the new compact header/footer. */
+.tv-node-kit.graph-node .node-heading {
+  background: transparent;
+  border: 0;
+  border-radius: 11px 11px 0 0;
+}
+.tv-node-kit.graph-node .node-footer {
+  background: transparent;
+}
+.tv-node-kit.graph-node[data-pending-review='true'] .node-footer {
+  background: transparent;
+}

@@ -2,6 +2,7 @@ import type { Edge, Node } from '@xyflow/react';
 import type { Annotation, Filter, Snapshot, SourceEdge, SourceFile, Tag } from '../domain';
 import { inScope, matchesAnnotation } from '../domain';
 import { filesForScope, groupForPath, isInfrastructurePath, scopeLabel } from './scopes';
+import { nodeSize } from './presentation';
 export { moduleForPath } from './scopes';
 
 export interface KnowledgeNodeData extends Record<string, unknown> {
@@ -239,8 +240,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
   const representative = new Map<string, string>();
   const makeNode = (data: KnowledgeNodeData) => {
     const id = `${data.kind}:${data.path}`;
-    const width = data.kind === 'file' ? (detailed ? 260 : 252) : detailed ? 272 : 264;
-    const height = data.kind === 'file' ? (detailed ? 180 : 164) : detailed ? 190 : 168;
+    const { width, height } = nodeSize(data.kind, detailed);
     nodes.push({ id, type: 'knowledge', data, position: { x: 0, y: 0 }, width, height });
     return id;
   };

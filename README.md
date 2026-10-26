@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.3.0_preview-3B82F6?style=flat-square" alt="Version 3.3.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.4.0_preview-3B82F6?style=flat-square" alt="Version 3.4.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -37,6 +37,12 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.4 preview: official node UI, with more space to read
+
+The architecture view now renders actual first-party React Flow UI BaseNode and NodeTooltip sources, retained with registry hashes and MIT notices. Compact overview cards, screen-sized inspection/actions, contextual zoom below68%, a canvas-first default and more generous ELK gaps reduce clutter. Floating UI keeps panels inside the visible canvas and keyboard focus returns to the node after dismissal. Existing code evidence, impact analysis, guidance and Review remain available.
+
+The manual-source integration and local adaptations are recorded in [third_party/react-flow-ui](third_party/react-flow-ui/README.md). This is not a replacement of the entire graph engine or a claim that every React Flow Pro template was adopted.
 
 ## 3.3 preview: redesigned source-grounded architecture cards
 

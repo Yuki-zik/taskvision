@@ -1,5 +1,14 @@
 # TaskVision Change Log
 
+## 3.4.0 Preview
+
+- Adopted actual MIT React Flow UI BaseNode and NodeTooltip registry source, with hashes and attribution.
+- Added scoped Tailwind utilities without a global reset; kept other workbench screens intact.
+- Added canvas-first overview, compact measured node geometry, contextual zoom and wider ELK separation.
+- Preserved source-linked relation evidence, impact analysis and all node source/drill/expand actions.
+- Added Floating UI boundary avoidance for screen-sized node details/actions and repaired keyboard focus restoration.
+- Added real browser acceptance for laptop readability, low-zoom interaction, viewport collision and keyboard return paths.
+
 ## 3.3.0 Preview — React Flow UI-inspired architecture node system (2026-10-26)
 
 - Redesigned the Web architecture **module cards and file cards** using first-party MIT React Flow UI Base Node's header/content/footer composition while keeping existing React Flow v12, ELK, Smart Edge, native CSS and current Workbench theme. **No invasive Tailwind/shadcn migration or new runtime dependency.** LikeC4 informed architecture hierarchy, not copied implementation code.

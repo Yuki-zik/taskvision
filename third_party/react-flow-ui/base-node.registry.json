@@ -1,0 +1,19 @@
+{
+  "name": "base-node",
+  "type": "registry:component",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:component",
+      "path": "base-node.tsx",
+      "content": "import type { ComponentProps } from \"react\";\n\nimport { cn } from \"@/lib/utils\";\n\nexport function BaseNode({ className, ...props }: ComponentProps<\"div\">) {\n  return (\n    <div\n      className={cn(\n        \"bg-card text-card-foreground relative rounded-md border\",\n        \"hover:ring-1\",\n        // React Flow displays node elements inside of a `NodeWrapper`\n        // component, which compiles down to a div with the class\n        // `react-flow__node`. When a node is selected, the class `selected` is\n        // added to the `react-flow__node` element. This allows us to style the\n        // node when it is selected.\n        \"in-[.selected]:border-muted-foreground\",\n        \"in-[.selected]:shadow-lg\",\n        className,\n      )}\n      tabIndex={0}\n      {...props}\n    />\n  );\n}\n\n/**\n * A container for a consistent header layout intended to be used inside the\n * `<BaseNode />` component.\n */\nexport function BaseNodeHeader({\n  className,\n  ...props\n}: ComponentProps<\"header\">) {\n  return (\n    <header\n      {...props}\n      className={cn(\n        \"mx-0 my-0 -mb-1 flex flex-row items-center justify-between gap-2 px-3 py-2\",\n        // Remove or modify these classes if you modify the padding in the\n        // `<BaseNode />` component.\n        className,\n      )}\n    />\n  );\n}\n\n/**\n * The title text for the node. To maintain a native application feel, the title\n * text is not selectable.\n */\nexport function BaseNodeHeaderTitle({\n  className,\n  ...props\n}: ComponentProps<\"h3\">) {\n  return (\n    <h3\n      data-slot=\"base-node-title\"\n      className={cn(\"user-select-none flex-1 font-semibold\", className)}\n      {...props}\n    />\n  );\n}\n\nexport function BaseNodeContent({\n  className,\n  ...props\n}: ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"base-node-content\"\n      className={cn(\"flex flex-col gap-y-2 p-3\", className)}\n      {...props}\n    />\n  );\n}\n\nexport function BaseNodeFooter({ className, ...props }: ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"base-node-footer\"\n      className={cn(\n        \"flex flex-col items-center gap-y-2 border-t px-3 pb-3 pt-2\",\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n"
+    }
+  ],
+  "tailwind": {},
+  "cssVars": {},
+  "meta": {}
+}

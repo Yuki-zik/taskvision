@@ -1,4 +1,9 @@
-# TaskVision 3 · 项目知识工作台
+# TaskVision 3.4 · 官方节点组件工作台
+
+架构画布采用实际 React Flow UI BaseNode／NodeTooltip 源码，配合 Floating UI 浮层避让。默认收起右侧项目详情；点击节点、源码或右上角“项目上下文”即可展开。选中节点出现不随画布缩小的操作条；低于68%缩放只显示结构标题、数量与关键状态，悬停／选择仍能查看完整信息。依赖类型、证据、影响分析与知识编辑行为不变。
+
+原始组件与哈希在 `third_party/react-flow-ui/`；Tailwind4只编译节点组件样式，未引入全局Preflight。既有表单、Review和VSCode外观继续保留。小屏全图缩放仍受物理空间限制，需要放大或深入模块阅读；没有声称所有屏幕下全图全文都可读。
+
 
 TaskVision 将源码标签、历史复用经验、人类指导和 Agent 交付接入同一份可读、可编辑的工程上下文。VS Code 负责源码高亮与导航；Web 负责项目结构、指导与审阅；MCP／Skill 负责 Agent 的检索、协作和交接。
 

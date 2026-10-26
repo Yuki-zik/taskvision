@@ -2968,3 +2968,19 @@ select:disabled {
     padding: 13px;
   }
 }
+
+/* An architecture canvas leads; context becomes a deliberate, reversible side panel. */
+.workspace-stage.canvas-first {
+  grid-template-columns: minmax(0, 1fr);
+}
+.graph-context-toggle {
+  gap: 6px;
+}
+.impact-toolbar[hidden] {
+  display: none;
+}
+@media (max-width: 600px) {
+  .graph-context-toggle {
+    display: none;
+  }
+}

@@ -2,6 +2,7 @@ import type { ELK, ElkNode } from 'elkjs/lib/elk-api';
 import type { XYPosition } from '@xyflow/react';
 import type { GraphModel, KnowledgeEdge, KnowledgeNode } from './model';
 import { RELATION_CATEGORIES, relationHandle, relationOffset } from './model';
+import { nodeSize } from './presentation';
 
 let engine: Promise<ELK> | undefined;
 export interface LaidOutGraph {
@@ -43,14 +44,14 @@ export async function layoutGraph(model: GraphModel): Promise<LaidOutGraph> {
       'elk.algorithm': 'layered',
       'elk.direction': 'RIGHT',
       'elk.edgeRouting': 'ORTHOGONAL',
-      'elk.spacing.nodeNode': '26',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '64',
+      'elk.spacing.nodeNode': '56',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '112',
       'elk.spacing.edgeNode': '20',
       'elk.layered.spacing.edgeNodeBetweenLayers': '20',
       'elk.separateConnectedComponents': 'true',
-      'elk.spacing.componentComponent': '32',
+      'elk.spacing.componentComponent': '64',
       'elk.aspectRatio': '1.35',
-      'elk.layered.compaction.connectedComponents': 'true',
+      'elk.layered.compaction.connectedComponents': 'false',
       'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
       'elk.padding': '[top=24,left=24,bottom=24,right=24]',
       'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
@@ -63,8 +64,10 @@ export async function layoutGraph(model: GraphModel): Promise<LaidOutGraph> {
       ports: RELATION_CATEGORIES.flatMap((category) =>
         (['in', 'out'] as const).map((side) => ({
           id: `${node.id}:${relationHandle(side, category)}`,
-          x: side === 'in' ? 0 : (node.width ?? 268),
-          y: (node.height ?? 178) / 2 + relationOffset(category),
+          x: side === 'in' ? 0 : (node.width ?? nodeSize(node.data.kind, node.data.detailed).width),
+          y:
+            (node.height ?? nodeSize(node.data.kind, node.data.detailed).height) / 2 +
+            relationOffset(category),
           width: 0,
           height: 0,
           layoutOptions: { 'elk.port.side': side === 'in' ? 'WEST' : 'EAST' },

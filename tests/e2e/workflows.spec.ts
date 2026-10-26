@@ -78,7 +78,7 @@ test('project discovery: graph navigation, readable nodes, stable viewport and n
   })));
   expect(nodes.length).toBeGreaterThan(0);
   expect(Math.max(...nodes.map(node => node.width))).toBeGreaterThanOrEqual(160);
-  await page.locator('[data-id="module:apps/train"]').dblclick();
+  await page.locator('.react-flow__node[data-id="module:apps/train"]').dblclick();
   await expect(page.locator('.breadcrumb-trail')).toContainText('train');
   await page.getByRole('button', { name: 'Training entry for acceptance', exact: true }).first().click();
   await page.getByRole('tab', { name: /^源码/ }).click();

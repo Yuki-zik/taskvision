@@ -19,7 +19,8 @@ exports.run = async function () {
   assert.ok(extension, 'installed preview exists');
   await extension.activate();
   assert.ok(extension.isActive);
-  assert.equal(extension.packageJSON.version, '3.0.0');
+  const expectedVersion = process.env.TASKVISION_EXPECTED_VERSION || require('../../package.json').version;
+  assert.equal(extension.packageJSON.version, expectedVersion);
   const commands = await vscode.commands.getCommands(true);
   const required = ['openWorkspace', 'stopWorkspace', 'copyMcpConfig', 'enableKnowledgeTags', 'exportAiContext', 'syncDataModel', 'setTaskStatus', 'refresh'];
   for (const name of required) assert.ok(commands.includes('taskvision.' + name), name);

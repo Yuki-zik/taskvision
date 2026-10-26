@@ -151,6 +151,7 @@ export default function App() {
     [snapshot],
   );
   const mobileDetail = !!(selection || module !== null || editor || transfer);
+  const detailVisible = view !== 'map' || mobileDetail;
   return (
     <div className="app-shell">
       <a className="skip-link" href="#workbench-content">
@@ -230,6 +231,18 @@ export default function App() {
             <span className="workspace-label">{snapshot?.project.name || 'TaskVision'}</span>
           </div>
           <div className="topbar-actions">
+            {view === 'map' && (
+              <button
+                className="button graph-context-toggle"
+                aria-label="切换项目上下文"
+                aria-expanded={mobileDetail}
+                title={mobileDetail ? '收起详情，专注结构' : '查看项目上下文'}
+                onClick={() => (mobileDetail ? closeDetail() : onModule(''))}
+              >
+                <PanelRightOpen size={15} />
+                <span>{mobileDetail ? '收起详情' : '项目上下文'}</span>
+              </button>
+            )}
             <IconButton
               label="刷新工作区"
               onClick={() => {
@@ -352,7 +365,9 @@ export default function App() {
           </div>
         )}
         {snapshot ? (
-          <div className={`workspace-stage${mobileDetail ? ' detail-open' : ''}`}>
+          <div
+            className={`workspace-stage${mobileDetail ? ' detail-open' : ''}${!detailVisible ? ' canvas-first' : ''}`}
+          >
             <div className="primary-pane">
               {view === 'map' && (
                 <GraphView
@@ -401,40 +416,42 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="detail-slot">
-              {editor ? (
-                <AnnotationEditor
-                  key={`${editor.annotation?.id ?? `new:${editor.path}`}`}
-                  target={editor}
-                  snapshot={snapshot}
-                  mutate={mutate}
-                  onClose={() => setEditor(null)}
-                  onSaved={() => {
-                    setEditor(null);
-                    notify('项目知识已保存');
-                  }}
-                />
-              ) : transfer ? (
-                <TransferPanel
-                  snapshot={snapshot}
-                  mutate={mutate}
-                  onClose={() => setTransfer(false)}
-                  onSaved={() => notify('知识导入完成')}
-                />
-              ) : (
-                <Inspector
-                  snapshot={snapshot}
-                  selection={selection}
-                  module={module}
-                  onSelect={onSelect}
-                  onEdit={onEdit}
-                  onDecide={(annotation, decision) => {
-                    void decide(annotation, decision);
-                  }}
-                  onClose={closeDetail}
-                />
-              )}
-            </div>
+            {detailVisible && (
+              <div className="detail-slot">
+                {editor ? (
+                  <AnnotationEditor
+                    key={`${editor.annotation?.id ?? `new:${editor.path}`}`}
+                    target={editor}
+                    snapshot={snapshot}
+                    mutate={mutate}
+                    onClose={() => setEditor(null)}
+                    onSaved={() => {
+                      setEditor(null);
+                      notify('项目知识已保存');
+                    }}
+                  />
+                ) : transfer ? (
+                  <TransferPanel
+                    snapshot={snapshot}
+                    mutate={mutate}
+                    onClose={() => setTransfer(false)}
+                    onSaved={() => notify('知识导入完成')}
+                  />
+                ) : (
+                  <Inspector
+                    snapshot={snapshot}
+                    selection={selection}
+                    module={module}
+                    onSelect={onSelect}
+                    onEdit={onEdit}
+                    onDecide={(annotation, decision) => {
+                      void decide(annotation, decision);
+                    }}
+                    onClose={closeDetail}
+                  />
+                )}
+              </div>
+            )}
           </div>
         ) : loading ? (
           <Loading>正在连接本地工作区…</Loading>

@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.3.0_preview-3B82F6?style=flat-square" alt="Version 3.3.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.4.0_preview-3B82F6?style=flat-square" alt="Version 3.4.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -35,6 +35,12 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.4 预览：直接采用官方节点组件
+
+架构图现在实际使用 **React Flow UI 官方 BaseNode 与 NodeTooltip 源码**，保留原始注册表、哈希和 MIT 许可。概览节点精简内容，默认收起右侧详情释放画布，节点间距增大；缩放低于68%时切换为结构阅读，不再挤满微小文字。详情和操作保持屏幕字号，Floating UI 自动避让边界，键盘关闭后回到原节点。原有源码关系、依赖影响、指导编辑和 Review 保留。
+
+源码引入与本地适配见 [开源组件记录](third_party/react-flow-ui/README.md)。这次直接集成官方组件；图引擎、业务知识模型与其他页面继续沿用现有实现。
 
 ## 3.3 预览：新版架构节点（React Flow UI）
 

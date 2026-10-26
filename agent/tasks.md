@@ -1,5 +1,13 @@
 # Current Tasks
 
+## 3.4 official React Flow UI integration delivered — 2026-10-26
+
+User asked to choose a polished mature OSS node design and actually use it. Branch `feat/official-node-kit-20261026`, baseline f9f2c13. Actual BaseNode and NodeTooltip registry source is now vendored and rendered, with raw source/registry SHA256 and MIT notices. Tailwind4 utilities are bounded to the node kit and omit Preflight. Floating UI flip/shift/size/hide safely places unscaled details/actions outside the transformed canvas. Compact shared geometry, less-dense ELK spacing, semantic zoom and opt-in right detail panel preserve source relations and original workflows.
+
+Verified locally: strict TS/Prettier;170 original extension tests;56 Core/HTTP/MCP;58 Web/model/geometry;6 layout-export checks;18 real Chrome flows with zero retries. Isolated3.4 VSIX activation/editor/custom tags/MCP config/service start-stop and package-only11-tool Web/MCP guidance roundtrip verified. Independent read-only review identified viewport clipping, duplicate focus and far-zoom Escape focus loss; all3 were reproduced/addressed and final targeted verdict PASS. Full UI changes do not claim universal platform or whole-project correctness.
+
+Evidence: `agent/official-ui-kit-acceptance.md`, `third_party/react-flow-ui/`, local ignored report and `~/agent-machine/workbench/taskvision-ui-kit-20261026/`. No push/publication or daily2.0.1 replacement. Preexisting `.taskvision/ai-status-report.md` remains outside commit; its running-plugin generated timestamp evolved and was not restored.
+
 ## 3.3 architecture node UI delivered — 2026-10-26
 
 User observed Web graph module/file nodes looked crude and asked about mature OSS component implementations. Branch `feat/graph-node-system-20261026`, TaskVision 3.3.0 local preview. Borrowed **React Flow UI first-party MIT Base Node header/content/footer composition**, along with LikeC4's architecture hierarchy, but **did not install a Tailwind/shadcn UI stack or copy paid examples**. Reworked card information hierarchy (real namespace, basename, file count, semantic summary, tags, review/Agent state), two measured module/file variants and source/drill/expand controls. Preserved original ReactFlow/ELK/SmartEdge and actual source-grounded connection semantics.

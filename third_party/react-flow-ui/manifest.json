@@ -1,0 +1,19 @@
+{
+  "fetchedAt": "2026-10-26",
+  "components": [
+    {
+      "component": "base-node",
+      "url": "https://ui.reactflow.dev/base-node",
+      "registrySha256": "e12440be5d17d378218d4543bdda431f02bf694dadf27266958b2b97ef3196df",
+      "sourceSha256": "affc655bfc1945cf3936d48729b40d5dcec2f744e92c57f42d9729fee9155c9d",
+      "path": "apps/web/src/components/react-flow-ui/base-node.tsx"
+    },
+    {
+      "component": "node-tooltip",
+      "url": "https://ui.reactflow.dev/node-tooltip",
+      "registrySha256": "e641bc040b69e9843b90fe6fa3688de9df5bfba79578739e15fbde7dfca82a8f",
+      "sourceSha256": "a748aea8e39d1fc4e5034d284184eb86f51f4e9b246fe1c246796c4fb9b72153",
+      "path": "apps/web/src/components/react-flow-ui/node-tooltip.tsx"
+    }
+  ]
+}
