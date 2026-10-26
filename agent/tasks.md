@@ -1,5 +1,24 @@
 # Current Tasks
 
+## 3.3 architecture node UI delivered — 2026-10-26
+
+User observed Web graph module/file nodes looked crude and asked about mature OSS component implementations. Branch `feat/graph-node-system-20261026`, TaskVision 3.3.0 local preview. Borrowed **React Flow UI first-party MIT Base Node header/content/footer composition**, along with LikeC4's architecture hierarchy, but **did not install a Tailwind/shadcn UI stack or copy paid examples**. Reworked card information hierarchy (real namespace, basename, file count, semantic summary, tags, review/Agent state), two measured module/file variants and source/drill/expand controls. Preserved original ReactFlow/ELK/SmartEdge and actual source-grounded connection semantics.
+
+Real Mac mini visual inspection at 1440×960 revealed initial top clipping and a bottom minimap overlay after increasing node geometry; adjusted Fit inset and minimap, measured 8/8 nodes visible with no overlap. Independent Codex read-only review found another P2: 1280×800 Fit bottom-right retained a 75% minimum and clipped modules. Corrected both TaskVision and React Flow's own Fit to `responsiveFitOptions()`, with real eight-module fixture checking all bounds and minimap exclusion after initial, upper Fit and bottom Fit; subsequent independent review **VERIFIED**. Smaller views may require ~50% zoom to show the whole diagram; use manual zoom or scope drill for reading.
+
+| Acceptance | Actual result |
+|---|---|
+| Original QUnit extension | 170/170 |
+| Core/HTTP/MCP security, review | 56/56 |
+| Web graph & knowledge | 48/48 |
+| Actual Chrome user flows | 13/13, including 3 new node/card geometry, actions, responsive and eight-module-fit cases |
+| ELK/D2 exporter | 6/6 |
+| Strict TS and Prettier | Passed |
+| VSIX installation and live Extension Host | Isolated 3.3 activated, 8 key commands, old CUSTOM tag preserved, source editor, HTTP launch-stop, MCP config clipboard verified |
+| Package-only Web + MCP | Both HTTP200, human guidance roundtrip and 11 tools; no node_modules in install |
+
+Evidence: `agent/node-design-acceptance.md`, `agent/reports/taskvision-3.3-node-design-20261026.md`, Mac mini workbench `~/agent-machine/workbench/taskvision-node-design-20261026/`. No remote publication, default profile change, or touching user's unrelated `.taskvision/ai-status-report.md` modification.
+
 ## Review 3.2.1 history/visibility repair — 2026-10-26
 
 User reported Web Review display bug. Reproduced against **actual pending 2.1 review** in Mac mini's TaskVision DB: old head `f012814`, new head `d16b7a4`; 64 historical file hashes, no claim-time baseline, 8 now ignored paths. Existing Web API returned HTTP403 `Ignored files are not exposed`, displayed generic permission error and locked actions. Fixed in `fix/review-legacy-detail-20261026`: missing-baseline history is metadata-only and clearly marked unreviewable, no source substituted, safe source skipped in modern partial reviews. `review_resolve` denies missing baseline, formerly safe paths made ignored, and deleted baseline-only paths; nested scope '' remains valid. Web shows revision provenance, incomplete/blocked evidence and human re-review action without automatically resolving user record.

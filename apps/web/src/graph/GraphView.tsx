@@ -60,8 +60,8 @@ import { analyzeImpact, type ImpactMode } from './impact';
 
 const fitOptions = {
   padding: {
-    top: '64px' as const,
-    bottom: '105px' as const,
+    top: '76px' as const,
+    bottom: '80px' as const,
     left: '24px' as const,
     right: '24px' as const,
   },
@@ -69,14 +69,61 @@ const fitOptions = {
   maxZoom: 1.05,
   duration: 200,
 };
+
+/**
+ * Readable desktop layouts use the familiar 75% floor. On shorter windows a
+ * hard 75% minimum crops entire module cards; relax it just enough to display
+ * the source-grounded overview. Normal zoom/pan remains under the user's control.
+ */
+function responsiveFitOptions(nodes: KnowledgeNode[]) {
+  const stage = document.querySelector<HTMLElement>('.graph-workspace .react-flow');
+  if (!stage || !nodes.length) return fitOptions;
+  const left = Math.min(...nodes.map((node) => node.position.x));
+  const right = Math.max(...nodes.map((node) => node.position.x + (node.width ?? 0)));
+  const top = Math.min(...nodes.map((node) => node.position.y));
+  const bottom = Math.max(...nodes.map((node) => node.position.y + (node.height ?? 0)));
+  const width = Math.max(1, right - left);
+  const height = Math.max(1, bottom - top);
+  const readableZoom = Math.min(
+    (stage.clientWidth - 32) / width,
+    (stage.clientHeight - 40) / height,
+  );
+  return { ...fitOptions, minZoom: Math.min(fitOptions.minZoom, Math.max(0.3, readableZoom)) };
+}
 const GraphNode = memo(function GraphNode({ data, selected }: NodeProps<KnowledgeNode>) {
   const module = data.kind === 'module';
-  const tags = (['REVIEW', 'CORE', 'REUSE', 'INTENT'] as Tag[]).filter(
+  const tags = (['REVIEW', 'CORE', 'REUSE', 'INTENT', 'TODO'] as Tag[]).filter(
     (tag) => data.counts[tag] > 0,
   );
+  const parentPath = data.path.slice(0, Math.max(0, data.path.lastIndexOf('/')));
+  const virtualScope = data.path === ROOT_SCOPE || data.path === TEST_SCOPE;
+  const name = module && !virtualScope ? data.path.split('/').at(-1) : data.label;
+  const namespace =
+    data.path === TEST_SCOPE
+      ? 'tests'
+      : data.path === ROOT_SCOPE
+        ? 'root'
+        : data.path.split('/')[0];
+  const location = virtualScope
+    ? data.path === TEST_SCOPE
+      ? '跨目录测试'
+      : '项目根目录'
+    : parentPath || '根目录';
+  const extension = !module && data.label.includes('.') ? (data.label.split('.').at(-1) ?? '') : '';
+  const hiddenTags = tags.slice(2);
+  const sourceLocation = `${data.summaryPath}:${data.summaryLine}`;
+  const footerTitle = data.reviews
+    ? `${data.reviews} 项待验收`
+    : data.owners.length
+      ? data.owners.join('、')
+      : data.expanded
+        ? `${data.shownFiles} / ${data.files} 个文件`
+        : `${data.annotations.length} 条知识`;
   return (
     <article
       className={`graph-node ${module ? 'module-node' : 'file-node'} ${data.detailed ? 'detailed-node' : 'overview-node'}${selected ? ' is-selected' : ''}`}
+      data-namespace={namespace}
+      data-pending-review={data.reviews > 0 || undefined}
     >
       {RELATION_CATEGORIES.map((category) => (
         <Handle
@@ -88,20 +135,27 @@ const GraphNode = memo(function GraphNode({ data, selected }: NodeProps<Knowledg
           style={{ top: `calc(50% + ${relationOffset(category)}px)` }}
         />
       ))}
-      <div className="node-heading">
-        <span className={`node-icon ${module ? 'module-icon' : ''}`}>
-          {module ? <Folder size={17} /> : <FileCode2 size={17} />}
+      {/* Local BaseNode composition: header, content and footer share one measured shell. */}
+      <header className="node-heading">
+        <span className={`node-icon ${module ? 'module-icon' : ''}`} aria-hidden="true">
+          {module ? (
+            <Folder size={19} strokeWidth={1.6} />
+          ) : (
+            <FileCode2 size={19} strokeWidth={1.6} />
+          )}
         </span>
         <div className="node-title">
-          <strong title={data.label}>{data.label}</strong>
-          <span>
-            {module
-              ? `${data.files} 个文件`
-              : data.path.slice(0, Math.max(0, data.path.lastIndexOf('/'))) || '根目录'}
+          <strong title={virtualScope ? data.label : data.path}>{name}</strong>
+          <span className="node-metadata" title={virtualScope ? location : data.path}>
+            <span className="node-path">{location}</span>
+            <span className="node-kind">
+              {module ? `模块 · ${data.files} 个文件` : `${extension.toUpperCase() || '源码'} 文件`}
+            </span>
           </span>
         </div>
         {module && (
           <button
+            type="button"
             className="node-drill nodrag nopan"
             title={`查看 ${data.label} 全部文件`}
             aria-label={`进入 ${data.label} 模块`}
@@ -113,59 +167,69 @@ const GraphNode = memo(function GraphNode({ data, selected }: NodeProps<Knowledg
             <ArrowUpRight size={17} />
           </button>
         )}
-      </div>
-      {data.summaryPath ? (
-        <button
-          className="node-summary node-summary-link nodrag nopan"
-          title={`${data.summary}\n${data.summaryPath}:${data.summaryLine}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            data.onSource?.(data.summaryPath, data.summaryLine);
-          }}
-        >
-          {data.summary}
-        </button>
-      ) : (
-        <p className="node-summary" title={data.summary}>
-          {data.summary}
-        </p>
-      )}
-      <div className="node-tags">
-        {tags.length ? (
-          tags
-            .slice(0, data.detailed ? 3 : 2)
-            .map((tag) => <TagChip key={tag} tag={tag} count={data.counts[tag]} />)
+      </header>
+      <div className="node-content">
+        {data.summaryPath ? (
+          <button
+            type="button"
+            className="node-summary node-summary-link nodrag nopan"
+            title={`${data.summary}\n${sourceLocation}`}
+            aria-label={`${data.summary}，查看源码 ${sourceLocation}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              data.onSource?.(data.summaryPath, data.summaryLine);
+            }}
+          >
+            <span className="node-summary-text">{data.summary}</span>
+            {data.detailed && (
+              <span className="node-source" aria-hidden="true">
+                <span>{`${data.summaryPath.split('/').at(-1)}:${data.summaryLine}`}</span>
+                <ArrowUpRight size={12} />
+              </span>
+            )}
+          </button>
         ) : (
-          <span className="node-unannotated">
-            {data.lines.toLocaleString()} 行 · {data.annotations.length} 条知识
-          </span>
+          <p className="node-summary" title={data.summary}>
+            <span className="node-summary-text">{data.summary}</span>
+          </p>
         )}
-      </div>
-      <div className="node-footer">
-        <span className={data.reviews ? 'review-color' : 'node-ownership'}>
-          {data.reviews ? (
+        <div className="node-tags">
+          {tags.length ? (
             <>
-              <Focus size={12} />
-              {data.reviews} 项待验收
-            </>
-          ) : data.owners.length ? (
-            <>
-              <UserRound size={12} />
-              {data.owners.join('、')}
-            </>
-          ) : data.expanded ? (
-            <>
-              {data.shownFiles} / {data.files} 个文件
+              {tags.slice(0, 2).map((tag) => (
+                <TagChip key={tag} tag={tag} count={data.counts[tag]} />
+              ))}
+              {hiddenTags.length > 0 && (
+                <span
+                  className="node-tag-overflow"
+                  title={hiddenTags.map((tag) => `${tag} ${data.counts[tag]}`).join(' · ')}
+                  aria-label={`另有 ${hiddenTags.length} 类标签：${hiddenTags.map((tag) => `${tag} ${data.counts[tag]}`).join('，')}`}
+                >
+                  +{hiddenTags.length}
+                </span>
+              )}
             </>
           ) : (
-            <>
-              <Network size={12} />
-              {data.annotations.length} 条知识
-            </>
+            <span className="node-unannotated">
+              {data.lines.toLocaleString()} 行 · {data.annotations.length} 条知识
+            </span>
           )}
+        </div>
+      </div>
+      <footer className="node-footer">
+        <span className={data.reviews ? 'review-color' : 'node-ownership'} title={footerTitle}>
+          {data.reviews ? (
+            <Focus size={12} />
+          ) : data.owners.length ? (
+            <UserRound size={12} />
+          ) : !data.expanded ? (
+            <Network size={12} />
+          ) : null}
+          <span className="node-footer-text">{footerTitle}</span>
         </span>
         {module && (
           <button
+            type="button"
             className="node-expand nodrag nopan"
             onClick={(event) => {
               event.stopPropagation();
@@ -177,12 +241,13 @@ const GraphNode = memo(function GraphNode({ data, selected }: NodeProps<Knowledg
                 : `展开最相关的 ${Math.min(4, data.files)} / ${data.files} 个文件，右上角查看全部`
             }
             aria-label={`${data.expanded ? '收起' : '展开'} ${data.label}`}
+            aria-expanded={data.expanded}
           >
             {data.expanded ? <Minus size={12} /> : <ChevronDown size={12} />}
             {data.expanded ? '收起' : `展开 ${Math.min(4, data.files)}/${data.files}`}
           </button>
         )}
-      </div>
+      </footer>
       {RELATION_CATEGORIES.map((category) => (
         <Handle
           key={category}
@@ -461,7 +526,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
     const settle = window.setTimeout(() => {
       frame = requestAnimationFrame(() => {
         pendingFit.current = false;
-        void graph.fitView(fitOptions);
+        void graph.fitView(responsiveFitOptions(nodes));
       });
     }, 90);
     return () => {
@@ -900,7 +965,11 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
             }}
           >
             <Background variant={BackgroundVariant.Dots} color="#ccd1cc" gap={22} size={1} />
-            <Controls position="bottom-right" showInteractive={false} fitViewOptions={fitOptions} />
+            <Controls
+              position="bottom-right"
+              showInteractive={false}
+              fitViewOptions={responsiveFitOptions(nodes)}
+            />
             <MiniMap
               position="bottom-left"
               pannable

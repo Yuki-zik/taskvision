@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.0.0_preview-3B82F6?style=flat-square" alt="Version 3.0.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.3.0_preview-3B82F6?style=flat-square" alt="Version 3.3.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -37,6 +37,10 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.3 preview: redesigned source-grounded architecture cards
+
+The Web node cards now follow React Flow UI's MIT Base Node **Header / Content / Footer** composition while retaining the current React Flow/ELK/Smart Edge renderer and native CSS. Module vs file cards, namespace, source-derived summaries, review/Agent status, semantic tags and hover/keyboard actions have a clearer hierarchy; existing source links, drilldown and review flows remain. LikeC4 informed the diagram hierarchy. No new Tailwind/shadcn build dependency or speculative relationship data was introduced. See [design acceptance](agent/node-design-acceptance.md).
 
 ## 3.2 preview: semantic architecture, dependency impact and human-agent collaboration
 

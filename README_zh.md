@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.0.0_preview-3B82F6?style=flat-square" alt="Version 3.0.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.3.0_preview-3B82F6?style=flat-square" alt="Version 3.3.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -35,6 +35,12 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.3 预览：新版架构节点（React Flow UI）
+
+针对原先节点标题与摘要拥挤、模块和文件辨识度弱的问题，使用 **React Flow UI 官方 Base Node** 的 Header／Content／Footer 组合方式，在现有 React + 原生 CSS 中重建模块卡片和文件卡片。参考 LikeC4 的软件架构分层阅读方式；保留源码可追溯关系、实时 Agent/Review 标记、点击源码、展开模块和智能避障连接。未引入一整套新的 Tailwind/shadcn，也没有切换图形渲染器。详见 [节点设计验收标准](agent/node-design-acceptance.md)。
+
+真实 TaskVision 工程的 8 个顶层模块已用统一布局测量，桌面可完整显示且左下角缩略图不会遮挡节点；较小窗口优先保持架构全貌，必要时降低自动缩放比例，可用滚轮／画布工具放大阅读。
 
 ## 3.2 预览：语义关系图、依赖影响与人机协作工作台
 

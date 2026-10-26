@@ -40,6 +40,14 @@ JS／TS 使用 AST 提取基本符号和静态依赖，其他支持的语言保�
 
 显式 `tv:` 指令优先于标签默认含义。旧 TODO、任务状态、四通道高亮、任务树和 Markdown／JSON 上下文导出继续保留。
 
+## 3.3 架构节点视觉系统
+
+采用第一方 [React Flow UI Base Node](https://reactflow.dev/ui/components/base-node) 开源组件结构作为成熟参考：Header 提供清晰的标题、源码命名空间和可用的导航入口；Content 显示可追溯摘要和最多两类可见的 CORE／REUSE／INTENT／REVIEW 标签，其它类别以真实 `+n` 提示；Footer 展示已有待审任务、认领者、展开操作或知识数量。样式沿用 TaskVision 现有低饱和色系和原生 CSS，并按 `apps`、`packages`、`src`、`tests` 等真实代码目录区分少量颜色。**无需额外安装 Tailwind／shadcn，也不会覆盖 VS Code 原生插件的四通道高亮配置。**
+
+模块节点可以深入整个目录或在原图临时展开重点文件；文件节点更突出 basename、父目录与源码行。鼠标、键盘和原有 semantic-zoom、影响分析、Review 交互维持一致。节点尺寸写在统一 TS GraphModel（模块概览264×168、文件概览252×164；详情模块272×190、文件260×180），CSS 不隐式改变 ELK 的宽高。桌面 Fit 采用75%阅读下限；高度较小的画布自动降低 Fit 的最小缩放以保持拓扑完整，选中后可自行放大详情。缩略图使用小尺寸以避开底部代码节点。
+
+原版用户可使用 `概览 / 详情` 和 `进入模块 / 展开` 操作，不需要迁移或重写现有知识数据。相关视觉质量与回归标准见 `agent/node-design-acceptance.md`。
+
 ## 3.2 依赖与影响分析（CodeMap 风格）
 
 在项目架构图中**先点模块或文件**，再在“依赖与影响分析”工具条中选择操作：

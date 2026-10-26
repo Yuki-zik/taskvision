@@ -1,5 +1,13 @@
 # TaskVision Change Log
 
+## 3.3.0 Preview — React Flow UI-inspired architecture node system (2026-10-26)
+
+- Redesigned the Web architecture **module cards and file cards** using first-party MIT React Flow UI Base Node's header/content/footer composition while keeping existing React Flow v12, ELK, Smart Edge, native CSS and current Workbench theme. **No invasive Tailwind/shadcn migration or new runtime dependency.** LikeC4 informed architecture hierarchy, not copied implementation code.
+- Module cards distinguish real namespace, shortened module name, actual file count, two-line source-grounded summary, semantic annotation tags/overflow and review/Agent scope. File cards show basename, parent path, file type, original source links and bounded content; expanded/detailed variants retain all callbacks, tooltips and accessibility labels.
+- Improved focus/hover/selected states, module/file and infrastructure role contrast with a restrained color palette and more readable type. Node/ELK dimensions agree at every density.
+- Corrected first-fit clipping after enlarging nodes by adjusting padding and minimap inset; desktop 1440×960 has all eight code modules visible without minimap overlap. Smaller window fit dynamically relaxes the 75% zoom floor rather than clipping graph nodes; pan/zoom remains available for reading details.
+- Added real Chrome node card UX tests: geometry and content overflow, source navigation, module expansion, file cards, three viewport sizes and regression of the original knowledge/Review flows.
+
 ## 3.2.1 Preview — Historical Review compatibility and trustworthy UI
 
 - Fixed an observed 2.1.0-era pending Review returning HTTP 403 after previously reviewed files became Git-ignored. Current safe paths remain available in modern reviews; excluded content and paths never appear in the detail payload.

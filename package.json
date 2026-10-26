@@ -10,7 +10,7 @@
         "ai-agents",
         "code-reuse"
     ],
-    "version": "3.2.1",
+    "version": "3.3.0",
     "license": "MIT",
     "icon": "resources/taskvision.png",
     "publisher": "A-Znk",

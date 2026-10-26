@@ -57,87 +57,291 @@
   color: #355c38;
   background: #e7eedf;
 }
-.graph-node.overview-node {
-  height: 154px;
+/* BaseNode-style composition. React Flow's model owns the outer dimensions, so
+   every density/kind uses the exact same box for DOM measurement and ELK ports. */
+.graph-node.module-node,
+.graph-node.file-node {
+  --node-accent: #45684c;
+  --node-tint: #edf2e8;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 50px minmax(0, 1fr) 30px;
+  border: 1px solid #b7c4b3;
+  border-radius: 5px;
+  background: #fffef9;
+  color: #293d34;
+  box-shadow: 0 2px 5px #263d3010;
+  transition:
+    border-color 140ms ease-out,
+    box-shadow 140ms ease-out;
 }
-.graph-node.detailed-node {
-  height: 190px;
+.graph-node[data-namespace='apps'] {
+  --node-accent: #3c665c;
+  --node-tint: #eaf1ed;
 }
-.overview-node .node-heading {
-  padding: 11px 12px 0;
-  gap: 8px;
+.graph-node[data-namespace='packages'] {
+  --node-accent: #4e626f;
+  --node-tint: #edf0f2;
 }
-.overview-node .node-icon {
-  width: 27px;
-  height: 29px;
+.graph-node[data-namespace='tests'] {
+  --node-accent: #75613e;
+  --node-tint: #f3efe5;
 }
-.overview-node .node-title strong {
-  font-size: 14px;
-  line-height: 1.4;
+.graph-node.file-node {
+  --node-accent: #71634b;
+  --node-tint: #f3efe5;
+  grid-template-rows: 48px minmax(0, 1fr) 30px;
+  border-color: #ccc5b6;
+  border-radius: 3px;
+  background: #fffdf8;
 }
-.overview-node .node-title > span {
-  font-size: 11px;
-  line-height: 1.45;
+.graph-node.module-node.detailed-node {
+  grid-template-rows: 54px minmax(0, 1fr) 34px;
 }
-.overview-node .node-drill {
-  margin-right: -4px;
-  padding: 2px;
+.graph-node.file-node.detailed-node {
+  grid-template-rows: 50px minmax(0, 1fr) 30px;
 }
-.overview-node .node-summary {
-  font-size: 14px;
-  line-height: 1.45;
-  height: 42px;
-  min-height: 42px;
-  margin: 7px 12px 6px;
-  -webkit-line-clamp: 2;
+.graph-node:hover {
+  border-color: var(--node-accent);
+  box-shadow: 0 4px 10px #263d301a;
 }
-.overview-node .node-tags {
-  padding: 0 12px;
-  min-height: 19px;
-  height: 19px;
+.graph-node.is-selected {
+  border: 1px solid #39735e;
+  outline: 2px solid #39735e;
+  outline-offset: 1px;
+  box-shadow: 0 4px 10px #263d301a;
 }
-.overview-node .tag-chip {
-  font-size: 10px;
-  padding: 1px 5px;
+.react-flow__node-knowledge:focus-visible .graph-node,
+.graph-node:has(:focus-visible) {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
 }
-.overview-node .node-footer {
-  min-height: 27px;
-  padding: 4px 12px 5px;
-  gap: 5px;
+.graph-node .node-heading {
+  min-width: 0;
+  gap: 9px;
+  padding: 7px 12px 4px;
+  background: var(--node-tint);
+  border-radius: 4px 4px 0 0;
 }
-.overview-node .node-footer > span {
-  max-width: 115px;
-  font-size: 10px;
-}
-.overview-node .node-expand {
-  font-size: 10px;
-  padding: 1px 3px;
-}
-.overview-node .node-unannotated {
-  font-size: 10px;
-}
-.node-summary.node-summary-link {
-  display: -webkit-box;
+.graph-node.file-node .node-heading {
+  padding: 6px 12px 4px;
   background: transparent;
-  padding: 0;
-  text-align: left;
-  width: calc(100% - 30px);
+  border-radius: 2px 2px 0 0;
+  gap: 7px;
+}
+.graph-node.module-node.detailed-node .node-heading {
+  padding-top: 9px;
+  padding-bottom: 5px;
+}
+.graph-node.file-node.detailed-node .node-heading {
+  padding-top: 7px;
+  padding-bottom: 5px;
+}
+.graph-node .node-icon {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 30px;
   border-radius: 0;
+  background: transparent;
+  color: var(--node-accent);
 }
-.overview-node .node-summary.node-summary-link {
-  width: calc(100% - 24px);
+.graph-node .node-title strong {
+  font: 650 17px/23px var(--font);
+  letter-spacing: -0.02em;
+  color: #283d33;
 }
-.node-summary.node-summary-link:hover {
-  color: #2c6e4a;
+.graph-node.file-node .node-title strong {
+  font: 600 15px/22px var(--mono);
+  letter-spacing: -0.025em;
+}
+.graph-node .node-title > .node-metadata {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: none;
+  min-width: 0;
+  color: #526454;
+  font-size: 11px;
+  line-height: 16px;
+}
+.graph-node .node-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.graph-node .node-kind {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.graph-node .node-kind::before {
+  content: '/';
+  margin-right: 6px;
+  color: #687667;
+}
+.graph-node .node-drill {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 28px;
+  padding: 0;
+  margin: 0 -3px 0 0;
+  align-self: center;
+  color: var(--node-accent);
+}
+.graph-node .node-drill:hover {
+  background: #fffef9;
+  color: #244d3c;
+}
+.graph-node .node-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px 14px 10px;
+  gap: 6px;
+}
+.graph-node.file-node .node-content {
+  padding: 6px 12px 10px;
+}
+.graph-node.detailed-node .node-content {
+  padding-top: 6px;
+  padding-bottom: 8px;
+  gap: 4px;
+}
+.graph-node .node-summary {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  padding: 0;
+  margin: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: #405447;
+  font: 400 14px/20px var(--font);
+  text-align: left;
+  overflow: visible;
+}
+.graph-node .node-summary-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  height: 40px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.graph-node .node-summary-link:hover .node-summary-text {
+  color: #286043;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.detailed-node .node-title strong {
-  font-size: 15px;
+.graph-node .node-source {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  height: 16px;
+  color: #526454;
+  font: 10px/16px var(--mono);
 }
-.detailed-node .node-summary {
-  font-size: 14px;
-  line-height: 1.5;
+.graph-node .node-source > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.graph-node .node-tags {
+  flex: 0 0 22px;
+  min-height: 22px;
+  padding: 0;
+  gap: 5px;
+}
+.graph-node.detailed-node .node-tags {
+  flex-basis: 20px;
+  min-height: 20px;
+}
+.graph-node .tag-chip {
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+.graph-node .tag-chip b {
+  font-size: 10px;
+  opacity: 1;
+}
+.graph-node .node-tag-overflow,
+.graph-node .node-unannotated {
+  color: #596653;
+  font-size: 11px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.graph-node .node-tag-overflow {
+  margin-left: 1px;
+}
+.graph-node .node-footer {
+  min-width: 0;
+  min-height: 0;
+  gap: 8px;
+  padding: 1px 10px 1px 14px;
+  margin: 0;
+  background: #f5f7f0;
+  border-top: 1px solid #e0e5d9;
+  border-radius: 0 0 4px 4px;
+}
+.graph-node.file-node .node-footer {
+  padding-left: 12px;
+  background: #f7f5ed;
+  border-color: #e8e2d6;
+  border-radius: 0 0 2px 2px;
+}
+.graph-node .node-footer > span {
+  min-width: 0;
+  max-width: none;
+  font-size: 11px;
+  line-height: 20px;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.graph-node .node-footer-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.graph-node .node-ownership {
+  color: #526454;
+}
+.graph-node .review-color {
+  color: #8a482c;
+  font-weight: 600;
+}
+.graph-node[data-pending-review='true'] .node-footer {
+  background: #faf0e3;
+  border-top-color: #e5d3bd;
+}
+.graph-node .node-expand {
+  flex-shrink: 0;
+  gap: 3px;
+  min-height: 26px;
+  padding: 2px 5px;
+  background: transparent;
+  color: #385c43;
+  font-size: 11px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.graph-node .node-expand:hover,
+.graph-node .node-expand[aria-expanded='true'] {
+  background: #e1eadb;
+  color: #2b5036;
 }
 .zoom-level {
   min-width: 32px;
@@ -403,30 +607,6 @@
 }
 .graph-workspace .react-flow__handle-right {
   right: 2px;
-}
-.graph-node.module-node {
-  border-radius: 8px;
-  border-color: #9eb9a9;
-}
-.graph-node.file-node {
-  border-radius: 3px;
-  border-color: #c3bdad;
-}
-.graph-node.file-node.overview-node {
-  height: 142px;
-}
-.graph-node.file-node.detailed-node {
-  height: 178px;
-}
-.file-node .node-title strong {
-  font-family: var(--mono);
-  font-size: 12px;
-}
-.file-node.overview-node .node-summary {
-  height: 32px;
-  min-height: 32px;
-  font-size: 12px;
-  line-height: 1.35;
 }
 .relation-details {
   position: absolute;
@@ -790,4 +970,17 @@
   .impact-summary {
     font-size: 10px;
   }
+}
+
+/* Keep the smaller overview minimap away from the lower-left module card.
+   The old 123×77 panel overlapped the bottom consumer after larger node cards
+   were introduced; this inset preserves the interactive minimap and attribution. */
+.graph-workspace .react-flow__minimap {
+  width: 88px;
+  height: 62px;
+  margin: 9px 8px 20px !important;
+}
+.graph-workspace .react-flow__minimap svg {
+  width: 88px;
+  height: 62px;
 }
