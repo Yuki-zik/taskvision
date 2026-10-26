@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { DatabaseSync } from 'node:sqlite';
 
 // Exercise the actual packaged-runtime boundary, not a mocked browser API.
 const { startServer } = await import(pathToFileURL(path.resolve('workspace/server.mjs')).href);
@@ -157,4 +158,176 @@ test('portable knowledge has an explicit import preview and agent proposals requ
   await page.getByRole('button', { name: /确认导入 1 条记录/ }).click();
   await expect(page.getByText('已完成导入，当前知识已刷新。', { exact: true })).toBeVisible();
   expect(workspace.dispatch('snapshot').annotations.find((a: { summary: string }) => a.summary === 'Imported guidance awaiting confirmation').status).toBe('proposed');
+});
+
+test('legacy Review with a newly ignored file remains readable, labels old commit and allows re-review', async ({
+  page,
+}) => {
+  const task = workspace.dispatch(
+    'task_create',
+    {
+      title: 'Old release review after source policy changed',
+      paths: [feature, 'packages/common/src/statistics.js'],
+    },
+    human,
+  ).task;
+  const claim = workspace.dispatch('task_claim', { taskId: task.id, agentId: 'old-agent' }).claim;
+  const review = workspace.dispatch('review_submit', {
+    taskId: task.id,
+    agentId: claim.agentId,
+    token: claim.token,
+    summary: 'Old release submitted before reliable review baselines',
+    evidence: ['Old agent claimed these files passed a test; this is not verified by the server.'],
+  }).review;
+  // Reproduce the actual 2.1 -> 3.2 migration: the old review has no recorded
+  // before/after source, and an originally readable file becomes gitignored.
+  const db = new DatabaseSync(workspace.dispatch('snapshot').project.storePath);
+  db.prepare("DELETE FROM records WHERE id=? AND kind IN ('review-baseline','review-source')").run(
+    review.id,
+  );
+  db.close();
+  const hiddenPath = 'packages/common/src/statistics.js';
+  fs.writeFileSync(
+    path.join(root, hiddenPath),
+    '// PREVIOUSLY_VISIBLE_REVIEW_SECRET\nexport const summarize = () => 0;\n',
+  );
+  fs.writeFileSync(
+    path.join(root, '.gitignore'),
+    `.taskvision/
+${hiddenPath}
+`,
+  );
+  execFileSync('git', ['-C', root, 'add', '.gitignore']);
+  execFileSync('git', [
+    '-C',
+    root,
+    '-c',
+    'user.name=Fixture',
+    '-c',
+    'user.email=fixture@localhost',
+    'commit',
+    '-qm',
+    'tighten source access',
+  ]);
+  const detailResponse = await page.request.get(`${app.url}api/reviews/${review.id}`);
+  expect(detailResponse.status()).toBe(200);
+  const detail = await detailResponse.json();
+  expect(detail.stale).toBe(true);
+  expect(detail.baselineAvailable).toBe(false);
+  expect(detail.baselineRecorded).toBe(false);
+  expect(detail.files).toEqual([]);
+  expect(JSON.stringify(detail)).not.toContain('PREVIOUSLY_VISIBLE_REVIEW_SECRET');
+  await open(page);
+  await navigate(page, '人工审阅');
+  await expect(page.locator('.review-history-banner')).toContainText('历史提交');
+  await expect(page.locator('.review-missing-baseline')).toContainText('没有可信的代码前后对比');
+  await expect(page.locator('.review-detail')).not.toContainText('Ignored files are not exposed');
+  await expect(page.getByRole('button', { name: '人工验收通过', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '要求修改', exact: true })).toBeEnabled();
+  await expect(page.locator('.review-detail')).toContainText('历史记录 · 缺少可信基线');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page
+    .getByRole('textbox', { name: '审阅意见' })
+    .fill('旧交付缺少可验证源码基线，请重新提交当前版本');
+  await page.getByRole('button', { name: '要求修改', exact: true }).click();
+  await expect(page.locator('.resolved-review')).toContainText('要求修改');
+  expect(
+    workspace.dispatch('snapshot').tasks.find((item: { id: string }) => item.id === task.id)
+      ?.status,
+  ).toBe('todo');
+});
+
+test('current Review with a newly ignored file still shows permitted Diff and blocks approval', async ({
+  page,
+}) => {
+  const shared = 'packages/common/src/statistics.js';
+  const task = workspace.dispatch(
+    'task_create',
+    {
+      title: 'Review scoped changes with a later excluded file',
+      paths: [feature, shared],
+    },
+    human,
+  ).task;
+  const claim = workspace.dispatch('task_claim', { taskId: task.id, agentId: 'scope-agent' }).claim;
+  fs.writeFileSync(
+    path.join(root, feature),
+    sourceBefore.replace('return values.length;', 'return values.length + 1;'),
+  );
+  fs.writeFileSync(
+    path.join(root, shared),
+    '// DO_NOT_DISCLOSE_OLD_REVIEW_CONTENT\nexport const summarize = () => 0;\n',
+  );
+  const review = workspace.dispatch('review_submit', {
+    taskId: task.id,
+    agentId: claim.agentId,
+    token: claim.token,
+    summary: 'Review before source visibility changed',
+  }).review;
+  fs.writeFileSync(path.join(root, '.gitignore'), `.taskvision/\n${shared}\n`);
+  const response = await page.request.get(`${app.url}api/reviews/${review.id}`);
+  expect(response.status()).toBe(200);
+  const detail = await response.json();
+  expect(detail.baselineRecorded).toBe(true);
+  expect(detail.baselineAvailable).toBe(false);
+  expect(detail.excludedFileCount).toBe(1);
+  expect(detail.files.map((item: { path: string }) => item.path)).toEqual([feature]);
+  expect(JSON.stringify(detail)).not.toContain('DO_NOT_DISCLOSE_OLD_REVIEW_CONTENT');
+  await open(page);
+  await navigate(page, '人工审阅');
+  await expect(page.locator('.diff-code')).toContainText('return values.length + 1;');
+  await expect(page.locator('.review-detail')).toContainText('1 项历史文件');
+  await expect(page.getByRole('button', { name: '人工验收通过', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '要求修改', exact: true })).toBeEnabled();
+});
+
+test('nested checkout Review has a valid root-scope baseline and can be accepted by a human', async ({ page }) => {
+  const nestedRoot = path.join(root, 'packages/common');
+  const nested = createWorkspace(nestedRoot);
+  const nestedApp = await startServer({ root: nestedRoot, port: 0, publicRoot: path.resolve('workspace/public') });
+  try {
+    const task = workspace.dispatch('task_create', { title: 'Nested workspace Review', paths: ['packages/common'] }, human).task;
+    const claim = nested.dispatch('task_claim', { taskId: task.id, agentId: 'nested-agent' }).claim;
+    fs.appendFileSync(path.join(nestedRoot, 'src/statistics.js'), '\n// REVIEW: Updated reusable logic\n');
+    const review = nested.dispatch('review_submit', {
+      taskId: task.id, agentId: claim.agentId, token: claim.token, summary: 'Nested checkout change',
+    }).review;
+    expect(review.paths).toEqual(['']);
+    await page.goto(nestedApp.url);
+    await navigate(page, '人工审阅');
+    await expect(page.locator('.diff-code')).toContainText('Updated reusable logic');
+    await expect(page.locator('.review-history-banner')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '人工验收通过', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: '人工验收通过', exact: true }).click();
+    await expect(page.locator('.resolved-review')).toContainText('已验收');
+    expect(workspace.dispatch('snapshot').tasks.find((item: { id: string }) => item.id === task.id)?.status).toBe('done');
+  } finally {
+    await nestedApp.close();
+    nested.close();
+  }
+});
+
+test('approval in an already-open Review is rejected when a deleted baseline path becomes ignored', async ({ page }) => {
+  const retired = 'packages/common/src/retired.js';
+  fs.writeFileSync(path.join(root, retired), '// Reviewed before deletion\nexport const retired = 1;\n');
+  const task = workspace.dispatch('task_create', { title: 'Review removal of old code', paths: ['packages/common'] }, human).task;
+  const claim = workspace.dispatch('task_claim', { taskId: task.id, agentId: 'remove-agent' }).claim;
+  fs.unlinkSync(path.join(root, retired));
+  const review = workspace.dispatch('review_submit', {
+    taskId: task.id, agentId: claim.agentId, token: claim.token, summary: 'Deleted retired module',
+  }).review;
+  await open(page);
+  await navigate(page, '人工审阅');
+  await expect(page.getByRole('button', { name: '人工验收通过', exact: true })).toBeEnabled();
+  fs.writeFileSync(path.join(root, '.gitignore'), `.taskvision/\n${retired}\n`);
+  // The button may still look enabled until polling/revalidation. The server
+  // must independently block the mutation based on the historical baseline.
+  await page.getByRole('button', { name: '人工验收通过', exact: true }).click();
+  await expect(page.locator('.review-detail')).toContainText('当前源码或安全可读范围已变化');
+  expect(workspace.dispatch('snapshot').reviews.find((item: { id: string }) => item.id === review.id)?.status).toBe('pending');
+  await page.reload();
+  await navigate(page, '人工审阅');
+  await expect(page.getByRole('button', { name: '人工验收通过', exact: true })).toBeDisabled();
+  await expect(page.locator('.review-detail')).toContainText('1 项历史文件');
 });

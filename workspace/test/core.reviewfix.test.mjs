@@ -296,8 +296,13 @@ test('scope capture accounts for new directory files, enforces its own cap and f
   );
   fs.rmSync(path.join(root, 'packages/core/src/new.ts'));
   fs.symlinkSync(path.join(root, 'other.ts'), path.join(root, 'packages/core/src/linked.ts'));
+  const unsafe = w.dispatch('review_detail', { reviewId: review.id });
+  assert.equal(unsafe.stale, true);
+  assert.equal(unsafe.baselineAvailable, false);
+  assert.deepEqual(unsafe.files, [], 'do not disclose historical source when a symlink appears');
+  assert.match(unsafe.warning, /cannot be safely captured/);
   assert.throws(
-    () => w.dispatch('review_detail', { reviewId: review.id }),
+    () => w.dispatch('review_resolve', { reviewId: review.id, decision: 'accepted' }, human),
     (e) => e.code === 'FORBIDDEN',
   );
 });
@@ -417,4 +422,92 @@ test('human acceptance preserves the proposed nested module scope instead of bro
   assert.ok(parent.dispatch('context',{path:'packages/core/src/index.ts'}).annotations.some(a=>a.id===note.id));
   assert.ok(!parent.dispatch('context',{path:'other.ts'}).annotations.some(a=>a.id===note.id));
   assert.ok(nested.dispatch('context',{path:'src/index.ts'}).annotations.some(a=>a.id===note.id&&a.status==='active'));
+});
+
+test('historical review lists safe remaining files when one earlier reviewed file becomes gitignored', (t) => {
+  const { root, open } = fixture(t);
+  const hidden = 'packages/core/src/previously-public.ts';
+  fs.writeFileSync(path.join(root, hidden), '// once-readable\nconst secret = "REVIEW-SOURCE-MUST-STAY-HIDDEN";\n');
+  const w = open();
+  const task = w.dispatch('task_create', { title: 'Two-file review', paths: ['packages/core'] }).task;
+  const claim = w.dispatch('task_claim', { taskId: task.id, agentId: 'agent' }).claim;
+  fs.appendFileSync(path.join(root, 'packages/core/src/index.ts'), '// verified change\n');
+  const review = w.dispatch('review_submit', {
+    taskId: task.id, agentId: claim.agentId, token: claim.token, summary: 'Review including once-public file',
+  }).review;
+  assert.equal(w.dispatch('review_detail', { reviewId: review.id }).baselineAvailable, true);
+  fs.writeFileSync(path.join(root, '.gitignore'), hidden + '\n');
+  const detail = w.dispatch('review_detail', { reviewId: review.id });
+  assert.equal(detail.stale, true);
+  assert.equal(detail.baselineAvailable, false, 'a historical review with blocked evidence is not approvable');
+  assert.equal(detail.excludedFileCount, 1);
+  assert.ok(detail.files.some(file => file.path === 'packages/core/src/index.ts'));
+  assert.ok(!detail.files.some(file => file.path === hidden));
+  assert.ok(!JSON.stringify(detail).includes('REVIEW-SOURCE-MUST-STAY-HIDDEN'));
+  assert.throws(() => w.dispatch('review_resolve', { reviewId: review.id, decision: 'accepted' }, human),
+    error => error.code === 'STALE');
+  assert.equal(w.dispatch('review_resolve', {
+    reviewId: review.id, decision: 'changes-requested', note: 'Reviewed source is no longer accessible',
+  }, human).task.status, 'todo');
+});
+
+test('old review without claim-time baseline cannot be silently accepted even on unchanged HEAD', (t) => {
+  const { open } = fixture(t), w = open();
+  const task = w.dispatch('task_create', { title: 'Legacy review', paths: ['other.ts'] }).task;
+  const claim = w.dispatch('task_claim', { taskId: task.id, agentId: 'agent' }).claim;
+  const review = w.dispatch('review_submit', {
+    taskId: task.id, agentId: claim.agentId, token: claim.token, summary: 'Old review format',
+  }).review;
+  const db = new DatabaseSync(w.dispatch('snapshot').project.storePath);
+  db.prepare("DELETE FROM records WHERE id=? AND kind IN ('review-baseline','review-source')").run(review.id);
+  db.close();
+  const detail = w.dispatch('review_detail', { reviewId: review.id });
+  assert.equal(detail.baselineAvailable, false);
+  assert.equal(detail.baselineRecorded, false);
+  assert.equal(detail.stale, true);
+  assert.deepEqual(detail.files, [], 'do not return current source when claim-time history is absent');
+  assert.ok(detail.warning);
+  assert.throws(() => w.dispatch('review_resolve', { reviewId: review.id, decision: 'accepted' }, human),
+    error => error.code === 'STALE', 'a missing baseline cannot receive human approval');
+});
+
+test('nested checkout root-scope review stays verifiable and approvable', (t) => {
+  const { root, open } = fixture(t);
+  const parent = open();
+  const nested = open('packages/core');
+  const task = parent.dispatch('task_create', { title: 'Nested-root review', paths: ['packages/core'] }).task;
+  const claim = nested.dispatch('task_claim', { taskId: task.id, agentId: 'nested-agent' }).claim;
+  fs.appendFileSync(path.join(root, 'packages/core/src/index.ts'), '// verified nested change\n');
+  const review = nested.dispatch('review_submit', {
+    taskId: task.id, agentId: claim.agentId, token: claim.token, summary: 'Nested checkout delivered',
+  }).review;
+  assert.deepEqual(review.paths, [''], 'empty scope represents this checkout root, not an invalid path');
+  const detail = nested.dispatch('review_detail', { reviewId: review.id });
+  assert.equal(detail.stale, false);
+  assert.equal(detail.baselineAvailable, true);
+  assert.ok(detail.files.some(file => file.path === 'src/index.ts'));
+  assert.equal(nested.dispatch('review_resolve', { reviewId: review.id, decision: 'accepted' }, human).task.status, 'done');
+});
+
+test('acceptance rejects deleted baseline-only paths made forbidden after review submit', (t) => {
+  const { root, open } = fixture(t);
+  const retired = 'packages/core/src/retired.ts';
+  fs.writeFileSync(path.join(root, retired), '// old reviewed implementation\nexport const retired = 1;\n');
+  const w = open();
+  const task = w.dispatch('task_create', { title: 'Delete obsolete file', paths: ['packages/core'] }).task;
+  const claim = w.dispatch('task_claim', { taskId: task.id, agentId: 'agent' }).claim;
+  fs.unlinkSync(path.join(root, retired));
+  const review = w.dispatch('review_submit', {
+    taskId: task.id, agentId: claim.agentId, token: claim.token, summary: 'Removed retired module',
+  }).review;
+  assert.equal(w.dispatch('review_detail', { reviewId: review.id }).baselineAvailable, true);
+  fs.writeFileSync(path.join(root, '.gitignore'), retired + '\n');
+  const detail = w.dispatch('review_detail', { reviewId: review.id });
+  assert.equal(detail.stale, true);
+  assert.equal(detail.baselineAvailable, false);
+  assert.equal(detail.excludedFileCount, 1);
+  assert.throws(() => w.dispatch('review_resolve', { reviewId: review.id, decision: 'accepted' }, human),
+    error => error.code === 'STALE', 'Backend must never approve historical evidence that the Web has withheld');
+  assert.equal(w.dispatch('snapshot').reviews.find(r => r.id === review.id).status, 'pending');
+  assert.equal(w.dispatch('snapshot').tasks.find(t => t.id === task.id).status, 'review');
 });

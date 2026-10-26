@@ -1,5 +1,11 @@
 # Current Tasks
 
+## Review 3.2.1 history/visibility repair — 2026-10-26
+
+User reported Web Review display bug. Reproduced against **actual pending 2.1 review** in Mac mini's TaskVision DB: old head `f012814`, new head `d16b7a4`; 64 historical file hashes, no claim-time baseline, 8 now ignored paths. Existing Web API returned HTTP403 `Ignored files are not exposed`, displayed generic permission error and locked actions. Fixed in `fix/review-legacy-detail-20261026`: missing-baseline history is metadata-only and clearly marked unreviewable, no source substituted, safe source skipped in modern partial reviews. `review_resolve` denies missing baseline, formerly safe paths made ignored, and deleted baseline-only paths; nested scope '' remains valid. Web shows revision provenance, incomplete/blocked evidence and human re-review action without automatically resolving user record.
+
+Independent Codex read-only review twice: first found two concrete P2 mismatches (nested-workspace empty scope; deletion baseline-only path bypassing Web), both reproduced red then repaired green; second review VERIFIED. Verified local suites: 170 QUnit +56 Core/HTTP/MCP +48 Web +10 true Chrome workflows; strict TypeScript/Prettier and 3.2.1 VSIX package + isolated VS Code Extension Host passed. User's unrelated `.taskvision/ai-status-report.md` edit was never changed or staged. Old 2.1 pending record remains pending. No remote push/Marketplace/default-profile replacement. See `agent/reports/taskvision-3.2.1-review-acceptance.md` and `workspace/README.md`.
+
 ## Dependency impact lens and ELK/D2 export delivered — 2026-10-26
 
 User-requested continued TaskVision graph improvement on `feat/graph-impact-tala-20261026`. Direct dependency, direct reverse dependents, reverse-transitive possible-impact and neighborhood lenses now run on the existing source-grounded React Flow graph. Actual geometry and zoom persist across lens changes/polls, source relationship evidence stays truthful. Selected modules retain expanded file representatives and keyboard activation synchronizes the parent inspector. Version 3.2.0 local preview, not published/pushed; daily 2.0.1 preserved.

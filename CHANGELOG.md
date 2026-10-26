@@ -1,5 +1,13 @@
 # TaskVision Change Log
 
+## 3.2.1 Preview — Historical Review compatibility and trustworthy UI
+
+- Fixed an observed 2.1.0-era pending Review returning HTTP 403 after previously reviewed files became Git-ignored. Current safe paths remain available in modern reviews; excluded content and paths never appear in the detail payload.
+- A legacy Review lacking claim-time before/after source now returns only its decision metadata and Agent-reported evidence, with no live-source substitution. UI clearly shows old vs current commit, hides unverifiable Diff, disables approval and keeps human **要求修改** available. Existing review records stay pending until a human acts.
+- Human approval also validates that a complete baseline and submitted source are stored, even if repository HEAD is unchanged. Symlink/ignored-source regressions fail closed, and partial modern reviews show only safe readable files without approving the whole change.
+- Historical detail payload was reduced from about 730 KB / 1.9s to about 1.1 KB / 2–5ms on the real TaskVision workspace, by avoiding irrelevant source scans when no baseline exists.
+- Added historical/ignored-source behavior tests and real Chrome Review workflows without changing normal valid code-review behavior.
+
 ## 3.2.0 Preview — Source-grounded Dependency Impact Lens (2026-10-26)
 
 - Borrowed CodeMap's direct dependency, reverse dependency and transitive possible-impact explorer while **retaining original importer → provider arrows**. A change's potential reachability is not a statement of runtime failure.

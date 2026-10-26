@@ -32,6 +32,12 @@ The extension API remains compatible with the declared VS Code1.72 API types. St
 
 The 3.2 preview retains the existing extension, 11 MCP tools, and Web. Verified local suites: 170 original plugin tests, 52 domain/security/protocol tests, 48 Web graph/impact tests, six browser user workflows, and six export/geometry tests. Strict TS and formatting pass; installed VSIX and standalone Web/MCP also validated. No remote release or cross-platform graphical Host certification is claimed.
 
+## 3.2.1 historical Review compatibility
+
+Legacy 2.1-era records lacked claim-time source baselines. In the Web Review page, old commit vs current HEAD is explicit and unsupported before/after comparisons are never reconstructed using current source. Detail requests return metadata-only when no baseline instead of an HTTP 403 caused by newly ignored historical paths. Modern reviews retain permitted file diffs but mark the whole review unapprovable if any historical evidence is excluded. Human-only approval now checks claim-time and submitted completeness, the current visibility of both baseline and submitted paths (including intentionally deleted files), workspace identity/HEAD and current source fingerprints. Canonical empty root scope remains valid for nested checkout reviews.
+
+Independent two-round read-only review found and verified repair of two additional P2 approval inconsistencies. Acceptance: 170 legacy tests, 56 domain/security/protocol tests, 48 Web tests, 10 real-browser workflows, strict TypeScript/format, isolated VSIX/Extension Host and MCP smoke. No existing database review was automatically accepted/rejected. No daily VS Code version or remote files changed. Repro and evidence: `agent/reports/taskvision-3.2.1-review-acceptance.md`.
+
 ## Current verified state
 
 3.0.0 local preview, developed on Mac mini. Strict typechecking and formatted new application/core source pass. 170 legacy behavior tests, 47 domain/security/protocol tests, 13 graph/diff tests and four real-browser workflows pass. Real installed VS Code activation/editor/custom tags/MCP config/service startup-stop pass. Two actual Codex worktrees demonstrated module reuse, new human guidance, conflicting claim rejection, private token recovery across turns, scoped tests and captured Review. Four independent review rounds converged from concrete blockers to PASS on the reviewed scope/coordination findings. No remote CI/Marketplace result is claimed.

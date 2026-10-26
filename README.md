@@ -40,6 +40,8 @@ code --install-extension A-Znk.taskvision
 
 ## 3.2 preview: semantic architecture, dependency impact and human-agent collaboration
 
+**3.2.1 patch:** fixes Web Review display failures for older 2.1 submissions with now-ignored source paths and missing historical baselines. Legacy reviews retain their metadata and require re-submission; current reviews retain verifiable diffs. See [workspace guide](workspace/README.md).
+
 The project now uses **strict TypeScript** throughout the extension and domain services. **React, React Flow, ELK and Smart Edge** power the interactive architecture workbench. Existing highlighting, task navigation and AI context export remain compatible.
 
 CORE / REUSE / INTENT / REVIEW annotations, human guidance, scoped agent leases and source-linked review share one domain model. The Web interface supports drilldown, source/knowledge navigation, revision-safe editing, proposal adoption, real before/after review and explicit knowledge import previews. Eleven MCP tools and a dedicated Skill support retrieval, reuse, coordination and handoff.

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ArrowRight,
   ArrowUpRight,
+  AlertTriangle,
   Check,
   ChevronRight,
   FileDiff,
@@ -120,6 +122,13 @@ function ReviewInspector({ review, snapshot, mutate, onSelect, onSaved }: Detail
   }
   const file = detail?.files[fileIndex] ?? detail?.files[0];
   const task = snapshot.tasks.find((task) => task.id === review.taskId);
+  const historicalCommit = !!(
+    review.head &&
+    snapshot.project.head &&
+    review.head !== snapshot.project.head
+  );
+  const diffUnavailable = !!detail && !detail.baselineRecorded;
+  const canApprove = !!detail && detail.baselineAvailable && !detail.stale && !error;
   return (
     <article className="review-detail">
       <div className="review-title">
@@ -135,6 +144,21 @@ function ReviewInspector({ review, snapshot, mutate, onSelect, onSaved }: Detail
           <span title={review.workspaceId}>工作区 {review.workspaceId.slice(0, 12)}</span>
         </div>
       </div>
+      {historicalCommit && (
+        <div className="review-history-banner" role="status">
+          <div className="review-history-label">
+            <AlertTriangle size={15} /> 历史提交 · 当前代码已更新
+          </div>
+          <div className="review-version-track">
+            <span>审阅版本</span>
+            <code>{review.head.slice(0, 8)}</code>
+            <ArrowRight size={14} />
+            <span>当前版本</span>
+            <code>{snapshot.project.head.slice(0, 8)}</code>
+          </div>
+          <p>这条交付属于旧提交，无法直接作为当前版本的验收依据。请重新提交 Review。</p>
+        </div>
+      )}
       {error && (
         <Notice danger>
           {error}
@@ -143,12 +167,21 @@ function ReviewInspector({ review, snapshot, mutate, onSelect, onSaved }: Detail
           </button>
         </Notice>
       )}
-      {detail?.warning && <Notice>{detail.warning}</Notice>}
-      {detail?.stale && (
-        <Notice danger>源码或工作区指纹已变化。此交付不能通过验收，请要求 Agent 重新提交。</Notice>
+      {detail && detail.review.workspaceId !== snapshot.project.workspaceId && (
+        <Notice danger>交付来自其他工作区，请切换到原工作区查看源码并决定是否需要重新提交。</Notice>
       )}
-      {detail && !detail.baselineAvailable && (
-        <Notice>这是一条没有历史基线的记录，无法展示可信的前后差异。请要求重新提交。</Notice>
+      {detail?.stale && !historicalCommit && (
+        <Notice danger>当前源码或安全可读范围已变化，原交付不能直接通过验收。</Notice>
+      )}
+      {!!detail?.excludedFileCount && (
+        <Notice danger>
+          有 {detail.excludedFileCount}{' '}
+          项历史文件证据因当前忽略或安全读取规则未展示；已隐藏其路径和内容。 需要重新提交完整的可信
+          Review。
+        </Notice>
+      )}
+      {detail && !detail.baselineAvailable && !diffUnavailable && !detail.excludedFileCount && (
+        <Notice>历史源码捕获不完整，当前可见的差异仅供参考，不能作为通过验收的依据。</Notice>
       )}
       <details className="review-evidence">
         <summary className="section-label">
@@ -168,46 +201,67 @@ function ReviewInspector({ review, snapshot, mutate, onSelect, onSaved }: Detail
         )}
       </details>
       <div className="section-label">
-        实际文件差异<span>{detail?.files.length ?? review.paths.length} 个范围内文件</span>
+        实际文件差异
+        <span>
+          {diffUnavailable
+            ? '历史记录 · 缺少可信基线'
+            : detail
+              ? `${detail.files.length} 个可访问文件${detail.baselineAvailable ? '' : ' · 不可验收'}`
+              : `${review.paths.length} 个审阅范围`}
+        </span>
       </div>
       {loading && !detail ? (
-        <Loading>正在读取原始版本与当前源码…</Loading>
+        <Loading>正在检查交付版本、历史基线与源码可读性…</Loading>
+      ) : !detail ? (
+        <Empty title="暂时无法读取审阅差异">
+          请保留审阅意见并重新读取；如果源码权限已变化，可要求 Agent 重新提交。
+        </Empty>
+      ) : diffUnavailable ? (
+        <div className="review-missing-baseline">
+          <AlertTriangle size={21} aria-hidden="true" />
+          <div>
+            <strong>这条历史交付没有可信的代码前后对比</strong>
+            <p>
+              创建这条 Review 时尚未保存完整的认领基线。我们保留了任务说明和 Agent
+              提交的证据，但不会把当前源码冒充为当时的修改，也不会将未知变更显示为“未修改”。
+              如仍需验收，请让 Agent 基于当前代码重新认领并提交。
+            </p>
+          </div>
+        </div>
       ) : (
-        detail && (
-          <>
-            {detail.files.length > 1 && (
-              <div className="diff-file-tabs" role="tablist" aria-label="差异文件">
-                {detail.files.map((item, index) => (
-                  <button
-                    key={item.path}
-                    role="tab"
-                    aria-selected={item.path === file?.path}
-                    onClick={() => setFileIndex(index)}
-                  >
-                    {item.path}
-                    <span>
-                      {
-                        (
-                          {
-                            modified: '修改',
-                            added: '新增',
-                            deleted: '删除',
-                            unchanged: '未变',
-                          } as const
-                        )[item.status]
-                      }
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {file ? (
-              <FileDifference file={file} onSelect={onSelect} />
-            ) : (
-              <Empty title="没有可展示的文件差异">请检查交付范围与服务端基线记录。</Empty>
-            )}
-          </>
-        )
+        <>
+          {detail.files.length > 1 && (
+            <div className="diff-file-tabs" role="tablist" aria-label="差异文件">
+              {detail.files.map((item, index) => (
+                <button
+                  key={item.path}
+                  role="tab"
+                  aria-selected={item.path === file?.path}
+                  onClick={() => setFileIndex(index)}
+                >
+                  {item.path}
+                  <span>
+                    {
+                      (
+                        {
+                          modified: '修改',
+                          added: '新增',
+                          deleted: '删除',
+                          unchanged: '未变',
+                        } as const
+                      )[item.status]
+                    }
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {file ? (
+            <FileDifference file={file} onSelect={onSelect} />
+          ) : (
+            <Empty title="没有可展示的文件差异">当前范围内没有可访问的历史文件。</Empty>
+          )}
+        </>
       )}
       {review.status === 'pending' ? (
         <section className="human-decision">
@@ -215,7 +269,11 @@ function ReviewInspector({ review, snapshot, mutate, onSelect, onSaved }: Detail
             <ShieldCheck size={17} />
             人工决定
           </h4>
-          <p>决定绑定当前源码版本。请检查差异与证据，再提交你的意见。</p>
+          <p>
+            {canApprove
+              ? '验收将绑定当前源码版本，请检查真实差异与证据后决定。'
+              : '这条交付目前不满足可信验收条件。可以保留审阅意见并要求 Agent 重新提交；不会自动修改旧记录。'}
+          </p>
           {storageError && <Notice danger>无法持久保存审阅草稿，请在关闭前复制意见。</Notice>}
           <label>
             审阅意见
@@ -229,9 +287,8 @@ function ReviewInspector({ review, snapshot, mutate, onSelect, onSaved }: Detail
           <div className="form-actions">
             <button
               className="button primary"
-              disabled={
-                busy || loading || !detail || detail.stale || !detail.baselineAvailable || !!error
-              }
+              disabled={busy || loading || !canApprove}
+              title={!canApprove ? '当前交付缺少可信版本或源码基线，请要求重新提交。' : undefined}
               onClick={() => {
                 void decide('accepted');
               }}
@@ -240,7 +297,7 @@ function ReviewInspector({ review, snapshot, mutate, onSelect, onSaved }: Detail
             </button>
             <button
               className="button"
-              disabled={busy || !detail}
+              disabled={busy}
               onClick={() => {
                 void decide('changes-requested');
               }}
@@ -320,7 +377,12 @@ export function ReviewsView({ snapshot, query, mutate, onSelect, onSaved }: Prop
                 <small>
                   {review.workspaceId !== snapshot.project.workspaceId
                     ? '其他工作区'
-                    : statuses[review.status]}
+                    : review.status === 'pending' &&
+                        !!review.head &&
+                        !!snapshot.project.head &&
+                        review.head !== snapshot.project.head
+                      ? '历史交付'
+                      : statuses[review.status]}
                 </small>
               </button>
             ))}

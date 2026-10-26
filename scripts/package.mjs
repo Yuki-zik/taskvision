@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = path.resolve(
-  process.argv[2] || path.join(root, 'artifacts', 'taskvision-3.2.0-preview.vsix'),
+  process.argv[2] || path.join(root, 'artifacts', 'taskvision-3.2.1-preview.vsix'),
 );
 fs.mkdirSync(path.dirname(output), { recursive: true });
 const result = spawnSync(

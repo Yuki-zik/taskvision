@@ -308,8 +308,9 @@ test('existing SQLite knowledge remains intact and historical reviews disclose a
   const detail = run('review_detail', { reviewId: review.id });
   assert.equal(detail.baselineAvailable, false);
   assert.match(detail.warning, /baseline/);
-  assert.equal(detail.files[0].before, null);
-  assert.equal(detail.files[0].afterHash, hash);
+  assert.deepEqual(detail.files, [], 'missing historical baseline cannot be substituted with current source');
+  assert.equal(detail.review.fileHashes['src/a.ts'], undefined, 'legacy source path metadata is withheld');
+  assert.equal(detail.stale, true);
   assert.ok(run('snapshot').tasks.some((t) => t.id === task.id));
   assert.equal(fs.existsSync(path.join(root, '.taskvision/workspace.sqlite')), true);
 });

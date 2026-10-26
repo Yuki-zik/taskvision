@@ -202,7 +202,12 @@ export interface ReviewFile {
 export interface ReviewDetail {
   review: Review;
   files: ReviewFile[];
+  /** A historical baseline record exists even when it is incomplete or some paths are unavailable. */
+  baselineRecorded?: boolean;
+  /** Only true when both before/after evidence is complete and every reviewed path remains safe. */
   baselineAvailable: boolean;
+  /** Number of previously recorded file paths withheld under current filesystem/ignore rules. */
+  excludedFileCount?: number;
   stale: boolean;
   warning?: string;
 }

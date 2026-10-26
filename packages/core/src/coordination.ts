@@ -29,7 +29,7 @@ import {
   Store,
 } from './store';
 import { Coordinates, type ScopeCoordinates } from './coordinates';
-import { fail, integer, now, overlaps, requireHuman, strings, text } from './validation';
+import { errorCode, fail, integer, now, overlaps, requireHuman, strings, text } from './validation';
 
 const MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 export type InspectedReviewFile = ReviewFile & {
@@ -383,10 +383,63 @@ export class Coordination {
         stale: true,
         warning: 'Review belongs to another checkout. Open its workspace to inspect source.',
       };
-    const baseline = this.store.get('review-baseline', review.id),
-      submitted = this.store.get('review-source', review.id),
-      current = this.capture(review.paths);
-    const stale =
+    const baseline = this.store.get('review-baseline', review.id);
+    // Old 2.1 reviews did not store a claim-time before/after source pair.
+    // Current source is NEVER a valid substitute for that missing evidence.
+    // Avoid scanning/serializing an unrelated checkout or exposing legacy paths:
+    // preserve only the historical decision metadata and Agent-reported evidence.
+    if (!baseline)
+      return {
+        review: { ...review, fileHashes: {} },
+        files: [],
+        baselineRecorded: false,
+        baselineAvailable: false,
+        stale: true,
+        warning:
+          'No claim-time source baseline is available for this historical review. Ask the Agent to submit a new review.',
+      };
+    const submitted = this.store.get('review-source', review.id);
+    // Historical records can refer to files newly excluded by .gitignore,
+    // deleted files, or paths that have become symlinks. Never let one unsafe
+    // historical path turn the entire human review UI into an HTTP 403.
+    const safeScopes: string[] = [];
+    for (const scope of review.paths) {
+      if (scope === '') {
+        // The empty scope represents the root of the current worktree.
+        // capture() and scopeInventory() already support it directly.
+        safeScopes.push(scope);
+        continue;
+      }
+      try {
+        safePath(this.project, scope, { directory: true, allowMissing: true });
+        safeScopes.push(scope);
+      } catch (error) {
+        if (!['FORBIDDEN', 'NOT_FOUND', 'INVALID_ARGUMENT'].includes(errorCode(error) || ''))
+          throw error;
+        // Old review scopes are immutable. An ignored file must not prevent
+        // the other, currently readable scopes from being compared.
+      }
+    }
+    let current: Capture;
+    try {
+      current = safeScopes.length
+        ? this.capture(safeScopes)
+        : { files: {}, complete: false, capturedAt: now() };
+    } catch (error) {
+      if (!['FORBIDDEN', 'NOT_FOUND', 'STALE', 'CONFLICT'].includes(errorCode(error) || ''))
+        throw error;
+      return {
+        review: { ...review, fileHashes: {} },
+        files: [],
+        baselineRecorded: !!baseline,
+        baselineAvailable: false,
+        excludedFileCount: Object.keys(review.fileHashes).length,
+        stale: true,
+        warning:
+          'Current project source cannot be safely captured for this historical review. No stored source is exposed; ask the Agent to submit a new review.',
+      };
+    }
+    const staleSource =
       review.head !== git(this.project.root, ['rev-parse', 'HEAD']) ||
       !sameHashes(review.fileHashes, hashes(current));
     const paths = [
@@ -396,11 +449,23 @@ export class Coordination {
         ...Object.keys(current.files),
       ]),
     ].sort();
-    const files: InspectedReviewFile[] = paths.map((relative) => {
-      // A newly ignored/blocked path must not expose source retained before the boundary changed.
-      safePath(this.project, relative, { allowMissing: true });
-      const before = baseline?.files[relative],
-        afterHash = review.fileHashes[relative] || null;
+    const permitted: string[] = [];
+    let excludedFileCount = 0;
+    for (const relative of paths) {
+      try {
+        // Revalidate historical paths against TODAY's policy before ever
+        // reading retained snapshots. Do not expose blocked source or its path.
+        safePath(this.project, relative, { allowMissing: true });
+        permitted.push(relative);
+      } catch (error) {
+        if (!['FORBIDDEN', 'NOT_FOUND', 'INVALID_ARGUMENT'].includes(errorCode(error) || ''))
+          throw error;
+        excludedFileCount += 1;
+      }
+    }
+    const files: InspectedReviewFile[] = permitted.map((relative) => {
+      const before = baseline?.files[relative];
+      const afterHash = review.fileHashes[relative] || null;
       const after =
         submitted?.files[relative] ||
         (current.files[relative]?.hash === afterHash ? current.files[relative] : undefined);
@@ -427,13 +492,33 @@ export class Coordination {
           : {}),
       };
     });
-    const baselineAvailable = !!baseline?.complete;
-    const warning = !baseline
-      ? 'No claim-time source baseline is available for this historical review or storage budget.'
-      : !baseline.complete || !submitted?.complete
-        ? 'Source capture exceeded its byte budget; some before/after content is unavailable.'
-        : undefined;
-    return { review, files, baselineAvailable, stale, ...(warning ? { warning } : {}) };
+    const baselineRecorded = !!baseline;
+    const baselineAvailable = !!baseline?.complete && !!submitted?.complete && !excludedFileCount;
+    const warnings: string[] = [];
+    if (!baseline)
+      warnings.push(
+        'No claim-time source baseline is available for this historical review or storage budget.',
+      );
+    else if (!baseline.complete || !submitted?.complete)
+      warnings.push(
+        'Source capture exceeded its byte budget; some before/after content is unavailable.',
+      );
+    if (excludedFileCount)
+      warnings.push(
+        `${excludedFileCount} historical source file(s) are now ignored or inaccessible; their content and paths have been withheld.`,
+      );
+    const safeHashes = Object.fromEntries(
+      Object.entries(review.fileHashes).filter(([relative]) => permitted.includes(relative)),
+    );
+    return {
+      review: { ...review, fileHashes: safeHashes },
+      files,
+      baselineRecorded,
+      baselineAvailable,
+      excludedFileCount,
+      stale: staleSource || excludedFileCount > 0,
+      ...(warnings.length ? { warning: warnings.join(' ') } : {}),
+    };
   }
   resolve(args: OperationArgs<'review_resolve'>, actor: Actor): OperationResult<'review_resolve'> {
     requireHuman(actor);
@@ -445,6 +530,33 @@ export class Coordination {
       if (current.status !== 'pending')
         fail('CONFLICT', 'This review already has a human decision.');
       if (args.decision === 'accepted') {
+        const baseline = this.store.get('review-baseline', current.id);
+        const submitted = this.store.get('review-source', current.id);
+        if (!baseline?.complete || !submitted?.complete)
+          fail(
+            'STALE',
+            'Review has no complete claim-time baseline and submitted source; ask for a new review.',
+          );
+        // Submitted hashes alone omit intentionally deleted files. Validate
+        // every file from both historical captures against TODAY's ignore and
+        // symlink policy; otherwise a newly ignored deletion can be approved
+        // despite the details view correctly refusing the same evidence.
+        const evidencePaths = new Set([
+          ...Object.keys(baseline.files),
+          ...Object.keys(submitted.files),
+        ]);
+        for (const relative of evidencePaths) {
+          try {
+            safePath(this.project, relative, { allowMissing: true });
+          } catch (error) {
+            if (!['FORBIDDEN', 'NOT_FOUND', 'INVALID_ARGUMENT'].includes(errorCode(error) || ''))
+              throw error;
+            fail(
+              'STALE',
+              'Previously reviewed source is now excluded or inaccessible; request a new review.',
+            );
+          }
+        }
         if (
           current.workspaceId !== this.project.workspaceId ||
           current.head !== git(this.project.root, ['rev-parse', 'HEAD'])
