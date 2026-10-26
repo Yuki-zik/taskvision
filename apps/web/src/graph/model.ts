@@ -1,5 +1,5 @@
 import type { Edge, Node } from '@xyflow/react';
-import type { Annotation, Filter, Snapshot, SourceFile, Tag } from '../domain';
+import type { Annotation, Filter, Snapshot, SourceEdge, SourceFile, Tag } from '../domain';
 import { inScope, matchesAnnotation } from '../domain';
 import { filesForScope, groupForPath, isInfrastructurePath, scopeLabel } from './scopes';
 export { moduleForPath } from './scopes';
@@ -29,10 +29,50 @@ export interface RoutePoint {
   x: number;
   y: number;
 }
-export type KnowledgeEdge = Edge<
-  { points?: RoutePoint[]; count: number; emphasized?: boolean; muted?: boolean },
-  'routed'
->;
+export const EVIDENCE_LIMIT = 40;
+export const RELATION_CATEGORIES = ['runtime', 'type', 'reexport', 'dynamic', 'lexical'] as const;
+export type RelationCategory = (typeof RELATION_CATEGORIES)[number];
+export type RelationMode = 'summary' | 'categories';
+export type RelationCounts = Partial<Record<RelationCategory, number>>;
+export interface RelationData extends Record<string, unknown> {
+  category: RelationCategory;
+  grouped?: boolean;
+  kindCounts?: RelationCounts;
+  sourceKindCounts?: Partial<Record<SourceEdge['kind'], number>>;
+  count: number;
+  evidence: SourceEdge[];
+  points?: RoutePoint[];
+  emphasized?: boolean;
+  muted?: boolean;
+  hovered?: boolean;
+  parallelCount: number;
+}
+export type KnowledgeEdge = Edge<RelationData, 'routed'>;
+
+export function relationCategory(kind: SourceEdge['kind']): RelationCategory | undefined {
+  switch (kind) {
+    case 'runtime-import':
+    case 'require':
+    case 'import':
+      return 'runtime';
+    case 'type-import':
+      return 'type';
+    case 're-export':
+      return 'reexport';
+    case 'dynamic-import':
+      return 'dynamic';
+    case 'lexical-import':
+      return 'lexical';
+  }
+}
+
+// Separate ports keep coexisting relation categories selectable rather than overpainting them.
+export function relationHandle(side: 'in' | 'out', category: RelationCategory): string {
+  return category === 'runtime' ? side : `${side}-${category}`;
+}
+export function relationOffset(category: RelationCategory): number {
+  return { runtime: 0, type: -40, reexport: -20, dynamic: 20, lexical: 40 }[category];
+}
 export interface GraphModel {
   nodes: KnowledgeNode[];
   edges: KnowledgeEdge[];
@@ -41,6 +81,7 @@ export interface GraphModel {
   codeFiles: number;
   infrastructureFiles: number;
   detailed: boolean;
+  counts?: Record<RelationCategory, number>;
 }
 export interface GraphOptions {
   scope: string;
@@ -49,6 +90,32 @@ export interface GraphOptions {
   focusId: string | null;
   infrastructure?: boolean;
   detailed?: boolean;
+  relationMode?: RelationMode;
+  relationKinds?: RelationCategory[];
+}
+
+export function defaultRelationMode(scope: string): RelationMode {
+  return scope ? 'categories' : 'summary';
+}
+
+// Round-robin sampling keeps even rare source kinds represented within the display budget.
+function sampleEvidence(buckets: SourceEdge[][]): SourceEdge[] {
+  if (buckets.reduce((sum, bucket) => sum + bucket.length, 0) <= EVIDENCE_LIMIT)
+    return buckets.flat().map((edge) => ({ ...edge }));
+  const evidence: SourceEdge[] = [];
+  for (let index = 0; evidence.length < EVIDENCE_LIMIT; index++) {
+    let added = false;
+    for (const bucket of buckets) {
+      const edge = bucket[index];
+      if (edge) {
+        evidence.push({ ...edge });
+        added = true;
+        if (evidence.length === EVIDENCE_LIMIT) break;
+      }
+    }
+    if (!added) break;
+  }
+  return evidence;
 }
 
 export function sourcePriority(path: string): number {
@@ -142,6 +209,8 @@ function dataFor(
 // INTENT: Aggregate actual import edges at the current scope; grouping never creates dependencies.
 export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphModel {
   const { scope, expanded, filter, focusId, infrastructure = false, detailed = false } = options;
+  const relationMode = options.relationMode ?? defaultRelationMode(scope);
+  const relationKinds = options.relationKinds ?? RELATION_CATEGORIES;
   const scoped = filesForScope(snapshot.files, scope);
   const infrastructureFiles = scoped.filter((file) => isInfrastructurePath(file.path)).length;
   const query = filter.query.trim().toLowerCase();
@@ -171,7 +240,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
   const makeNode = (data: KnowledgeNodeData) => {
     const id = `${data.kind}:${data.path}`;
     const width = data.kind === 'file' ? 252 : detailed ? 284 : 236;
-    const height = detailed ? 190 : 154;
+    const height = detailed ? (data.kind === 'file' ? 178 : 190) : data.kind === 'file' ? 142 : 154;
     nodes.push({ id, type: 'knowledge', data, position: { x: 0, y: 0 }, width, height });
     return id;
   };
@@ -203,25 +272,96 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
     }
   }
   const dependencies = new Map<string, KnowledgeEdge>();
+  const evidenceByEdge = new Map<string, Map<SourceEdge['kind'], SourceEdge[]>>();
   for (const edge of snapshot.edges) {
+    const category = relationCategory(edge.kind);
     const source = representative.get(edge.from),
       target = representative.get(edge.to);
-    if (!source || !target || source === target) continue;
-    const id = `dependency:${source}→${target}`;
+    if (!category || !source || !target || source === target) continue;
+    const id = `dependency:${category}:${source}→${target}`;
     const existing = dependencies.get(id);
-    if (existing?.data) existing.data.count++;
-    else
+    if (existing?.data) {
+      existing.data.count++;
+      existing.data.kindCounts![category] = existing.data.count;
+      const counts = existing.data.sourceKindCounts!;
+      counts[edge.kind] = (counts[edge.kind] ?? 0) + 1;
+    } else
       dependencies.set(id, {
         id,
         source,
         target,
-        sourceHandle: 'out',
-        targetHandle: 'in',
+        sourceHandle: relationHandle('out', category),
+        targetHandle: relationHandle('in', category),
         type: 'routed',
-        data: { count: 1 },
+        data: {
+          category,
+          count: 1,
+          kindCounts: { [category]: 1 },
+          sourceKindCounts: { [edge.kind]: 1 },
+          evidence: [],
+          parallelCount: 1,
+        },
       });
+    const buckets = evidenceByEdge.get(id) ?? new Map<SourceEdge['kind'], SourceEdge[]>();
+    const bucket = buckets.get(edge.kind) ?? [];
+    if (bucket.length < EVIDENCE_LIMIT) bucket.push(edge);
+    buckets.set(edge.kind, bucket);
+    evidenceByEdge.set(id, buckets);
   }
-  const edges = [...dependencies.values()];
+  const categorized = [...dependencies.values()];
+  for (const edge of categorized)
+    edge.data!.evidence = sampleEvidence([...evidenceByEdge.get(edge.id)!.values()]);
+  const filtered = categorized.filter((edge) => relationKinds.includes(edge.data!.category));
+  const grouped = new Map<string, KnowledgeEdge>();
+  if (relationMode === 'summary') {
+    for (const edge of filtered) {
+      const id = `dependency:summary:${edge.source}→${edge.target}`;
+      let summary = grouped.get(id);
+      if (!summary) {
+        summary = {
+          id,
+          source: edge.source,
+          target: edge.target,
+          sourceHandle: 'out',
+          targetHandle: 'in',
+          type: 'routed',
+          data: {
+            // Compatibility port/category only: grouped metadata carries the actual meaning.
+            category: 'runtime',
+            grouped: true,
+            kindCounts: {},
+            sourceKindCounts: {},
+            count: 0,
+            evidence: [],
+            parallelCount: 1,
+          },
+        };
+        grouped.set(id, summary);
+      }
+      const data = summary.data!;
+      data.count += edge.data!.count;
+      Object.assign(data.kindCounts!, edge.data!.kindCounts);
+      Object.assign(data.sourceKindCounts!, edge.data!.sourceKindCounts);
+      data.evidence.push(...edge.data!.evidence);
+    }
+    for (const edge of grouped.values()) {
+      const buckets = new Map<SourceEdge['kind'], SourceEdge[]>();
+      for (const evidence of edge.data!.evidence) {
+        const bucket = buckets.get(evidence.kind) ?? [];
+        bucket.push(evidence);
+        buckets.set(evidence.kind, bucket);
+      }
+      edge.data!.evidence = sampleEvidence([...buckets.values()]);
+    }
+  }
+  const edges = relationMode === 'summary' ? [...grouped.values()] : filtered;
+  const endpointCounts = new Map<string, number>();
+  for (const edge of edges) {
+    const key = JSON.stringify([edge.source, edge.target]);
+    endpointCounts.set(key, (endpointCounts.get(key) ?? 0) + 1);
+  }
+  for (const edge of edges)
+    edge.data!.parallelCount = endpointCounts.get(JSON.stringify([edge.source, edge.target]))!;
   const neighborIds = new Set([focusId]);
   if (focusId)
     for (const edge of edges) {
@@ -233,6 +373,26 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
   const visibleEdges = edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
   );
+  // Toolbar totals describe all source relationships in the focused neighborhood,
+  // regardless of display filters. Derive neighbors from the unfiltered category
+  // edges; deriving them from visibleEdges would incorrectly make hidden kinds
+  // look like they disappeared from the actual project.
+  const countIds = new Set(focusId ? [focusId] : nodes.map((node) => node.id));
+  if (focusId)
+    for (const edge of categorized) {
+      if (edge.source === focusId) countIds.add(edge.target);
+      if (edge.target === focusId) countIds.add(edge.source);
+    }
+  const counts: Record<RelationCategory, number> = {
+    runtime: 0,
+    type: 0,
+    reexport: 0,
+    dynamic: 0,
+    lexical: 0,
+  };
+  for (const edge of categorized)
+    if (countIds.has(edge.source) && countIds.has(edge.target))
+      counts[edge.data!.category] += edge.data!.count;
   const signature = JSON.stringify([
     visibleNodes.map((node) => [node.id, node.width, node.height]).sort(),
     visibleEdges.map((edge) => [edge.id, edge.source, edge.target]).sort(),
@@ -245,5 +405,6 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
     codeFiles: scoped.length - infrastructureFiles,
     infrastructureFiles,
     detailed,
+    counts,
   };
 }

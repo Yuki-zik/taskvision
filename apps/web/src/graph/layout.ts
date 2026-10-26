@@ -1,6 +1,7 @@
 import type { ELK, ElkNode } from 'elkjs/lib/elk-api';
 import type { XYPosition } from '@xyflow/react';
 import type { GraphModel, KnowledgeEdge, KnowledgeNode } from './model';
+import { RELATION_CATEGORIES, relationHandle, relationOffset } from './model';
 
 let engine: Promise<ELK> | undefined;
 export interface LaidOutGraph {
@@ -59,29 +60,21 @@ export async function layoutGraph(model: GraphModel): Promise<LaidOutGraph> {
       width: node.width,
       height: node.height,
       layoutOptions: { 'elk.portConstraints': 'FIXED_POS' },
-      ports: [
-        {
-          id: `${node.id}:in`,
-          x: 0,
-          y: (node.height ?? 178) / 2,
+      ports: RELATION_CATEGORIES.flatMap((category) =>
+        (['in', 'out'] as const).map((side) => ({
+          id: `${node.id}:${relationHandle(side, category)}`,
+          x: side === 'in' ? 0 : (node.width ?? 268),
+          y: (node.height ?? 178) / 2 + relationOffset(category),
           width: 0,
           height: 0,
-          layoutOptions: { 'elk.port.side': 'WEST' },
-        },
-        {
-          id: `${node.id}:out`,
-          x: node.width ?? 268,
-          y: (node.height ?? 178) / 2,
-          width: 0,
-          height: 0,
-          layoutOptions: { 'elk.port.side': 'EAST' },
-        },
-      ],
+          layoutOptions: { 'elk.port.side': side === 'in' ? 'WEST' : 'EAST' },
+        })),
+      ),
     })),
     edges: model.edges.map((edge) => ({
       id: edge.id,
-      sources: [`${edge.source}:out`],
-      targets: [`${edge.target}:in`],
+      sources: [`${edge.source}:${edge.sourceHandle}`],
+      targets: [`${edge.target}:${edge.targetHandle}`],
     })),
   };
   const graph = await elk.layout(input);
@@ -105,7 +98,7 @@ export async function layoutGraph(model: GraphModel): Promise<LaidOutGraph> {
     })),
     edges: model.edges.map((edge) => ({
       ...edge,
-      data: { count: edge.data?.count ?? 1, ...edge.data, points: routes.get(edge.id) },
+      data: { ...edge.data!, points: routes.get(edge.id) },
     })),
   };
 }

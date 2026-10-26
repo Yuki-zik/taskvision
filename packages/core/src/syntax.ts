@@ -1,6 +1,6 @@
 import path from 'node:path';
 import ts from 'typescript-parser';
-import type { SourceResult, SourceSymbol } from '../../shared/src/types';
+import type { SourceRelationKind, SourceResult, SourceSymbol } from '../../shared/src/types';
 
 export interface Comment {
   prefix: string;
@@ -10,8 +10,13 @@ export interface Comment {
 export interface Analysis {
   comments: Map<number, Comment>;
   symbols: SourceSymbol[];
-  imports: string[];
+  imports: SourceDependency[];
+}
+export interface SourceDependency {
+  kind: SourceRelationKind;
   provenance: string;
+  line: number;
+  specifier: string;
 }
 const JS_EXTENSIONS = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts']);
 interface LexicalState {
@@ -50,7 +55,7 @@ function lexicalComment(line: string, ext: string, state: LexicalState): Comment
 function lexicalAnalysis(source: SourceResult): Analysis {
   const comments = new Map<number, Comment>(),
     symbols: SourceSymbol[] = [],
-    imports: string[] = [],
+    imports: SourceDependency[] = [],
     state: LexicalState = {};
   const ext = path.extname(source.path).toLowerCase();
   source.text.split(/\r?\n/).forEach((line, index) => {
@@ -63,10 +68,16 @@ function lexicalAnalysis(source: SourceResult): Analysis {
         );
       if (symbol) symbols.push({ name: symbol[1], line: index + 1, kind: 'lexical-symbol' });
       const dependency = /(?:\bfrom\s*|\brequire\s*\(\s*|\bimport\s*)['"](\.[^'"]+)['"]/.exec(line);
-      if (dependency) imports.push(dependency[1]);
+      if (dependency)
+        imports.push({
+          kind: 'lexical-import',
+          provenance: 'lexical-static-import',
+          line: index + 1,
+          specifier: dependency[1],
+        });
     }
   });
-  return { comments, symbols, imports, provenance: 'lexical-static-import' };
+  return { comments, symbols, imports };
 }
 /** Parse source text directly; project configuration and plugins are never loaded. */
 export function analyzeSyntax(source: SourceResult): Analysis {
@@ -75,8 +86,22 @@ export function analyzeSyntax(source: SourceResult): Analysis {
   const file = ts.createSourceFile(source.path, source.text, ts.ScriptTarget.Latest, true);
   const comments = new Map<number, Comment>(),
     symbols: SourceSymbol[] = [],
-    imports: string[] = [];
+    imports: SourceDependency[] = [];
   const ranges = new Map<number, ts.CommentRange>();
+  function dependency(
+    node: ts.Node,
+    specifier: ts.Node | undefined,
+    kind: SourceRelationKind,
+    provenance: string,
+  ): void {
+    if (specifier && ts.isStringLiteralLike(specifier) && /^(?:\.\/|\.\.\/)/.test(specifier.text))
+      imports.push({
+        kind,
+        provenance: 'typescript-ast-' + provenance,
+        line: file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1,
+        specifier: specifier.text,
+      });
+  }
   function collect(node: ts.Node): void {
     for (const range of ts.getLeadingCommentRanges(file.text, node.pos) || [])
       ranges.set(range.pos, range);
@@ -119,19 +144,56 @@ export function analyzeSyntax(source: SourceResult): Analysis {
         endLine: file.getLineAndCharacterOfPosition(node.end).line + 1,
         kind,
       });
-    if (
-      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
-      node.moduleSpecifier &&
-      ts.isStringLiteral(node.moduleSpecifier)
-    )
-      imports.push(node.moduleSpecifier.text);
-    if (
+    if (ts.isImportDeclaration(node)) {
+      const clause = node.importClause,
+        bindings = clause?.namedBindings;
+      const typeOnly =
+        clause?.isTypeOnly ||
+        (!clause?.name &&
+          bindings &&
+          ts.isNamedImports(bindings) &&
+          bindings.elements.length > 0 &&
+          bindings.elements.every((element) => element.isTypeOnly));
+      dependency(
+        node,
+        node.moduleSpecifier,
+        typeOnly ? 'type-import' : 'runtime-import',
+        'import-declaration',
+      );
+    } else if (ts.isExportDeclaration(node)) {
+      const clause = node.exportClause;
+      const typeOnly =
+        node.isTypeOnly ||
+        (clause &&
+          ts.isNamedExports(clause) &&
+          clause.elements.length > 0 &&
+          clause.elements.every((element) => element.isTypeOnly));
+      dependency(
+        node,
+        node.moduleSpecifier,
+        typeOnly ? 'type-import' : 're-export',
+        typeOnly ? 'export-declaration-type-only' : 'export-declaration',
+      );
+    } else if (
+      ts.isImportEqualsDeclaration(node) &&
+      ts.isExternalModuleReference(node.moduleReference)
+    ) {
+      dependency(
+        node,
+        node.moduleReference.expression,
+        node.isTypeOnly ? 'type-import' : 'require',
+        'import-equals',
+      );
+    } else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
+      dependency(node, node.argument.literal, 'type-import', 'import-type');
+    } else if (
       ts.isCallExpression(node) &&
       ((ts.isIdentifier(node.expression) && node.expression.text === 'require') ||
         node.expression.kind === ts.SyntaxKind.ImportKeyword)
     ) {
-      const argument = node.arguments[0];
-      if (argument && ts.isStringLiteral(argument)) imports.push(argument.text);
+      const kind =
+        node.expression.kind === ts.SyntaxKind.ImportKeyword ? 'dynamic-import' : 'require';
+      dependency(node, node.arguments[0], kind, kind);
     }
     node.forEachChild(collect);
   }
@@ -155,10 +217,5 @@ export function analyzeSyntax(source: SourceResult): Analysis {
         comments.set(index + 1, { prefix: match[1], body: match[2], suffix: match[3] || '' });
     }
   }
-  return {
-    comments,
-    symbols,
-    imports: imports.filter((i) => i.startsWith('.')),
-    provenance: 'typescript-ast-import',
-  };
+  return { comments, symbols, imports };
 }

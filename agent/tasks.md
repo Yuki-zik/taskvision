@@ -1,5 +1,22 @@
 # Current Tasks
 
+## Semantic graph refinement delivered — 2026-10-26
+
+User-requested OSS research and connection/relationship design improvement. Branch `feat/semantic-graph-20261026`, local preview 3.1.0. Reused React Flow + ELK, adopted pinned MIT Smart Edge v5 A* routing, and borrowed LikeC4's merge-versus-classify relationship UX. Code AST now records exact source relation kind, 1-based line, specifier and provenance; click a bundled edge to inspect accurate evidence. Default top-level summary reduced real-module links from 15 category lines to 10 grouped lines with all categories recoverable.
+
+| Acceptance | Current result |
+|---|---|
+| Source-grounded semantics / SQLite / HTTP / MCP | 52 / 52 tests passed |
+| Existing VS Code tasks and highlights | 170 / 170 tests passed |
+| Interactive relationships/model, aggregation, layout | 31 / 31 tests passed |
+| Actual Chrome browser user flows | 5 / 5 passed; line-level source drill, relation categories, drag-preview update, original knowledge/review workflows |
+| Initial layout | 8 / 8 TaskVision modules visible without manual fitting; 10 sampled source-verified SVG paths crossed 0 unrelated node interiors |
+| Responsive | 1440, 1280 and 390px widths; no full-page horizontal overflow |
+| Independent review | PASS with two P2 findings; both reproduced and repaired (dragging stale route, focus/filter counts), tests re-run |
+| VSIX | 3.1 isolated installation; built Web and 11 MCP tools run without node_modules; daily 2.0.1 retained |
+
+Docs: `agent/semantic-graph-oss-review.md`, `agent/semantic-graph-acceptance.md`, `workspace/README.md`; sanitized acceptance report `agent/reports/taskvision-semantic-graph-20261026.md`. Remaining future work: LikeC4 Graph/Diagram split, D2/TALA same-graph A/B and CodeMap reverse-impact overlay. No automatic commits to remote or Marketplace publication. **The preexisting `.taskvision/ai-status-report.md` edit was not staged, modified or reverted by this graph task.**
+
 ## TypeScript + UX refactor delivered — 2026-10-26
 
 User-authorized full refactor on Mac mini, branch `refactor/typescript-workbench-20261026`, baseline `f012814`. Version3.0.0 preview. Old VSIX and consistent SQLite backup retained; no remote push/publication or default-profile replacement.

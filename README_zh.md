@@ -36,9 +36,9 @@ code --install-extension A-Znk.taskvision
 ---
 
 
-## 3.0 预览：统一的源码知识与协作工作台
+## 3.1 预览：语义关系图与人机协作工作台
 
-项目已统一为 **严格 TypeScript**：保留旧插件行为，抽离共享领域核心、HTTP/MCP/CLI 适配层，并用 **React、React Flow 和 ELK** 重做交互式项目地图。
+项目已统一为 **严格 TypeScript**：保留旧插件行为，抽离共享领域核心、HTTP/MCP/CLI 适配层，并用 **React、React Flow、ELK 和 Smart Edge** 重做交互式项目地图。
 
 源码中的 CORE／REUSE／INTENT／REVIEW 标签、人类网页指导、Agent 任务认领和实际代码 Review 共用一份模型。页面支持架构概览与深入、源码／知识联动、带冲突保护的编辑、提议采纳、真实差异审阅和知识导入预检。Agent 通过11个MCP工具与专属Skill按需读取、复用和交接。
 

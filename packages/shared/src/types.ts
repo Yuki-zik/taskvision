@@ -30,11 +30,21 @@ export interface SourceFile {
   annotationCount: number;
   symbols: SourceSymbol[];
 }
+export type SourceRelationKind =
+  | 'runtime-import'
+  | 'type-import'
+  | 're-export'
+  | 'require'
+  | 'dynamic-import'
+  | 'lexical-import'
+  | 'import';
 export interface SourceEdge {
   from: string;
   to: string;
-  kind: string;
+  kind: SourceRelationKind;
   provenance: string;
+  line?: number;
+  specifier?: string;
 }
 export interface Annotation {
   id: string;

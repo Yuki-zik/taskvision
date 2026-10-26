@@ -1,5 +1,14 @@
 # TaskVision Change Log
 
+## 3.1.0 Preview — Semantic Architecture Graph (2026-10-26)
+
+- Adopted the MIT React Flow Smart Edge v5 worker-based obstacle router, preserving React Flow and ELK layout.
+- Source-derived links now distinguish runtime imports, type-only imports, re-exports, `require()`, dynamic imports and lexical fallback, with 1-based source line, exact specifier and provenance.
+- Default overview **summarizes multiple kinds between the same directed module pair**; switch to **分类** to expand separate paths. Category filters and counters stay grounded in actual source references.
+- Click or keyboard-open a link to inspect the source/target, grouped evidence, actual counts and source location. No fabricated code-call or data-flow relations.
+- Improved module/file styling, rounded obstacle-avoiding paths, initial-fit timing, viewport retention and responsive source browsing.
+- Compared LikeC4, CodeCanvas, D2/TALA, CodeMap, AntV G6/X6 and dependency-cruiser for future reuse; see `agent/semantic-graph-oss-review.md`. D2/TALA remains a future isolated comparison, not a hidden new runtime dependency.
+
 ## 3.0.0 Preview
 
 - Migrated extension, knowledge core, HTTP/MCP/CLI and Web source to strict TypeScript with shared contracts.

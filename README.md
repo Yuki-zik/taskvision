@@ -38,9 +38,9 @@ code --install-extension A-Znk.taskvision
 ---
 
 
-## 3.0 preview: a typed code-knowledge and collaboration workspace
+## 3.1 preview: semantic architecture graph and human-agent collaboration
 
-The project now uses **strict TypeScript** throughout the extension and domain services. **React, React Flow and ELK** power the interactive architecture workbench. Existing highlighting, task navigation and AI context export remain compatible.
+The project now uses **strict TypeScript** throughout the extension and domain services. **React, React Flow, ELK and Smart Edge** power the interactive architecture workbench. Existing highlighting, task navigation and AI context export remain compatible.
 
 CORE / REUSE / INTENT / REVIEW annotations, human guidance, scoped agent leases and source-linked review share one domain model. The Web interface supports drilldown, source/knowledge navigation, revision-safe editing, proposal adoption, real before/after review and explicit knowledge import previews. Eleven MCP tools and a dedicated Skill support retrieval, reuse, coordination and handoff.
 

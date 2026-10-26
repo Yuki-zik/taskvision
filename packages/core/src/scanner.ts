@@ -15,7 +15,7 @@ import type {
 } from '../../shared/src/types';
 import { digest, inventory, readSource, safePath, statFingerprint } from './filesystem';
 import { fail } from './validation';
-import { analyzeSyntax } from './syntax';
+import { analyzeSyntax, type SourceDependency } from './syntax';
 
 export interface SourceAnnotation extends Annotation {
   sourcePrefix: string;
@@ -28,8 +28,7 @@ interface ParsedSource {
   source: Pick<SourceResult, 'path' | 'hash'>;
   annotations: SourceAnnotation[];
   file: SourceFile;
-  imports: string[];
-  provenance: string;
+  imports: SourceDependency[];
   fingerprint: string;
 }
 export interface ScanData {
@@ -162,7 +161,6 @@ export class SourceIndex {
         symbols: analysis.symbols,
       },
       imports: analysis.imports,
-      provenance: analysis.provenance,
       fingerprint,
     };
   }
@@ -212,7 +210,7 @@ export class SourceIndex {
     for (const item of parsed)
       for (const dependency of item.imports) {
         const base = path.posix.normalize(
-          path.posix.join(path.posix.dirname(item.source.path), dependency),
+          path.posix.join(path.posix.dirname(item.source.path), dependency.specifier),
         );
         // TypeScript source commonly imports emitted .js/.mjs/.cjs paths. Resolve
         // source counterparts without inventing a dependency on a generated file.
@@ -237,8 +235,10 @@ export class SourceIndex {
           edges.push({
             from: item.source.path,
             to: target,
-            kind: 'import',
-            provenance: item.provenance,
+            kind: dependency.kind,
+            provenance: dependency.provenance,
+            line: dependency.line,
+            specifier: dependency.specifier,
           });
       }
     return {
