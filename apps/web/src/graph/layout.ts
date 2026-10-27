@@ -1,7 +1,6 @@
 import type { ELK, ElkNode } from 'elkjs/lib/elk-api';
 import type { XYPosition } from '@xyflow/react';
 import type { GraphModel, KnowledgeEdge, KnowledgeNode } from './model';
-import { RELATION_CATEGORIES, relationHandle, relationOffset } from './model';
 import { nodeSize } from './presentation';
 
 let engine: Promise<ELK> | undefined;
@@ -61,23 +60,22 @@ export async function layoutGraph(model: GraphModel): Promise<LaidOutGraph> {
       width: node.width,
       height: node.height,
       layoutOptions: { 'elk.portConstraints': 'FIXED_POS' },
-      ports: RELATION_CATEGORIES.flatMap((category) =>
-        (['in', 'out'] as const).map((side) => ({
-          id: `${node.id}:${relationHandle(side, category)}`,
-          x: side === 'in' ? 0 : (node.width ?? nodeSize(node.data.kind, node.data.detailed).width),
-          y:
-            (node.height ?? nodeSize(node.data.kind, node.data.detailed).height) / 2 +
-            relationOffset(category),
-          width: 0,
-          height: 0,
-          layoutOptions: { 'elk.port.side': side === 'in' ? 'WEST' : 'EAST' },
-        })),
-      ),
+      ports: Object.values(node.data.wirePorts).map((port) => ({
+        id: port.id,
+        x:
+          port.side === 'in'
+            ? 0
+            : (node.width ?? nodeSize(node.data.kind, node.data.detailed).width),
+        y: port.y,
+        width: 0,
+        height: 0,
+        layoutOptions: { 'elk.port.side': port.side === 'in' ? 'WEST' : 'EAST' },
+      })),
     })),
     edges: model.edges.map((edge) => ({
       id: edge.id,
-      sources: [`${edge.source}:${edge.sourceHandle}`],
-      targets: [`${edge.target}:${edge.targetHandle}`],
+      sources: [edge.sourceHandle!],
+      targets: [edge.targetHandle!],
     })),
   };
   const graph = await elk.layout(input);

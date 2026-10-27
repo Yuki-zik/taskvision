@@ -5,7 +5,6 @@ import { layoutGraph, retainPositions, type LaidOutGraph } from '../src/graph/la
 import {
   buildGraph,
   RELATION_CATEGORIES,
-  relationOffset,
   type GraphOptions,
   type KnowledgeNode,
   type RoutePoint,
@@ -80,16 +79,17 @@ function assertRoutes({ nodes, edges }: LaidOutGraph): void {
   for (const edge of edges) {
     const source = nodes.find((node) => node.id === edge.source)!;
     const target = nodes.find((node) => node.id === edge.target)!;
-    const offset = relationOffset(edge.data!.category);
+    const sourcePort = source.data.wirePorts[edge.sourceHandle!]!;
+    const targetPort = target.data.wirePorts[edge.targetHandle!]!;
     const points = edge.data!.points;
     assert.ok(points && points.length >= 2, `missing route for ${edge.id}`);
     assert.deepEqual(points[0], {
       x: source.position.x + source.width!,
-      y: source.position.y + source.height! / 2 + offset,
+      y: source.position.y + sourcePort.y,
     });
     assert.deepEqual(points.at(-1), {
       x: target.position.x,
-      y: target.position.y + target.height! / 2 + offset,
+      y: target.position.y + targetPort.y,
     });
     for (let index = 1; index < points.length; index++) {
       const a: RoutePoint = points[index - 1]!,
@@ -127,7 +127,12 @@ test('model and ELK preserve the shared module/file geometry in both reading den
         { width: node.width, height: node.height },
         nodeSize(node.data.kind, detailed),
       );
-      assert.ok(node.height! / 2 > 40, 'all five fixed ports stay inside the node');
+      assert.ok(
+        Object.values(node.data.wirePorts).every(
+          (port) => port.y >= 16 && port.y <= node.height! - 16,
+        ),
+        'live ports stay inside the measured node',
+      );
     }
   }
 });
@@ -158,7 +163,7 @@ test('fan-out has deliberate same-layer and between-layer spacing with valid rou
   );
 });
 
-test('all five categories keep their fixed ports, source evidence and obstacle clearance', async () => {
+test('all five categories keep their live ports, source evidence and obstacle clearance', async () => {
   const from = 'apps/frontend/index.ts',
     to = 'packages/service/index.ts';
   const kinds = [

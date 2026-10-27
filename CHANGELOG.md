@@ -1,5 +1,14 @@
 # TaskVision Change Log
 
+## 3.5.0 Preview
+
+- Separated dependency edges into stable physical ports on both endpoints, shared by the source model, ELK and React Flow.
+- Added smooth cubic connections in clear corridors and independently routed Smart Edge A* waypoints around other modules.
+- Applied stable importer colors to overview cables and retained true relation-kind colors in category mode.
+- Preserved source evidence, arrow direction, impact analysis, keyboard navigation and endpoint geometry while isolating an active wire.
+- Added real core fan-in tests, A* obstacle-corridor tests and end-to-end graph drag/poll/focus tests without introducing another graph runtime.
+- Exposed the physical limit for extremely high-degree nodes rather than silently dropping dependencies.
+
 ## 3.4.0 Preview
 
 - Adopted actual MIT React Flow UI BaseNode and NodeTooltip registry source, with hashes and attribution.

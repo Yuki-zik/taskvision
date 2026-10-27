@@ -1,5 +1,5 @@
-import { memo, useRef } from 'react';
-import { Handle, Position, useStore, type NodeProps } from '@xyflow/react';
+import { memo, useLayoutEffect, useRef } from 'react';
+import { Handle, Position, useStore, useUpdateNodeInternals, type NodeProps } from '@xyflow/react';
 import {
   ArrowUpRight,
   ChevronDown,
@@ -24,17 +24,29 @@ import {
 } from '../components/react-flow-ui/node-tooltip';
 import { FloatingNodePanel } from '../components/react-flow-ui/floating-node-panel';
 import type { Tag } from '../domain';
-import { RELATION_CATEGORIES, relationHandle, relationOffset, type KnowledgeNode } from './model';
+import type { KnowledgeNode } from './model';
+import { RELATIONS, SUMMARY_RELATION, sourceCableColor } from './relations';
 import { MAP_ZOOM_THRESHOLD, nodeSize, readingMode } from './presentation';
 import { ROOT_SCOPE, TEST_SCOPE } from './scopes';
 
 const TAG_PRIORITY: Tag[] = ['REVIEW', 'CORE', 'REUSE', 'INTENT', 'TODO'];
 
 export const ArchitectureNode = memo(function ArchitectureNode({
+  id,
   data,
   selected,
 }: NodeProps<KnowledgeNode>) {
   const nodeElement = useRef<HTMLDivElement>(null);
+  const updateNodeInternals = useUpdateNodeInternals();
+  const ports = Object.values(data.wirePorts);
+  const portGeometry = JSON.stringify(ports.map((port) => [port.id, port.y]));
+  const crowded = ports.some((port) => port.crowded);
+  const crowdingLabel = crowded
+    ? '连接密集，间距已压缩，部分端点可能重叠；可使用邻居聚焦或关系分类筛选查看'
+    : '';
+  // React Flow otherwise retains old handle bounds when degree changes without
+  // changing the card dimensions (e.g. category toggles and topology polling).
+  useLayoutEffect(() => updateNodeInternals(id), [id, portGeometry, updateNodeInternals]);
   // Subscribe to the threshold crossing, never to every viewport wheel pixel.
   const farZoom = useStore((state) => state.transform[2] < MAP_ZOOM_THRESHOLD);
   const mode = readingMode(farZoom ? 0 : MAP_ZOOM_THRESHOLD, data.detailed);
@@ -66,6 +78,7 @@ export const ArchitectureNode = memo(function ArchitectureNode({
     data.summary,
     reviewLabel,
     ownerLabel,
+    crowdingLabel,
     ...tags.map((tag) => `${tag} ${data.counts[tag]}`),
   ]
     .filter(Boolean)
@@ -84,19 +97,60 @@ export const ArchitectureNode = memo(function ArchitectureNode({
           data-reading-mode={mode}
           data-namespace={namespace}
           data-pending-review={data.reviews > 0 || undefined}
+          data-wire-crowded={crowded || undefined}
           role="group"
           aria-label={accessibleLabel}
         >
-          {RELATION_CATEGORIES.map((category) => (
-            <Handle
-              key={`in-${category}`}
-              type="target"
-              id={relationHandle('in', category)}
-              position={Position.Left}
-              isConnectable={false}
-              style={{ top: `calc(50% + ${relationOffset(category)}px)` }}
-            />
-          ))}
+          {ports.map((port) => {
+            const relation =
+              port.category === 'summary' ? SUMMARY_RELATION : RELATIONS[port.category];
+            const wireColor =
+              port.category === 'summary'
+                ? sourceCableColor(port.side === 'out' ? id : port.counterpart)
+                : relation.color;
+            const kinds = Object.entries(port.kindCounts)
+              .map(
+                ([category, count]) =>
+                  `${RELATIONS[category as keyof typeof RELATIONS].label} ${count}`,
+              )
+              .join(' · ');
+            const size = port.crowded ? Math.max(1, Math.min(3, port.spacing * 0.7)) : 6;
+            return (
+              <Handle
+                key={port.id}
+                type={port.side === 'in' ? 'target' : 'source'}
+                id={port.id}
+                position={port.side === 'in' ? Position.Left : Position.Right}
+                isConnectable={false}
+                data-edge-id={port.edgeId}
+                data-relation-category={port.category}
+                data-wire-crowded={port.crowded || undefined}
+                title={`${port.side === 'in' ? '引用方' : '依赖'} ${port.counterpart} · ${kinds}${port.crowded ? ` · ${crowdingLabel}` : ''}`}
+                style={{
+                  // The 1px shell border is inside the measured node rectangle.
+                  // These offsets put handle centers exactly at ELK's x/y.
+                  top: port.y - 1,
+                  // React Flow's fixed-position port endpoint is on the card
+                  // border. Center the visible circle there rather than 3px
+                  // inside the node, or the cable will appear disconnected.
+                  left: port.side === 'in' ? -size / 2 : undefined,
+                  right: port.side === 'out' ? -size / 2 : undefined,
+                  // React Flow's default lateral 50% transform makes its
+                  // computed cable attachment land at the circle's outer edge.
+                  // With a centered box and only vertical centering, the visible
+                  // circle and measured SVG endpoint remain attached at its perimeter.
+                  transform: 'translateY(-50%)',
+                  width: size,
+                  height: size,
+                  minWidth: size,
+                  minHeight: size,
+                  borderWidth: port.crowded ? 0 : 1,
+                  background: wireColor,
+                  opacity: farZoom ? 0.55 : 0.9,
+                }}
+              />
+            );
+          })}
           <BaseNodeHeader className="node-heading" data-slot="base-node-header">
             <span className="node-icon" aria-hidden="true">
               {module ? (
@@ -228,16 +282,6 @@ export const ArchitectureNode = memo(function ArchitectureNode({
               </button>
             )}
           </BaseNodeFooter>
-          {RELATION_CATEGORIES.map((category) => (
-            <Handle
-              key={`out-${category}`}
-              type="source"
-              id={relationHandle('out', category)}
-              position={Position.Right}
-              isConnectable={false}
-              style={{ top: `calc(50% + ${relationOffset(category)}px)` }}
-            />
-          ))}
         </BaseNode>
       </NodeTooltipTrigger>
       <NodeTooltipContent
@@ -253,6 +297,7 @@ export const ArchitectureNode = memo(function ArchitectureNode({
           {data.files} 个文件 · {data.lines.toLocaleString()} 行 · {data.annotations.length} 条知识
           {data.expanded && ` · 已显示 ${data.shownFiles} / ${data.files} 个文件`}
         </p>
+        {crowded && <p className="node-detail-facts">{crowdingLabel}</p>}
         {tags.length > 0 && (
           <div className="node-detail-tags">
             {tags.map((tag) => (

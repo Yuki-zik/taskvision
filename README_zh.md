@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.4.0_preview-3B82F6?style=flat-square" alt="Version 3.4.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.5.0_preview-3B82F6?style=flat-square" alt="Version 3.5.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -35,6 +35,12 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.5 预览：ComfyUI 风格分线与真实关系追踪
+
+架构图为每条可见依赖单独分配稳定的节点端口，ELK 与 React Flow 共用坐标。无遮挡时绘制平滑贝塞尔线；绕过其他模块时通过稳定途经点交给现有 Smart Edge A*。概览按引用方着色，分类视图按真实关系类别着色。悬停或聚焦某条线后其他线及节点淡出，点击仍能阅读原始源码与行号。
+
+多个连接交叉处使用柔和背景间隔，闲置时隐藏多余标签。高扇入模块超出卡片空间时显示拥挤提示，可用聚焦邻居与关系筛选深入查看。依赖箭头始终是引用方指向被引用方，不代表运行时数据流或函数调用。
 
 ## 3.4 预览：直接采用官方节点组件
 

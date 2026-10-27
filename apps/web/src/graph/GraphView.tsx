@@ -13,6 +13,7 @@ import {
   getSmoothStepPath,
   useNodesInitialized,
   useReactFlow,
+  useNodes,
   type EdgeProps,
   type OnNodesChange,
   type OnEdgesChange,
@@ -43,9 +44,15 @@ import {
 } from './model';
 import { filesForScope, groupForPath, ROOT_SCOPE, scopeLabel, TEST_SCOPE } from './scopes';
 import { layoutGraph, retainPositions } from './layout';
-import { RELATIONS, SUMMARY_RELATION, relationPresentation } from './relations';
+import { RELATIONS, SUMMARY_RELATION, relationPresentation, sourceCableColor } from './relations';
 import { RelationDetails } from './RelationDetails';
-import { matchingRoute, roundedRoute, routeMidpoint } from './routing';
+import {
+  matchingRoute,
+  roundedRoute,
+  routeMidpoint,
+  separatedCable,
+  obstacleLaneWaypoints,
+} from './routing';
 import { analyzeImpact, type ImpactMode } from './impact';
 import { ArchitectureNode } from './ArchitectureNode';
 
@@ -83,8 +90,42 @@ function responsiveFitOptions(nodes: KnowledgeNode[]) {
 }
 function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
   const { data, sourceX, sourceY, targetX, targetY } = props;
+  const obstacles = useNodes<KnowledgeNode>();
+  const lane = data as
+    | (typeof data & {
+        wireLaneIndex?: number;
+        wireLaneCount?: number;
+        wireCorridorIndex?: number;
+        wireCorridorCount?: number;
+      })
+    | undefined;
+  const cable = separatedCable(
+    {
+      source: { x: sourceX, y: sourceY },
+      target: { x: targetX, y: targetY },
+      sourceId: props.source,
+      targetId: props.target,
+      laneIndex: lane?.wireLaneIndex,
+      laneCount: lane?.wireLaneCount,
+    },
+    obstacles,
+  );
+  const waypoints = cable
+    ? []
+    : obstacleLaneWaypoints(
+        {
+          source: { x: sourceX, y: sourceY },
+          target: { x: targetX, y: targetY },
+          sourceId: props.source,
+          targetId: props.target,
+          laneIndex: lane?.wireCorridorIndex,
+          laneCount: lane?.wireCorridorCount,
+        },
+        obstacles,
+      );
   const { route, isDragging } = useSmartEdgePath({
     ...props,
+    waypoints: waypoints.length ? waypoints : undefined,
     preset: 'smoothstep',
     options: { nodePadding: 13, gridRatio: 8, borderRadius: 12 },
   });
@@ -105,46 +146,67 @@ function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
     offset: 27,
   });
   const smart = !isDragging && route?.kind === 'routed' ? route : null;
-  const path = smart?.svgPathString ?? (points ? roundedRoute(points) : fallback[0]);
+  // The clear corridor uses a real cubic cable rather than ELK's often
+  // coincident orthogonal bus. If the cable crosses a node, keep Smart Edge's
+  // obstacle-safe A* route (ELK only as an interim fallback).
+  const path = smart?.svgPathString ?? cable?.path ?? (points ? roundedRoute(points) : fallback[0]);
   const center = smart
     ? { x: smart.edgeCenterX, y: smart.edgeCenterY }
-    : points
-      ? routeMidpoint(points)
-      : { x: fallback[1], y: fallback[2] };
+    : cable
+      ? cable.center
+      : points
+        ? routeMidpoint(points)
+        : { x: fallback[1], y: fallback[2] };
   const relation = data ? relationPresentation(data) : RELATIONS.runtime;
-  const emphasized = data?.emphasized || props.selected;
+  const wireColor = data?.grouped ? sourceCableColor(props.source) : relation.color;
+  // An active hovered/focused wire wins over an older selected wire.
+  // Otherwise the older selection keeps full opacity in the same hub.
+  const emphasized = !data?.muted && (data?.emphasized || props.selected);
   const kindCount = Object.values(data?.kindCounts ?? {}).filter((count) => count > 0).length;
   const label = data?.grouped
     ? data.hovered || emphasized
       ? `${kindCount}类·${data.count}处`
       : undefined
-    : data?.hovered || emphasized || (data?.parallelCount ?? 1) > 1
+    : data?.hovered || emphasized
       ? `${relation.label}${(data?.count ?? 1) > 1 ? ` · ${data!.count}` : ''}`
-      : (data?.count ?? 1) > 1
-        ? String(data!.count)
-        : undefined;
+      : undefined;
   return (
-    <BaseEdge
-      id={props.id}
-      path={path}
-      markerEnd={props.markerEnd}
-      interactionWidth={10}
-      label={label}
-      labelX={center.x}
-      labelY={center.y}
-      labelStyle={{ fill: '#34453c', fontSize: 11, fontWeight: 550 }}
-      labelBgStyle={{ fill: '#fafbf7', fillOpacity: 0.96 }}
-      labelBgPadding={[5, 3]}
-      labelBgBorderRadius={3}
-      style={{
-        stroke: relation.color,
-        strokeDasharray: relation.dash,
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
-        strokeWidth: emphasized ? 2.2 : 1.35,
-        opacity: data?.muted && !emphasized ? 0.2 : emphasized ? 1 : 0.78,
-      }}
-    />
+    <>
+      <path
+        d={path}
+        className="tv-wire-casing"
+        aria-hidden="true"
+        pointerEvents="none"
+        fill="none"
+        stroke="#f3f4ee"
+        strokeWidth={emphasized ? 7.4 : 5.1}
+        strokeDasharray={relation.dash}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={data?.muted && !emphasized ? 0.12 : 1}
+      />
+      <BaseEdge
+        id={props.id}
+        path={path}
+        markerEnd={props.markerEnd}
+        interactionWidth={18}
+        label={label}
+        labelX={center.x}
+        labelY={center.y}
+        labelStyle={{ fill: '#34453c', fontSize: 11, fontWeight: 550 }}
+        labelBgStyle={{ fill: '#fafbf7', fillOpacity: 0.96 }}
+        labelBgPadding={[5, 3]}
+        labelBgBorderRadius={3}
+        style={{
+          stroke: wireColor,
+          strokeDasharray: relation.dash,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          strokeWidth: emphasized ? 2.65 : 1.65,
+          opacity: data?.muted && !emphasized ? 0.12 : emphasized ? 1 : 0.82,
+        }}
+      />
+    </>
   );
 }
 const nodeTypes = { knowledge: ArchitectureNode };
@@ -188,6 +250,15 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const layoutContext = useRef('');
   const resetPositions = useRef(false);
   const pendingFit = useRef(false);
+  // Keep a first node click from opening the side inspector until React Flow
+  // can distinguish a double click. Opening it immediately resizes this
+  // canvas between click #1 and #2 and can swallow the second click.
+  const pendingInspector = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPendingInspector = useCallback(() => {
+    if (pendingInspector.current !== null) clearTimeout(pendingInspector.current);
+    pendingInspector.current = null;
+  }, []);
+  useEffect(() => () => cancelPendingInspector(), [cancelPendingInspector]);
   const context = `${snapshot.project.workspaceId}:${scope}:${infrastructure}:${detailed}`;
   const contextRef = useRef(context);
   contextRef.current = context;
@@ -240,6 +311,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   }, [graph]);
   const drill = useCallback(
     (path: string) => {
+      cancelPendingInspector();
       rememberViewport();
       setScope(path);
       setExpanded([]);
@@ -249,7 +321,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       setImpactMode('all');
       onModule(path);
     },
-    [rememberViewport, onModule],
+    [rememberViewport, onModule, cancelPendingInspector],
   );
   const toggle = useCallback((path: string) => {
     setExpanded((previous) =>
@@ -307,7 +379,9 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               type: MarkerType.ArrowClosed,
               width: 18,
               height: 18,
-              color: relationPresentation(edge.data!).color,
+              color: edge.data!.grouped
+                ? sourceCableColor(edge.source)
+                : relationPresentation(edge.data!).color,
             },
           })),
         );
@@ -364,12 +438,20 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   // previously selected file after the next graph update.
   const activateNode = useCallback(
     (node: KnowledgeNode) => {
+      cancelPendingInspector();
       setSelectedEdgeId(null);
       setSelectedId(node.id);
-      if (node.data.kind === 'file') onSelect({ path: node.data.path, line: 1 });
-      else onModule(node.data.path);
+      if (node.data.kind === 'file') {
+        onSelect({ path: node.data.path, line: 1 });
+      } else {
+        const target = node.data.path;
+        pendingInspector.current = setTimeout(() => {
+          pendingInspector.current = null;
+          onModule(target);
+        }, 280);
+      }
     },
-    [onSelect, onModule],
+    [onSelect, onModule, cancelPendingInspector],
   );
   // Polling may change evidence/counts without changing topology or the saved view.
   useEffect(() => {
@@ -438,27 +520,73 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       }
   }, []);
   const activeNode = impactActive ? null : (hoveredId ?? selectedId);
+  const wireLanes = useMemo(() => {
+    const grouped = new Map<string, KnowledgeEdge[]>();
+    for (const edge of edges) {
+      const key = JSON.stringify([edge.source, edge.target]);
+      grouped.set(key, [...(grouped.get(key) ?? []), edge]);
+    }
+    const lanes = new Map<string, { index: number; count: number }>();
+    for (const group of grouped.values()) {
+      group.sort((a, b) => a.id.localeCompare(b.id));
+      group.forEach((edge, index) => lanes.set(edge.id, { index, count: group.length }));
+    }
+    return lanes;
+  }, [edges]);
+  // Stable target-specific ranks distinguish routes that converge on the same
+  // provider even when their importer nodes differ.
+  const corridorLanes = useMemo(() => {
+    const targets = new Map<string, KnowledgeEdge[]>();
+    for (const edge of edges) targets.set(edge.target, [...(targets.get(edge.target) ?? []), edge]);
+    const lanes = new Map<string, { index: number; count: number }>();
+    for (const group of targets.values()) {
+      group.sort((a, b) => a.id.localeCompare(b.id));
+      group.forEach((edge, index) => lanes.set(edge.id, { index, count: group.length }));
+    }
+    return lanes;
+  }, [edges]);
+  const activeWire = hoveredEdge ?? focusedEdge ?? selectedEdgeId;
   const displayedEdges = useMemo(
     () =>
       edges.map((edge) => ({
         ...edge,
+        zIndex: edge.id === activeWire ? 20 : 0,
         selected: edge.id === selectedEdgeId,
         ariaLabel: `${edge.source.replace(/^(module|file):/, '')} 依赖于 ${edge.target.replace(/^(module|file):/, '')}，${relationPresentation(edge.data!).label}，${edge.data!.grouped ? `${Object.values(edge.data!.kindCounts ?? {}).filter((count) => count > 0).length} 类，` : ''}${edge.data!.count} 处引用。按 Enter 查看来源证据。`,
         data: {
           ...edge.data!,
+          wireLaneIndex: wireLanes.get(edge.id)?.index ?? 0,
+          wireLaneCount: wireLanes.get(edge.id)?.count ?? 1,
+          wireCorridorIndex: corridorLanes.get(edge.id)?.index ?? 0,
+          wireCorridorCount: corridorLanes.get(edge.id)?.count ?? 1,
           hovered: edge.id === hoveredEdge,
-          emphasized:
-            edge.id === hoveredEdge ||
-            edge.id === focusedEdge ||
-            (impactActive
+          // A hovered/keyboard-focused/selected wire outranks the module lens.
+          // Otherwise selecting a provider makes every incident wire vivid,
+          // preventing the user from following one route through crossings.
+          emphasized: activeWire
+            ? edge.id === activeWire
+            : impactActive
               ? analysis.edgeIds.has(edge.id)
-              : !!activeNode && (edge.source === activeNode || edge.target === activeNode)),
-          muted: impactActive
-            ? !analysis.edgeIds.has(edge.id) && edge.id !== hoveredEdge && edge.id !== focusedEdge
-            : !!activeNode && edge.source !== activeNode && edge.target !== activeNode,
+              : !!activeNode && (edge.source === activeNode || edge.target === activeNode),
+          muted: activeWire
+            ? edge.id !== activeWire
+            : impactActive
+              ? !analysis.edgeIds.has(edge.id)
+              : !!activeNode && edge.source !== activeNode && edge.target !== activeNode,
         },
       })),
-    [edges, activeNode, hoveredEdge, focusedEdge, selectedEdgeId, impactActive, analysis],
+    [
+      edges,
+      activeNode,
+      activeWire,
+      hoveredEdge,
+      focusedEdge,
+      selectedEdgeId,
+      impactActive,
+      analysis,
+      wireLanes,
+      corridorLanes,
+    ],
   );
   const selectedEdge = displayedEdges.find((edge) => edge.id === selectedEdgeId);
   // Apply impact colors as an overlay without editing source knowledge or relaying out nodes.
@@ -476,15 +604,21 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               : depth === 1
                 ? 'impact-direct'
                 : 'impact-indirect';
+        const activeEdge = activeWire ? edges.find((edge) => edge.id === activeWire) : undefined;
+        const wireClass = activeEdge
+          ? node.id === activeEdge.source || node.id === activeEdge.target
+            ? 'tv-wire-endpoint'
+            : 'tv-wire-unrelated'
+          : '';
         return {
           ...node,
           selected: node.id === selectedId,
-          className: [node.className, lensClass].filter(Boolean).join(' '),
+          className: [node.className, lensClass, wireClass].filter(Boolean).join(' '),
           ariaLabel: `${node.data.label}${depth === undefined ? (impactActive ? '，不在当前静态分析范围' : '') : depth === 0 ? '，分析中心' : `，静态依赖距离${depth}跳`}`,
           data: { ...node.data, impactDepth: depth },
         };
       }),
-    [nodes, selectedId, impactActive, analysis],
+    [nodes, selectedId, impactActive, analysis, activeWire, edges],
   );
   const closeRelation = useCallback(() => {
     const id = selectedEdgeId;
@@ -620,14 +754,15 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
         {relationMode === 'summary' && (
           <span className="relation-summary-legend" title={SUMMARY_RELATION.hint}>
             <svg width="24" height="12" viewBox="0 0 24 12" aria-hidden="true">
+              <path d="M1 6 H11 M8 3 L11 6 L8 9" fill="none" stroke="#4779ad" strokeWidth="1.8" />
               <path
-                d="M1 6 H21 M18 3 L21 6 L18 9"
+                d="M13 6 H22 M19 3 L22 6 L19 9"
                 fill="none"
-                stroke={SUMMARY_RELATION.color}
-                strokeWidth="1.6"
+                stroke="#9a683e"
+                strokeWidth="1.8"
               />
             </svg>
-            同向依赖汇总
+            按引用方着色 · 同向依赖汇总
           </span>
         )}
         <div className="relation-toggles" role="group" aria-label="关系类型">
@@ -748,8 +883,14 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
             edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onEdgeClick={(_, edge) => setSelectedEdgeId(edge.id)}
-            onPaneClick={() => setSelectedEdgeId(null)}
+            onEdgeClick={(_, edge) => {
+              cancelPendingInspector();
+              setSelectedEdgeId(edge.id);
+            }}
+            onPaneClick={() => {
+              cancelPendingInspector();
+              setSelectedEdgeId(null);
+            }}
             onNodeClick={(_, node) => activateNode(node)}
             onNodeDoubleClick={(_, node) => {
               if (node.data.kind === 'module') drill(node.data.path);

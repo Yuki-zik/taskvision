@@ -69,3 +69,7 @@ npm run package:preview
 ## Official node UI adoption (3.4)
 
 Actual React Flow UI registry components live in `apps/web/src/components/react-flow-ui`, with original source hashes under `third_party/react-flow-ui`. The graph-specific `ArchitectureNode` composes these components using shared measured geometry and semantic zoom from `graph/presentation.ts`. Floating UI DOM is the collision/viewport positioning boundary for screen-sized node panels. Tailwind utilities are compiled without Preflight and only scan those component sources. App context is opt-in in map view. Do not reintroduce parallel handwritten node renderers or all-detail shrinking at low zoom.
+
+## 3.5 Source-grounded wire routing
+
+The graph model assigns deterministic per-edge ports; layout and UI share their coordinates. Routing offers cubic wires and optional independently-routed Smart Edge A* obstacle waypoints. Overview hue encodes the importer identity; category modes encode source-backed relation type. Focus de-emphasizes sibling wires and retains direct source evidence. No new graph engine. Extreme fan-in has an explicit capacity warning.

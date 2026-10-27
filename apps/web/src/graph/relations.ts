@@ -30,3 +30,17 @@ export const RELATIONS: Record<RelationCategory, RelationPresentation> = {
 export function relationPresentation(data: RelationData): RelationPresentation {
   return data.grouped ? SUMMARY_RELATION : RELATIONS[data.category];
 }
+
+/**
+ * Summary mode deliberately colors by the importing node, not by a fabricated
+ * runtime semantics. A stable ID hash means filtering categories or polling
+ * never randomly changes a module's cable color. A 24-step coprime hue spread
+ * reduces visually adjacent colors in small architecture graphs.
+ */
+export function sourceCableColor(sourceId: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < sourceId.length; i++)
+    hash = Math.imul(hash ^ sourceId.charCodeAt(i), 16777619);
+  const hue = ((((hash >>> 0) % 24) * 7) % 24) * 15 + 8;
+  return 'hsl(' + hue + ' 46% 39%)';
+}

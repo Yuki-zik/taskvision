@@ -403,3 +403,22 @@
 .tv-node-kit.graph-node[data-pending-review='true'] .node-footer {
   background: transparent;
 }
+
+/* Comfy-inspired cables: the thin ivory casing creates a visible bridge gap
+   where crossing lines overlap, while selected endpoints remain crisp. */
+.graph-workspace .react-flow__edge {
+  transition: opacity 120ms ease;
+}
+.graph-workspace .react-flow__node.tv-wire-unrelated .tv-node-kit {
+  opacity: 0.57;
+  filter: saturate(0.72);
+  transition:
+    opacity 120ms ease,
+    filter 120ms ease;
+}
+.graph-workspace .react-flow__node.tv-wire-endpoint .tv-node-kit {
+  border-color: #3d877c;
+  box-shadow:
+    0 0 0 1px #458b7b45,
+    0 5px 22px #1c4a3820;
+}

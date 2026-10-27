@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.4.0_preview-3B82F6?style=flat-square" alt="Version 3.4.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.5.0_preview-3B82F6?style=flat-square" alt="Version 3.5.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -37,6 +37,12 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.5 preview: distinct Comfy-style source-backed wires
+
+Each visible dependency gets stable independent endpoints shared by ELK and React Flow. Clear corridors use smooth cubic curves. Blocked corridors use distinct optional Smart Edge A* waypoints rather than letting all imports share one bus. Overview colors identify the importing module; category view still identifies real relationship kinds. Hover/keyboard focus isolates a wire while preserving evidence navigation; idle labels stay hidden.
+
+Extremely high fan-in still exceeds a card's physical port capacity; use neighbor focus/filter to inspect. The arrow means importer depends on provider, never execution or data flow. No additional graph engine or runtime dependency.
 
 ## 3.4 preview: official node UI, with more space to read
 

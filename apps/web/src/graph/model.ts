@@ -21,6 +21,7 @@ export interface KnowledgeNodeData extends Record<string, unknown> {
   summaryPath: string;
   summaryLine: number;
   annotations: Annotation[];
+  wirePorts: Record<string, WirePort>;
   onExpand?: (path: string) => void;
   onDrill?: (path: string) => void;
   onSource?: (path: string, line: number) => void;
@@ -35,6 +36,18 @@ export const RELATION_CATEGORIES = ['runtime', 'type', 'reexport', 'dynamic', 'l
 export type RelationCategory = (typeof RELATION_CATEGORIES)[number];
 export type RelationMode = 'summary' | 'categories';
 export type RelationCounts = Partial<Record<RelationCategory, number>>;
+export interface WirePort {
+  id: string;
+  edgeId: string;
+  side: 'in' | 'out';
+  counterpart: string;
+  category: RelationCategory | 'summary';
+  kindCounts: RelationCounts;
+  count: number;
+  y: number;
+  spacing: number;
+  crowded: boolean;
+}
 export interface RelationData extends Record<string, unknown> {
   category: RelationCategory;
   grouped?: boolean;
@@ -67,12 +80,78 @@ export function relationCategory(kind: SourceEdge['kind']): RelationCategory | u
   }
 }
 
-// Separate ports keep coexisting relation categories selectable rather than overpainting them.
+// Legacy category geometry helpers; live dependencies use per-edge wirePorts.
 export function relationHandle(side: 'in' | 'out', category: RelationCategory): string {
   return category === 'runtime' ? side : `${side}-${category}`;
 }
 export function relationOffset(category: RelationCategory): number {
   return { runtime: 0, type: -40, reexport: -20, dynamic: 20, lexical: 40 }[category];
+}
+
+// A finite card has a finite capacity at 8px separation. Beyond that capacity,
+// compress spacing and disclose crowding. Keep one logical port per edge; past
+// the pixel capacity, physical slots can coincide. The renderer reduces dot size;
+// existing category/neighbor focus can reduce degree without losing evidence.
+const WIRE_PORT_MARGIN = 16;
+const WIRE_PORT_GAP = 12;
+const WIRE_PORT_MIN_GAP = 8;
+function assignWirePorts(nodes: KnowledgeNode[], edges: KnowledgeEdge[]) {
+  const portsByNode = new Map(
+    nodes.map((node) => [node.id, { in: [] as WirePort[], out: [] as WirePort[] }]),
+  );
+  const wiredEdges = edges.map((edge) => {
+    const sourceHandle = `out:${edge.id}`;
+    const targetHandle = `in:${edge.id}`;
+    for (const side of ['in', 'out'] as const) {
+      const nodeId = side === 'in' ? edge.target : edge.source;
+      portsByNode.get(nodeId)![side].push({
+        id: side === 'in' ? targetHandle : sourceHandle,
+        edgeId: edge.id,
+        side,
+        counterpart: side === 'in' ? edge.source : edge.target,
+        category: edge.data!.grouped ? 'summary' : edge.data!.category,
+        kindCounts: { ...edge.data!.kindCounts },
+        count: edge.data!.count,
+        y: 0,
+        spacing: WIRE_PORT_GAP,
+        crowded: false,
+      });
+    }
+    return { ...edge, sourceHandle, targetHandle };
+  });
+  const categories = ['summary', ...RELATION_CATEGORIES];
+  const wiredNodes = nodes.map((node) => {
+    const height = node.height ?? nodeSize(node.data.kind, node.data.detailed).height;
+    const span = height - WIRE_PORT_MARGIN * 2;
+    const legibleSlots = Math.floor(span / WIRE_PORT_MIN_GAP) + 1;
+    const ports = (['in', 'out'] as const).flatMap((side) => {
+      // Neighbor keys avoid a second ELK pass and keep ports steady on polling
+      // and dragging. This is deterministic, not a crossing-minimization claim.
+      const ordered = portsByNode
+        .get(node.id)!
+        [side].sort(
+          (a, b) =>
+            a.counterpart.localeCompare(b.counterpart) ||
+            categories.indexOf(a.category) - categories.indexOf(b.category) ||
+            a.edgeId.localeCompare(b.edgeId),
+        );
+      const spacing = Math.min(WIRE_PORT_GAP, span / Math.max(1, ordered.length - 1));
+      const firstY = (height - spacing * (ordered.length - 1)) / 2;
+      return ordered.map((port, index) => ({
+        ...port,
+        // NETWORK_SIMPLEX snaps port positions to pixels internally. Use those
+        // same coordinates in the model/DOM rather than returning stale endpoints.
+        y: Math.round(firstY + spacing * index),
+        spacing,
+        crowded: ordered.length > legibleSlots,
+      }));
+    });
+    return {
+      ...node,
+      data: { ...node.data, wirePorts: Object.fromEntries(ports.map((port) => [port.id, port])) },
+    };
+  });
+  return { nodes: wiredNodes, edges: wiredEdges };
 }
 export interface GraphModel {
   nodes: KnowledgeNode[];
@@ -204,6 +283,7 @@ function dataFor(
     expanded,
     shownFiles: expanded ? Math.min(4, files.length) : 0,
     annotations,
+    wirePorts: {},
   };
 }
 
@@ -290,8 +370,6 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
         id,
         source,
         target,
-        sourceHandle: relationHandle('out', category),
-        targetHandle: relationHandle('in', category),
         type: 'routed',
         data: {
           category,
@@ -322,11 +400,9 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
           id,
           source: edge.source,
           target: edge.target,
-          sourceHandle: 'out',
-          targetHandle: 'in',
           type: 'routed',
           data: {
-            // Compatibility port/category only: grouped metadata carries the actual meaning.
+            // Compatibility category only: grouped metadata carries the actual meaning.
             category: 'runtime',
             grouped: true,
             kindCounts: {},
@@ -373,6 +449,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
   const visibleEdges = edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
   );
+  const wired = assignWirePorts(visibleNodes, visibleEdges);
   // Toolbar totals describe all source relationships in the focused neighborhood,
   // regardless of display filters. Derive neighbors from the unfiltered category
   // edges; deriving them from visibleEdges would incorrectly make hidden kinds
@@ -398,8 +475,8 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions): GraphMode
     visibleEdges.map((edge) => [edge.id, edge.source, edge.target]).sort(),
   ]);
   return {
-    nodes: visibleNodes,
-    edges: visibleEdges,
+    nodes: wired.nodes,
+    edges: wired.edges,
     signature,
     totalFiles: files.length,
     codeFiles: scoped.length - infrastructureFiles,

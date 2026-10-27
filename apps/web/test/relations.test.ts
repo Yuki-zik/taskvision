@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Snapshot, SourceEdge, SourceFile } from '../src/domain';
-import { buildGraph, EVIDENCE_LIMIT, relationOffset, type GraphOptions } from '../src/graph/model';
+import { buildGraph, EVIDENCE_LIMIT, type GraphOptions } from '../src/graph/model';
 import { layoutGraph } from '../src/graph/layout';
 import { matchingRoute, roundedRoute, routeMidpoint } from '../src/graph/routing';
 
@@ -78,8 +78,8 @@ test('top-level summary merges real directed endpoints and retains precise categ
   const edge = model.edges[0]!;
   assert.equal(edge.source, 'module:apps/web');
   assert.equal(edge.target, 'module:packages/core');
-  assert.equal(edge.sourceHandle, 'out');
-  assert.equal(edge.targetHandle, 'in');
+  assert.equal(edge.sourceHandle, `out:${edge.id}`);
+  assert.equal(edge.targetHandle, `in:${edge.id}`);
   assert.equal(edge.data!.grouped, true);
   assert.equal(edge.data!.parallelCount, 1);
   assert.equal(edge.data!.count, 7);
@@ -234,8 +234,8 @@ test('ELK summary routes use the neutral central ports rather than category offs
   const edge = laid.edges[0]!;
   const source = laid.nodes.find((node) => node.id === edge.source)!;
   const target = laid.nodes.find((node) => node.id === edge.target)!;
-  assert.equal(edge.sourceHandle, 'out');
-  assert.equal(edge.targetHandle, 'in');
+  assert.equal(edge.sourceHandle, `out:${edge.id}`);
+  assert.equal(edge.targetHandle, `in:${edge.id}`);
   assert.deepEqual(edge.data!.points?.[0], {
     x: source.position.x + source.width!,
     y: source.position.y + source.height! / 2,
@@ -343,7 +343,7 @@ test('polling a count or evidence change preserves the layout signature', () => 
   assert.equal(second.edges[0]!.data!.evidence[1]!.line, 19);
 });
 
-test('ELK fallback endpoints match the five semantic handles and expire after an endpoint moves', async () => {
+test('ELK fallback endpoints match the live per-edge handles and expire after an endpoint moves', async () => {
   const model = graph(
     (
       ['runtime-import', 'type-import', 're-export', 'dynamic-import', 'lexical-import'] as const
@@ -353,12 +353,13 @@ test('ELK fallback endpoints match the five semantic handles and expire after an
   for (const edge of laid.edges) {
     const source = laid.nodes.find((node) => node.id === edge.source)!;
     const target = laid.nodes.find((node) => node.id === edge.target)!;
-    const offset = relationOffset(edge.data!.category);
+    const sourcePort = source.data.wirePorts[edge.sourceHandle!]!;
+    const targetPort = target.data.wirePorts[edge.targetHandle!]!;
     const start = {
       x: source.position.x + source.width!,
-      y: source.position.y + source.height! / 2 + offset,
+      y: source.position.y + sourcePort.y,
     };
-    const end = { x: target.position.x, y: target.position.y + target.height! / 2 + offset };
+    const end = { x: target.position.x, y: target.position.y + targetPort.y };
     assert.deepEqual(edge.data!.points?.[0], start);
     assert.deepEqual(edge.data!.points?.at(-1), end);
     assert.equal(matchingRoute(edge.data!.points, start, end), edge.data!.points);

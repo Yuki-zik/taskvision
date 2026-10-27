@@ -1,5 +1,11 @@
 # Current Tasks
 
+## 3.5 Comfy-style wire separation delivered — 2026-10-26
+
+User reported overlapping links. Branch feat/comfy-wire-lanes-20261026. Implemented stable per-edge ports, smooth cubic cables, distinct obstacle A* waypoints, importer-colored overview, relation kind colors in category mode, and selected-wire focus with sibling fading. Underlying source evidence and older editor/Agent APIs are preserved. No new graph engine or dependency, no remote publication or user-profile replacement.
+
+Actual acceptance is in agent/wire-lane-acceptance.md and private Mac mini workbench taskvision-wire-lanes-20261026. The preexisting .taskvision/ai-status-report.md update is excluded from this change.
+
 ## 3.4 official React Flow UI integration delivered — 2026-10-26
 
 User asked to choose a polished mature OSS node design and actually use it. Branch `feat/official-node-kit-20261026`, baseline f9f2c13. Actual BaseNode and NodeTooltip registry source is now vendored and rendered, with raw source/registry SHA256 and MIT notices. Tailwind4 utilities are bounded to the node kit and omit Preflight. Floating UI flip/shift/size/hide safely places unscaled details/actions outside the transformed canvas. Compact shared geometry, less-dense ELK spacing, semantic zoom and opt-in right detail panel preserve source relations and original workflows.
