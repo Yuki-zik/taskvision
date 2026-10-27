@@ -73,3 +73,9 @@ Actual React Flow UI registry components live in `apps/web/src/components/react-
 ## 3.5 Source-grounded wire routing
 
 The graph model assigns deterministic per-edge ports; layout and UI share their coordinates. Routing offers cubic wires and optional independently-routed Smart Edge A* obstacle waypoints. Overview hue encodes the importer identity; category modes encode source-backed relation type. Focus de-emphasizes sibling wires and retains direct source evidence. No new graph engine. Extreme fan-in has an explicit capacity warning.
+
+## 3.6 Graph Studio
+
+The workbench now has a coherent dark application theme in `apps/web/src/studio-theme.css`; `graph/GraphLegend.tsx` explains dependency semantics separately from curve geometry. Cards expose source-derived facts via `graph/node-facts.ts`, with one shared sizing/semanticzoom contract in `presentation.ts`. A readable85% default is distinct from full-mapFit; the minimap is opt-in.
+
+`layout.ts` uses bounded route-aware local port reordering, not only neighbor centerY. `route-geometry.ts` validates/simplifies geometry, and `routing.ts` produces continuous-tangent display routes or honest literalstraight lines. `matchingRoute` tolerates only the5pxhorizontal/1pxvertical socketperimeter measurement offset, normalizing endpoints; actualnode movement invalidates stale routes. GraphView preserves these refined ports on metadata polling and does not reintroduce center-based order afterdrag. Full screenshots and corehub crop are primary visual acceptance evidence.

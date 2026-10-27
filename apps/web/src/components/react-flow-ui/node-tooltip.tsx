@@ -27,6 +27,7 @@ type TooltipContextType = {
   isVisible: boolean;
   showTooltip: () => void;
   hideTooltip: () => void;
+  dismissTooltip: () => void;
   focusTooltip: () => void;
   tooltipId: string;
   triggerRef: React.RefObject<HTMLDivElement | null>;
@@ -34,6 +35,16 @@ type TooltipContextType = {
 };
 
 const TooltipContext = createContext<TooltipContextType | null>(null);
+// Closing a portal can expose another node under a stationary cursor. Do not
+// immediately replace the dismissed dialog with that node's hover dialog.
+let hoverSuppressed = false;
+const releaseHover = () => {
+  hoverSuppressed = false;
+};
+function suppressHoverUntilPointerMoves() {
+  hoverSuppressed = true;
+  window.addEventListener('pointermove', releaseHover, { once: true, capture: true });
+}
 
 /* TOOLTIP NODE ------------------------------------------------------------- */
 
@@ -48,7 +59,7 @@ export function NodeTooltip({ children, ...props }: ComponentProps<'div'>) {
 
   const showTooltip = useCallback(() => {
     clearTimeout(closeTimer.current);
-    if (!dismissed.current) setIsVisible(true);
+    if (!dismissed.current && !hoverSuppressed) setIsVisible(true);
   }, []);
   const hideTooltip = useCallback(() => {
     clearTimeout(closeTimer.current);
@@ -65,7 +76,14 @@ export function NodeTooltip({ children, ...props }: ComponentProps<'div'>) {
       setIsVisible(false);
     }, 220);
   }, []);
+  const dismissTooltip = useCallback(() => {
+    clearTimeout(closeTimer.current);
+    dismissed.current = true;
+    suppressHoverUntilPointerMoves();
+    setIsVisible(false);
+  }, []);
   const focusTooltip = useCallback(() => {
+    hoverSuppressed = false;
     dismissed.current = false;
     clearTimeout(closeTimer.current);
     setIsVisible(true);
@@ -93,6 +111,7 @@ export function NodeTooltip({ children, ...props }: ComponentProps<'div'>) {
       event.stopPropagation();
       clearTimeout(closeTimer.current);
       dismissed.current = true;
+      suppressHoverUntilPointerMoves();
       if (contentRef.current?.contains(document.activeElement)) {
         // The sole node focus target is React Flow's ancestor wrapper. Inner
         // source controls can be hidden by semantic zoom, so never focus them.
@@ -111,6 +130,7 @@ export function NodeTooltip({ children, ...props }: ComponentProps<'div'>) {
         isVisible,
         showTooltip,
         hideTooltip,
+        dismissTooltip,
         focusTooltip,
         tooltipId,
         triggerRef,
@@ -129,8 +149,15 @@ export function NodeTooltipTrigger(props: ComponentProps<'div'>) {
   if (!tooltipContext) {
     throw new Error('NodeTooltipTrigger must be used within NodeTooltip');
   }
-  const { showTooltip, hideTooltip, focusTooltip, isVisible, tooltipId, triggerRef } =
-    tooltipContext;
+  const {
+    showTooltip,
+    hideTooltip,
+    dismissTooltip,
+    focusTooltip,
+    isVisible,
+    tooltipId,
+    triggerRef,
+  } = tooltipContext;
 
   const onMouseEnter = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -154,7 +181,21 @@ export function NodeTooltipTrigger(props: ComponentProps<'div'>) {
       ref={triggerRef}
       aria-describedby={isVisible ? tooltipId : props['aria-describedby']}
       onMouseEnter={onMouseEnter}
+      onPointerMove={(event) => {
+        props.onPointerMove?.(event);
+        // Native pointermove releases the global Escape suppression before
+        // this handler. Reopen for the genuinely new hovered node even when
+        // mouseenter arrived before that movement event.
+        if (!event.defaultPrevented) showTooltip();
+      }}
       onMouseLeave={onMouseLeave}
+      onClickCapture={(event) => {
+        props.onClickCapture?.(event);
+        // Source/drill/expand actions must not leave a focused hover panel
+        // covering the newly revealed file node. Keep the action's focus;
+        // close only this supplementary panel, not the actual inspector.
+        if ((event.target as HTMLElement).closest('button, a')) dismissTooltip();
+      }}
       onFocus={(event) => {
         props.onFocus?.(event);
         if (!event.defaultPrevented) showTooltip();
@@ -196,7 +237,8 @@ export function NodeTooltipContent({
   if (!tooltipContext) {
     throw new Error('NodeTooltipContent must be used within NodeTooltip');
   }
-  const { isVisible, showTooltip, hideTooltip, tooltipId, contentRef, triggerRef } = tooltipContext;
+  const { isVisible, showTooltip, hideTooltip, dismissTooltip, tooltipId, contentRef, triggerRef } =
+    tooltipContext;
 
   return (
     <div>
@@ -217,6 +259,10 @@ export function NodeTooltipContent({
         onMouseLeave={(event) => {
           props.onMouseLeave?.(event);
           hideTooltip();
+        }}
+        onClickCapture={(event) => {
+          props.onClickCapture?.(event);
+          if ((event.target as HTMLElement).closest('button, a')) dismissTooltip();
         }}
         onFocus={(event) => {
           props.onFocus?.(event);

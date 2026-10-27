@@ -29,6 +29,7 @@ import {
   Focus,
   Layers3,
   Network,
+  Map as MapIcon,
   RotateCcw,
 } from 'lucide-react';
 import type { Filter, Selection, Snapshot } from '../domain';
@@ -43,18 +44,13 @@ import {
   type RelationMode,
 } from './model';
 import { filesForScope, groupForPath, ROOT_SCOPE, scopeLabel, TEST_SCOPE } from './scopes';
-import { layoutGraph, retainPositions } from './layout';
+import { layoutGraph, retainPositions, reorderPortsByGeometry } from './layout';
 import { RELATIONS, SUMMARY_RELATION, relationPresentation, sourceCableColor } from './relations';
 import { RelationDetails } from './RelationDetails';
-import {
-  matchingRoute,
-  roundedRoute,
-  routeMidpoint,
-  separatedCable,
-  obstacleLaneWaypoints,
-} from './routing';
+import { matchingRoute, displayRoute, separatedCable, obstacleLaneWaypoints } from './routing';
 import { analyzeImpact, type ImpactMode } from './impact';
 import { ArchitectureNode } from './ArchitectureNode';
+import { GraphLegend, type WireDisplayStyle } from './GraphLegend';
 
 const fitOptions = {
   padding: {
@@ -90,6 +86,7 @@ function responsiveFitOptions(nodes: KnowledgeNode[]) {
 }
 function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
   const { data, sourceX, sourceY, targetX, targetY } = props;
+  const style = (data?.wireStyle ?? 'flow') as WireDisplayStyle;
   const obstacles = useNodes<KnowledgeNode>();
   const lane = data as
     | (typeof data & {
@@ -146,17 +143,31 @@ function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
     offset: 27,
   });
   const smart = !isDragging && route?.kind === 'routed' ? route : null;
-  // The clear corridor uses a real cubic cable rather than ELK's often
-  // coincident orthogonal bus. If the cable crosses a node, keep Smart Edge's
-  // obstacle-safe A* route (ELK only as an interim fallback).
-  const path = smart?.svgPathString ?? cable?.path ?? (points ? roundedRoute(points) : fallback[0]);
-  const center = smart
-    ? { x: smart.edgeCenterX, y: smart.edgeCenterY }
-    : cable
-      ? cable.center
-      : points
-        ? routeMidpoint(points)
-        : { x: fallback[1], y: fallback[2] };
+  // One geometry presentation pipeline: never let a cached grid SVG override
+  // a valid smooth curve, nor reuse a stale ELK route after node movement.
+  // Smart Edge's raw grid points omit the actual socket centers. Anchor the
+  // cleaned polyline to LIVE handles instead of leaving visible detached tails.
+  const orderedPoints =
+    points ??
+    (smart?.points
+      ? [{ x: sourceX, y: sourceY }, ...smart.points, { x: targetX, y: targetY }]
+      : undefined);
+  const displayed =
+    style === 'direct'
+      ? displayRoute(
+          [
+            { x: sourceX, y: sourceY },
+            { x: targetX, y: targetY },
+          ],
+          'direct',
+        )
+      : style === 'flow' && cable
+        ? { path: cable.path, center: cable.center }
+        : orderedPoints && orderedPoints.length > 1
+          ? displayRoute(orderedPoints, 'flow', style === 'flow' ? 36 : 10, obstacles)
+          : { path: fallback[0], center: { x: fallback[1], y: fallback[2] } };
+  const path = displayed.path;
+  const center = displayed.center;
   const relation = data ? relationPresentation(data) : RELATIONS.runtime;
   const wireColor = data?.grouped ? sourceCableColor(props.source) : relation.color;
   // An active hovered/focused wire wins over an older selected wire.
@@ -178,8 +189,8 @@ function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
         aria-hidden="true"
         pointerEvents="none"
         fill="none"
-        stroke="#f3f4ee"
-        strokeWidth={emphasized ? 7.4 : 5.1}
+        stroke="var(--studio-canvas, #10151f)"
+        strokeWidth={emphasized ? 5.5 : 4.2}
         strokeDasharray={relation.dash}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -193,8 +204,8 @@ function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
         label={label}
         labelX={center.x}
         labelY={center.y}
-        labelStyle={{ fill: '#34453c', fontSize: 11, fontWeight: 550 }}
-        labelBgStyle={{ fill: '#fafbf7', fillOpacity: 0.96 }}
+        labelStyle={{ fill: '#d9e9ff', fontSize: 11, fontWeight: 550 }}
+        labelBgStyle={{ fill: '#20324a', fillOpacity: 0.98 }}
         labelBgPadding={[5, 3]}
         labelBgBorderRadius={3}
         style={{
@@ -224,6 +235,8 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const [expanded, setExpanded] = useState<string[]>([]);
   const [infrastructure, setInfrastructure] = useState(false);
   const [detailed, setDetailed] = useState(false);
+  const [wireStyle, setWireStyle] = useState<WireDisplayStyle>('flow');
+  const [showMiniMap, setShowMiniMap] = useState(false);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [impactMode, setImpactMode] = useState<ImpactMode>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -243,6 +256,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const [layoutBusy, setLayoutBusy] = useState(true);
   const [layoutError, setLayoutError] = useState('');
   const [zoom, setZoom] = useState(1);
+  const [viewportMode, setViewportMode] = useState<'read' | 'all'>('read');
   const graph = useReactFlow<KnowledgeNode, KnowledgeEdge>();
   const initialized = useNodesInitialized();
   const positions = useRef(new Map<string, Map<string, XYPosition>>());
@@ -250,6 +264,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const layoutContext = useRef('');
   const resetPositions = useRef(false);
   const pendingFit = useRef(false);
+  const fitAsOverview = useRef(false);
   // Keep a first node click from opening the side inspector until React Flow
   // can distinguish a double click. Opening it immediately resizes this
   // canvas between click #1 and #2 and can swallow the second click.
@@ -358,27 +373,39 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
         const remembered = explicitLayout
           ? new Map<string, XYPosition>()
           : (positions.current.get(context) ?? new Map<string, XYPosition>());
-        const restored = remembered.size ? retainPositions(result.nodes, remembered) : result.nodes;
+        const restored = remembered.size
+          ? reorderPortsByGeometry(retainPositions(result.nodes, remembered), result.edges)
+          : result.nodes;
         const rememberedPositions = new Map(remembered);
         for (const node of restored) rememberedPositions.set(node.id, node.position);
         positions.current.set(context, rememberedPositions);
         const data = new Map(latest.current.nodes.map((node) => [node.id, node.data]));
         setNodes(
-          decorate(restored.map((node) => ({ ...node, data: data.get(node.id) ?? node.data }))),
+          decorate(
+            restored.map((node) => ({
+              ...node,
+              data: { ...(data.get(node.id) ?? node.data), wirePorts: node.data.wirePorts },
+            })),
+          ),
         );
         const positionsChanged = restored.some(
           (node, index) =>
             node.position.x !== result.nodes[index]!.position.x ||
-            node.position.y !== result.nodes[index]!.position.y,
+            node.position.y !== result.nodes[index]!.position.y ||
+            Object.values(node.data.wirePorts).some(
+              (port) => result.nodes[index]!.data.wirePorts[port.id]?.y !== port.y,
+            ),
         );
         setEdges(
           result.edges.map((edge) => ({
             ...edge,
             data: { ...edge.data!, points: positionsChanged ? undefined : edge.data?.points },
             markerEnd: {
-              type: MarkerType.ArrowClosed,
-              width: 18,
-              height: 18,
+              type: MarkerType.Arrow,
+              markerUnits: 'userSpaceOnUse',
+              strokeWidth: 1.35,
+              width: 9,
+              height: 9,
               color: edge.data!.grouped
                 ? sourceCableColor(edge.source)
                 : relationPresentation(edge.data!).color,
@@ -393,7 +420,11 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
           if (saved) {
             void graph.setViewport(saved);
             setZoom(saved.zoom);
-          } else pendingFit.current = true;
+          } else {
+            fitAsOverview.current = false;
+            setViewportMode('read');
+            pendingFit.current = true;
+          }
         }
       })
       .catch(() => {
@@ -418,8 +449,37 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
     let frame = 0;
     const settle = window.setTimeout(() => {
       frame = requestAnimationFrame(() => {
+        const stage = document.querySelector<HTMLElement>('.graph-workspace .react-flow');
+        if (!stage) return;
+        const left = Math.min(...nodes.map((node) => node.position.x));
+        const top = Math.min(...nodes.map((node) => node.position.y));
+        const right = Math.max(...nodes.map((node) => node.position.x + (node.width ?? 0)));
+        const bottom = Math.max(...nodes.map((node) => node.position.y + (node.height ?? 0)));
+        // Fit the committed ELK coordinates, not React Flow's one-frame-old
+        // internal bounds. Its initial estimate previously shrank this real
+        // eight-module view to39% although64% fits the same canvas.
+        const allZoom = Math.max(
+          0.15,
+          Math.min(
+            1.05,
+            (stage.clientWidth - 80) / Math.max(1, right - left),
+            (stage.clientHeight - 44) / Math.max(1, bottom - top),
+          ),
+        );
+        // A rich node editor must not shrink metrics to6px merely to fit every
+        // card. Initial reading view retains an85%floor; explicit Fit shows all.
+        // Small/mobile canvases also retain actions via normal panning/zoom.
+        const nextZoom = fitAsOverview.current ? allZoom : Math.max(0.85, allZoom);
         pendingFit.current = false;
-        void graph.fitView(responsiveFitOptions(nodes));
+        setZoom(nextZoom);
+        void graph.setViewport(
+          {
+            x: (stage.clientWidth - (right - left) * nextZoom) / 2 - left * nextZoom,
+            y: (stage.clientHeight - (bottom - top) * nextZoom) / 2 - top * nextZoom,
+            zoom: nextZoom,
+          },
+          { duration: 160 },
+        );
       });
     }, 90);
     return () => {
@@ -430,7 +490,30 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   useEffect(() => {
     const currentData = new Map(model.nodes.map((node) => [node.id, node.data]));
     setNodes((previous) =>
-      decorate(previous.map((node) => ({ ...node, data: currentData.get(node.id) ?? node.data }))),
+      decorate(
+        previous.map((node) => {
+          const fresh = currentData.get(node.id);
+          if (!fresh) return node;
+          // Geometry-refined port order must survive metadata-only polling. New
+          // topology is reconciled by the layout pass, not alphabetical model data.
+          const samePorts =
+            Object.keys(fresh.wirePorts).length === Object.keys(node.data.wirePorts).length &&
+            Object.keys(fresh.wirePorts).every((key) => key in node.data.wirePorts);
+          const wirePorts = samePorts
+            ? Object.fromEntries(
+                Object.entries(fresh.wirePorts).map(([key, port]) => [
+                  key,
+                  {
+                    ...port,
+                    y: node.data.wirePorts[key]!.y,
+                    spacing: node.data.wirePorts[key]!.spacing,
+                  },
+                ]),
+              )
+            : fresh.wirePorts;
+          return { ...node, data: { ...fresh, wirePorts } };
+        }),
+      ),
     );
   }, [model, decorate]);
   // One activation path for mouse and keyboard. The parent inspector selection must
@@ -555,6 +638,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
         ariaLabel: `${edge.source.replace(/^(module|file):/, '')} 依赖于 ${edge.target.replace(/^(module|file):/, '')}，${relationPresentation(edge.data!).label}，${edge.data!.grouped ? `${Object.values(edge.data!.kindCounts ?? {}).filter((count) => count > 0).length} 类，` : ''}${edge.data!.count} 处引用。按 Enter 查看来源证据。`,
         data: {
           ...edge.data!,
+          wireStyle,
           wireLaneIndex: wireLanes.get(edge.id)?.index ?? 0,
           wireLaneCount: wireLanes.get(edge.id)?.count ?? 1,
           wireCorridorIndex: corridorLanes.get(edge.id)?.index ?? 0,
@@ -586,6 +670,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       analysis,
       wireLanes,
       corridorLanes,
+      wireStyle,
     ],
   );
   const selectedEdge = displayedEdges.find((edge) => edge.id === selectedEdgeId);
@@ -633,6 +718,8 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const breadcrumbs =
     scope === ROOT_SCOPE || scope === TEST_SCOPE ? [scope] : scope.split('/').filter(Boolean);
   const fit = () => {
+    fitAsOverview.current = true;
+    setViewportMode('all');
     pendingFit.current = true;
     setFitTick((tick) => tick + 1);
   };
@@ -727,6 +814,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
             详情
           </button>
         </div>
+        <GraphLegend mode={relationMode} style={wireStyle} onStyle={setWireStyle} />
       </div>
       <div className="relation-toolbar" aria-label="关系图例与筛选">
         <div className="relation-mode-switch" role="group" aria-label="关系显示方式">
@@ -891,6 +979,14 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               cancelPendingInspector();
               setSelectedEdgeId(null);
             }}
+            onNodeDragStop={() => {
+              // Keep the layout's local-route port order during manual moves.
+              // Re-sorting by distant centers here would reintroduce fan braids;
+              // explicit re-layout computes a fresh route-aware ordering.
+              setEdges((current) =>
+                current.map((edge) => ({ ...edge, data: { ...edge.data!, points: undefined } })),
+              );
+            }}
             onNodeClick={(_, node) => activateNode(node)}
             onNodeDoubleClick={(_, node) => {
               if (node.data.kind === 'module') drill(node.data.path);
@@ -907,6 +1003,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
             nodesDraggable={!layoutBusy}
             elementsSelectable
             edgesFocusable
+            colorMode="dark"
             minZoom={0.15}
             maxZoom={1.7}
             deleteKeyCode={null}
@@ -929,21 +1026,24 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               'handle.ariaLabel': '依赖连接点',
             }}
           >
-            <Background variant={BackgroundVariant.Dots} color="#ccd1cc" gap={22} size={1} />
+            <Background variant={BackgroundVariant.Dots} color="#2c384b" gap={24} size={0.8} />
             <Controls
               position="bottom-right"
               showInteractive={false}
               fitViewOptions={responsiveFitOptions(nodes)}
+              onFitView={fit}
             />
-            <MiniMap
-              position="bottom-left"
-              pannable
-              zoomable
-              nodeColor={(node) =>
-                node.type === 'knowledge' && node.data.kind === 'module' ? '#b8c9ca' : '#e2dcd0'
-              }
-              maskColor="rgba(244,245,240,0.76)"
-            />
+            {showMiniMap && (
+              <MiniMap
+                position="bottom-left"
+                pannable
+                zoomable
+                nodeColor={(node) =>
+                  node.type === 'knowledge' && node.data.kind === 'module' ? '#506987' : '#7b6c94'
+                }
+                maskColor="rgba(16,21,31,0.8)"
+              />
+            )}
             <Panel position="top-right" className="graph-actions">
               <button
                 className="canvas-button"
@@ -955,6 +1055,20 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               >
                 <RotateCcw size={14} className={layoutBusy ? 'spin' : ''} />
                 重新布局
+              </button>
+              <button
+                className={`canvas-button${viewportMode === 'read' ? ' readable-mode' : ''}`}
+                aria-label="阅读缩放"
+                aria-pressed={viewportMode === 'read'}
+                title="保留信息字号；拖动画布浏览其他节点"
+                onClick={() => {
+                  fitAsOverview.current = false;
+                  setViewportMode('read');
+                  pendingFit.current = true;
+                  setFitTick((tick) => tick + 1);
+                }}
+              >
+                阅读
               </button>
               <IconButton label="适合画布，保留文字可读" onClick={fit}>
                 <Expand size={16} />
@@ -970,20 +1084,16 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
                 <Focus size={14} />
                 {focusId ? '显示全图' : '聚焦邻居'}
               </button>
+              <IconButton
+                label="切换缩略图"
+                aria-pressed={showMiniMap}
+                onClick={() => setShowMiniMap((value) => !value)}
+              >
+                <MapIcon size={15} />
+              </IconButton>
               <span className="zoom-level" aria-label="当前缩放">
                 {Math.round(zoom * 100)}%
               </span>
-            </Panel>
-            <Panel position="bottom-center" className="graph-legend">
-              <span>
-                <i className="legend-module" />
-                模块
-              </span>
-              <span>
-                <i className="legend-file" />
-                文件
-              </span>
-              <span>点击连线查看来源</span>
             </Panel>
           </ReactFlow>
         </SmartEdgeProvider>
@@ -1010,7 +1120,13 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
         )}
       </div>
       <footer className="canvas-footer">
-        <span>双击进入模块 · 右上角查看全部文件 · 拖动画布平移</span>
+        <span>
+          {wireStyle === 'direct'
+            ? '直连模式不避障 · 线可经过中间节点'
+            : viewportMode === 'read'
+              ? '阅读缩放 · 拖动画布浏览 · 适合画布可查看全图'
+              : '全图视角 · 点击阅读恢复字号 · 双击进入模块'}
+        </span>
         <span>
           {impactActive
             ? '静态潜在影响范围 · 只基于当前已解析引用，不证明程序会出错'

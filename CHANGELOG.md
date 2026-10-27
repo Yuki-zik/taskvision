@@ -1,5 +1,14 @@
 # TaskVision Change Log
 
+## 3.6.0 Preview
+
+- Introduced Graph Studio's coherent dark workbench, readable source-backed card facts and all nonzero knowledge chips.
+- Added flow/rounded/direct connection presentation plus an explicit semantic legend; direct mode warns that it does not avoid nodes.
+- Ordered port fans by nearby routed approach/departure, fixing the actual MCP→core/shared braid; normalized socket perimeter measurement without accepting genuinely stale routes.
+- Removed flattened mid-curve tangents, cleaned grid retraces, reduced arrowheads, and preserved refined ports through polling.
+- Separated readable85% initial view from full-map fitting; made the minimap opt-in to avoid obscuring node facts.
+- Preserved editor/MCP/review behavior; added contrast, filter-state, local geometry and real-browser interaction regressions.
+
 ## 3.5.0 Preview
 
 - Separated dependency edges into stable physical ports on both endpoints, shared by the source model, ELK and React Flow.

@@ -13,7 +13,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       root: option('--root') ?? process.cwd(),
       port: option('--port') === undefined ? 4317 : Number(option('--port')),
     });
-    console.log(JSON.stringify({ ready: true, url: app.url, pid: process.pid, version: '3.5.0' }));
+    console.log(JSON.stringify({ ready: true, url: app.url, pid: process.pid, version: '3.6.0' }));
     const close = async (): Promise<void> => {
       await app.close();
       process.exit(0);

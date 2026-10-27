@@ -105,6 +105,10 @@ test('multiple typed relations from one module stay separately selectable and vi
   await page.goto(server.url);
   await expect(page.getByText('正在整理结构…', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '分类', exact: true }).click();
+  //Reading mode deliberately preserves text size; use fullmap to bring all
+  //four sources into view before this end-to-end drag scenario.
+  await page.getByRole('button', { name: '适合画布，保留文字可读', exact: true }).click();
+  await page.waitForTimeout(280);
   const matches = page.locator('.react-flow__edge[data-id*="module:apps/a→module:packages/core"]');
   await expect(matches).toHaveCount(4);
   const rows = await matches.evaluateAll((items) =>

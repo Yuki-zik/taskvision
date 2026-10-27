@@ -263,7 +263,7 @@ test('actual ELK routes use precisely the live ports in module/file overview and
         assert.deepEqual(node.position, remembered.get(node.id));
         assert.deepEqual(
           node.data.wirePorts,
-          model.nodes.find((item) => item.id === node.id)!.data.wirePorts,
+          laid.nodes.find((item) => item.id === node.id)!.data.wirePorts,
         );
       }
     }
@@ -337,7 +337,7 @@ test('high degree is explicitly crowded and bounded, preserves every edge and ca
 
 test('degree beyond pixel capacity honestly shares crowded physical slots while preserving unique logical ports and all counts', (t) => {
   const leaves = Array.from(
-    { length: 100 },
+    { length: 180 },
     (_, index) => `packages/dense-${String(index).padStart(3, '0')}`,
   );
   const snapshot = sourceFixture(t, {
@@ -351,14 +351,14 @@ test('degree beyond pixel capacity honestly shares crowded physical slots while 
   const model = buildGraph(snapshot, options);
   const hub = model.nodes.find((node) => node.id === 'module:apps/dense')!;
   const ports = Object.values(hub.data.wirePorts);
-  assert.equal(ports.length, 100);
-  assert.equal(new Set(ports.map((port) => port.id)).size, 100);
+  assert.equal(ports.length, 180);
+  assert.equal(new Set(ports.map((port) => port.id)).size, 180);
   assert.ok(ports.every((port) => port.crowded && Number.isInteger(port.y)));
   assert.equal(new Set(ports.map((port) => port.y)).size, hub.height! - 32 + 1);
-  assert.equal(model.edges.length, 108);
+  assert.equal(model.edges.length, 188);
   assert.equal(
     model.edges.reduce((sum, edge) => sum + edge.data!.count, 0),
-    109,
+    189,
   );
   assertPortGeometry(model);
 });

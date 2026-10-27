@@ -137,7 +137,12 @@ test('full project overview groups nested applications, shared packages, extensi
   const laid = await layoutGraph(graph);
   const width = Math.max(...laid.nodes.map((node) => node.position.x + node.width!));
   const height = Math.max(...laid.nodes.map((node) => node.position.y + node.height!));
-  assert.ok(width < 1000 && height < 800, `overview should remain compact, got ${width}×${height}`);
+  // Rich196px cards replace the obsolete120px overview. Preserve the eight-module
+  // composition and bounded layout without forcing new information into old boxes.
+  assert.ok(
+    width < 1280 && height < 1100,
+    `rich overview exceeds measured budget: ${width}×${height}`,
+  );
 });
 test('module expansion is bounded, exposes total count and never fabricates dependency edges', () => {
   const data = snapshot();

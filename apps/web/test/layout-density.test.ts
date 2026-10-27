@@ -229,7 +229,11 @@ test('eight-module source topology stays within a readable overview without pinn
   assert.equal(laid.edges.length, 11);
   const width = Math.max(...laid.nodes.map((node) => node.position.x + node.width!));
   const height = Math.max(...laid.nodes.map((node) => node.position.y + node.height!));
-  assert.ok(width <= 1100 && height <= 750, `overview exceeds canvas budget: ${width}×${height}`);
+  // A larger honest information budget is explicit in the3.6 design contract.
+  assert.ok(
+    width <= 1280 && height <= 1100,
+    `rich overview exceeds canvas budget: ${width}×${height}`,
+  );
   assertSeparated(laid.nodes);
   assertRoutes(laid);
 });

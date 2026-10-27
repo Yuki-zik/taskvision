@@ -4,15 +4,15 @@ import { RELATION_CATEGORIES, relationOffset } from '../src/graph/model';
 import { MAP_ZOOM_THRESHOLD, nodeSize, readingMode } from '../src/graph/presentation';
 
 test('overview and detail use the agreed measured module and file geometry', () => {
-  assert.deepEqual(nodeSize('module', false), { width: 264, height: 120 });
-  assert.deepEqual(nodeSize('file', false), { width: 252, height: 112 });
-  assert.deepEqual(nodeSize('module', true), { width: 288, height: 184 });
-  assert.deepEqual(nodeSize('file', true), { width: 272, height: 176 });
+  assert.deepEqual(nodeSize('module', false), { width: 304, height: 196 });
+  assert.deepEqual(nodeSize('file', false), { width: 292, height: 184 });
+  assert.deepEqual(nodeSize('module', true), { width: 328, height: 248 });
+  assert.deepEqual(nodeSize('file', true), { width: 316, height: 236 });
 });
 
 test('far zoom prioritizes map reading even when detail is enabled', () => {
   for (const detailed of [false, true]) {
-    assert.equal(readingMode(0.5, detailed), 'map');
+    assert.equal(readingMode(0.4, detailed), 'map');
     assert.equal(readingMode(MAP_ZOOM_THRESHOLD - 0.001, detailed), 'map');
   }
   assert.equal(readingMode(MAP_ZOOM_THRESHOLD, false), 'overview');

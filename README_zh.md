@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.5.0_preview-3B82F6?style=flat-square" alt="Version 3.5.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.6.0_preview-3B82F6?style=flat-square" alt="Version 3.6.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -35,6 +35,14 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.6 预览：Graph Studio
+
+界面统一为石墨深色；节点直接展示真实职责、全部非零知识标签、文件与代码规模、当前可见引用方／依赖方数量、实际待验收与 Agent 认领。REVIEW 源码阅读点和待验收提交明确区分，不生成虚假健康或完成状态。
+
+线路按端口附近的实际走向排序，平滑曲线、圆角走线、直连三种外观可切换；端口测量与 ELK 路径保持一致，小箭头不再堆叠。新增图例解释颜色、虚实线、依赖方向与节点标签。直连模式明确不避障。默认阅读视图保留85%字号，需要浏览全项目时点击适合画布；缩略图按需开启，避免遮住节点信息。
+
+继续复用现有图引擎与业务核心，无新增运行时依赖。验收依据见 [Graph Studio用户流程](agent/graph-studio-acceptance.md)。
 
 ## 3.5 预览：ComfyUI 风格分线与真实关系追踪
 

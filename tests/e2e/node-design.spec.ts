@@ -166,11 +166,15 @@ test('eight-module architecture remains inbounds on laptop after initial and eit
   await page.goto(server.url);
   await expect(page.locator('.react-flow__node')).toHaveCount(8);
   await expect(page.getByText('正在整理结构…', { exact: true })).toHaveCount(0);
+  //3.6 defaults to readable85% nodes; this geometry check explicitly requests full map.
+  await page.getByRole('button', { name: '适合画布，保留文字可读', exact: true }).click();
   const check = async () => {
     const canvas = await page.locator('.react-flow').boundingBox();
-    const minimap = await page.locator('.react-flow__minimap').boundingBox();
+    const minimapLocator = page.locator('.react-flow__minimap');
+    const minimap = (await minimapLocator.count()) ? await minimapLocator.boundingBox() : null;
     expect(canvas).not.toBeNull();
-    expect(minimap).not.toBeNull();
+    //3.6 keeps navigation opt-in so it cannot obscure initial node facts.
+    expect(minimap).toBeNull();
     const cards = await page.locator('.react-flow__node').evaluateAll((nodes) =>
       nodes.map((node) => {
         const b = node.getBoundingClientRect();
@@ -184,10 +188,11 @@ test('eight-module architecture remains inbounds on laptop after initial and eit
       expect(card.y).toBeGreaterThanOrEqual(canvas!.y + 1);
       expect(card.bottom).toBeLessThanOrEqual(canvas!.y + canvas!.height - 1);
       expect(
-        card.x < minimap!.x + minimap!.width &&
-          card.right > minimap!.x &&
-          card.y < minimap!.y + minimap!.height &&
-          card.bottom > minimap!.y,
+        !!minimap &&
+          card.x < minimap.x + minimap.width &&
+          card.right > minimap.x &&
+          card.y < minimap.y + minimap.height &&
+          card.bottom > minimap.y,
       ).toBe(false);
     }
   };
@@ -198,8 +203,9 @@ test('eight-module architecture remains inbounds on laptop after initial and eit
     .poll(
       async () => {
         const canvas = await page.locator('.react-flow').boundingBox();
-        const minimap = await page.locator('.react-flow__minimap').boundingBox();
-        if (!canvas || !minimap) return false;
+        const minimapLocator = page.locator('.react-flow__minimap');
+        const minimap = (await minimapLocator.count()) ? await minimapLocator.boundingBox() : null;
+        if (!canvas) return false;
         const cards = await page.locator('.react-flow__node').evaluateAll((nodes) =>
           nodes.map((node) => {
             const b = node.getBoundingClientRect();
@@ -215,6 +221,7 @@ test('eight-module architecture remains inbounds on laptop after initial and eit
               card.y >= canvas.y + 1 &&
               card.bottom <= canvas.y + canvas.height - 1 &&
               !(
+                minimap &&
                 card.x < minimap.x + minimap.width &&
                 card.right > minimap.x &&
                 card.y < minimap.y + minimap.height &&

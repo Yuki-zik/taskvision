@@ -1,5 +1,13 @@
 # Current Tasks
 
+## 3.6 Graph Studio — 2026-10-27
+
+User explicitly rejected3.5 screenshot: kinky/braided fans, outdated coarse interface, hidden node facts and insufficient legend. Branch `feat/graph-studio-20261027` from3400916. Main implementation is complete: coherent charcoal workbench; source-backed visible tag/fact/status cards; readable85% default vs explicit whole-mapFit; opt-in minimap; three geometry styles with semantic legend; route-aware near-socket ordering and socket-perimeter anchoring. Existing ReactFlow/ELK/SmartEdge kept, no runtime dependencies added.
+
+Independent read-only review confirmed searchcontrast/filterstate/taskheading/defaulttextsize issues, then minimapoverlap; all addressed, bounded final verdictPASS. Exact MCPfan reproduced/fixed and21siblingnear-port combinations checked. Popupaction/Escape/focus behavior and initialFit verified by meaningful userflows. Final artifact/runtime/Host results remain in local report and workbench.
+
+Acceptance contract `agent/graph-studio-acceptance.md`; evidence root `~/agent-machine/workbench/taskvision-graph-studio-20261027/`. No remote push/Marketplace/default2.0.1 replacement. Preexisting `.taskvision/ai-status-report.md` remains excluded, never restored.
+
 ## 3.5 Comfy-style wire separation delivered — 2026-10-26
 
 User reported overlapping links. Branch feat/comfy-wire-lanes-20261026. Implemented stable per-edge ports, smooth cubic cables, distinct obstacle A* waypoints, importer-colored overview, relation kind colors in category mode, and selected-wire focus with sibling fading. Underlying source evidence and older editor/Agent APIs are preserved. No new graph engine or dependency, no remote publication or user-profile replacement.

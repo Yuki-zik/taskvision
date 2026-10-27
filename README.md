@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.5.0_preview-3B82F6?style=flat-square" alt="Version 3.5.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.6.0_preview-3B82F6?style=flat-square" alt="Version 3.6.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -37,6 +37,14 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.6 preview: Graph Studio
+
+A coherent charcoal workbench with source-linked information visible on cards: all nonzero knowledge tags, file/LOC counts, unique visible consumers/providers, pending handoffs and actual Agent ownership. REVIEW source hotspots and pending review submissions remain distinct.
+
+Connections use route-aware local fan ordering, smooth cubic curves, shared geometry for ELK and actual socket measurements, and small fixed-size arrows. Flow, rounded-channel and literal-direct presentation are selectable; the legend distinguishes rendering from real dependency semantics. Direct mode explicitly does not avoid nodes. Reading mode keeps an85% text-size floor; Fit shows the whole map. The minimap is opt-in so it does not cover node facts.
+
+No additional graph runtime. Existing source evidence, filtering, impact analysis and MCP remain available. See [Graph Studio acceptance](agent/graph-studio-acceptance.md).
 
 ## 3.5 preview: distinct Comfy-style source-backed wires
 

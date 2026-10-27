@@ -11,3 +11,7 @@ Tailwind4 utilities are compiled with a bounded @source list and no Preflight. T
 ## Integration corrections
 
 BaseNode remains an upstream copy with local import/formatting. The application sets `tabIndex=-1` on its inner card, keeping the existing React Flow wrapper as the sole primary keyboard target. NodeTooltip retains the upstream context/trigger/content API, with local focus, delayed hover and Escape handling. Its content and selected actions now use a small `FloatingNodePanel` adapter over the MIT Floating UI DOM package: flip/shift/size/hide against the actual canvas, portalled outside transformed clipping. This avoids tiny or inaccessible controls at low zoom. The selected action UI retains screen-sized behavior but uses this bounded adapter instead of a fixed-side NodeToolbar.
+
+## 3.6 interaction updates
+
+The official API remains intact. Supplementary node dialogs now dismiss when their own source/drill/expand action is used, so expanded files are not covered by stale focused hover content. Escape suppresses immediate re-opening under the stationary pointer; actual pointer movement or explicit keyboard activation re-enables it. No business data or transport permission changes. The workbench adds a separate application theme; upstream registry originals remain unchanged and locally adapted code remains reviewable.

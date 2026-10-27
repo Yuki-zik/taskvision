@@ -60,6 +60,7 @@ test.afterEach(async () => {
 async function settle(page: Page) {
   await expect(page.locator('.graph-node.tv-node-kit')).toHaveCount(8);
   await expect(page.getByText('正在整理结构…', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '适合画布，保留文字可读', exact: true }).click();
   // Wait for measured, settled actual layout rather than the asynchronous100% first frame.
   await expect
     .poll(
@@ -101,17 +102,24 @@ test('official node kit opens a readable canvas-first architecture with reversib
     await expect(page.locator('.detail-slot')).toHaveCount(0);
     const canvas = await page.locator('.react-flow').boundingBox();
     expect(canvas!.width).toBeGreaterThan(viewport.width * 0.7);
-    const titles = await page.locator('.tv-node-kit .node-title strong').evaluateAll((items) =>
-      items.map((item) => {
-        const card = item.closest('.tv-node-kit') as HTMLElement;
-        const scale = card.getBoundingClientRect().width / card.offsetWidth;
-        return {
-          text: item.textContent?.trim(),
-          screenFont: parseFloat(getComputedStyle(item).fontSize) * scale,
-        };
-      }),
-    );
-    expect(titles.every((title) => title.text && title.screenFont >= 11)).toBe(true);
+    await page.getByRole('button', { name: '阅读缩放', exact: true }).click();
+    await page.waitForTimeout(220);
+    await expect
+      .poll(async () => {
+        const titles = await page.locator('.tv-node-kit .node-title strong').evaluateAll((items) =>
+          items.map((item) => {
+            const card = item.closest('.tv-node-kit') as HTMLElement;
+            return {
+              text: item.textContent?.trim(),
+              font:
+                (parseFloat(getComputedStyle(item).fontSize) * card.getBoundingClientRect().width) /
+                card.offsetWidth,
+            };
+          }),
+        );
+        return titles.every((title) => title.text && title.font >= 11);
+      })
+      .toBe(true);
     await page.getByRole('button', { name: '切换项目上下文', exact: true }).click();
     await expect(page.locator('.project-inspector')).toBeVisible();
     await page.getByRole('button', { name: '切换项目上下文', exact: true }).click();
@@ -242,7 +250,11 @@ test('Escape returns keyboard focus to a zoomed-out file after inspecting source
   await page.locator('.react-flow__node[data-id="module:packages/core/src"]').dblclick();
   const file = page.locator('.react-flow__node[data-id="file:packages/core/src/engine.ts"]');
   await expect(file).toBeVisible();
-  for (let i = 0; i < 5; i++) {
+  for (
+    let i = 0;
+    i < 9 && (await file.locator('.graph-node').getAttribute('data-reading-mode')) !== 'map';
+    i++
+  ) {
     await page.locator('.react-flow__controls-zoomout').click();
     await page.waitForTimeout(220);
   }

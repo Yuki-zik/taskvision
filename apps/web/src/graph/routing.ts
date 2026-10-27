@@ -1,4 +1,5 @@
 import type { RoutePoint } from './model';
+import { cubicHitsBox, finitePoint, splitCubic, type Cubic, type RouteBox } from './route-geometry';
 
 // ELK geometry is only a startup fallback. A moved endpoint invalidates it.
 export function matchingRoute(
@@ -6,19 +7,36 @@ export function matchingRoute(
   source: RoutePoint,
   target: RoutePoint,
 ): RoutePoint[] | undefined {
-  if (!points || points.length < 2) return undefined;
+  if (
+    !points ||
+    points.length < 2 ||
+    !points.every(finitePoint) ||
+    !finitePoint(source) ||
+    !finitePoint(target)
+  )
+    return undefined;
   const first = points[0]!,
     last = points.at(-1)!;
-  return Math.abs(first.x - source.x) < 3 &&
-    Math.abs(first.y - source.y) < 3 &&
-    Math.abs(last.x - target.x) < 3 &&
-    Math.abs(last.y - target.y) < 3
-    ? points
-    : undefined;
+  // ELK ports are card-border centers while React Flow attaches to the
+  // outward perimeter of a6–8px socket (up to4px horizontal offset). This
+  // measurement difference is not a stale route; retain its geometry and
+  // anchor only its endpoints. Real node moves still invalidate the route.
+  if (
+    Math.abs(first.x - source.x) > 5 ||
+    Math.abs(first.y - source.y) > 1 ||
+    Math.abs(last.x - target.x) > 5 ||
+    Math.abs(last.y - target.y) > 1
+  )
+    return undefined;
+  if (first.x === source.x && first.y === source.y && last.x === target.x && last.y === target.y)
+    return points;
+  return [{ ...source }, ...points.slice(1, -1), { ...target }];
 }
 
 // Round an existing ELK polyline; routing itself belongs to ELK / Smart Edge.
 export function roundedRoute(points: RoutePoint[], radius = 12): string {
+  points = simplifyRoute(points);
+  radius = Number.isFinite(radius) ? Math.max(0, Math.min(64, radius)) : 12;
   const first = points[0];
   if (!first) return '';
   let path = `M ${first.x},${first.y}`;
@@ -64,11 +82,7 @@ export function routeMidpoint(points: RoutePoint[]): RoutePoint {
   return points[0] ?? { x: 0, y: 0 };
 }
 
-/**
- * A two-cubic wire for unobstructed corridors. The joined sections share a
- * horizontal tangent. Distinct midline offsets separate parallel wires.
- * If any other node intersects the curve, use Smart Edge/ELK instead.
- */
+/** Clear corridors use a single cubic with horizontal endpoint tangents. */
 export interface WireObstacle {
   id: string;
   position: RoutePoint;
@@ -105,7 +119,7 @@ export function cubicPoint(
   };
 }
 export function cableLaneOffset(index = 0, total = 1): number {
-  if (total <= 1) return 0;
+  if (!Number.isFinite(index) || !Number.isFinite(total) || total <= 1) return 0;
   const rank = Math.min(Math.max(index, 0), total - 1) - (total - 1) / 2;
   return rank * 18;
 }
@@ -115,64 +129,172 @@ export function separatedCable(
 ): WireCablePath | undefined {
   const { source, target, sourceId, targetId } = input;
   const dx = target.x - source.x;
-  if (!Number.isFinite(dx) || dx < 72) return undefined;
-  const laneOffset = cableLaneOffset(input.laneIndex, input.laneCount);
-  const mid: RoutePoint = {
-    x: (source.x + target.x) / 2,
-    y: (source.y + target.y) / 2 + laneOffset,
-  };
-  const reach = Math.min(148, Math.max(28, dx * 0.29));
-  const first: readonly [RoutePoint, RoutePoint, RoutePoint, RoutePoint] = [
+  if (!finitePoint(source) || !finitePoint(target) || !Number.isFinite(dx) || dx < 72)
+    return undefined;
+  const sharedLevel = Math.abs(source.y - target.y) < 1e-6;
+  const laneOffset = sharedLevel ? cableLaneOffset(input.laneIndex, input.laneCount) : 0;
+  const reach = Math.min(148, dx * 0.42);
+  const base: Cubic = [
     source,
     { x: source.x + reach, y: source.y },
-    { x: mid.x - reach / 2, y: mid.y },
-    mid,
-  ];
-  const second: readonly [RoutePoint, RoutePoint, RoutePoint, RoutePoint] = [
-    mid,
-    { x: mid.x + reach / 2, y: mid.y },
     { x: target.x - reach, y: target.y },
     target,
   ];
-  const padding = input.padding ?? 12;
+  // Keep the public two-segment sampling contract. Both halves are exact
+  // subdivisions of ONE cubic; the midpoint has the original sloped tangent.
+  let segments = splitCubic(base);
+  // Legacy shared sockets need an actual lane. Distinct sockets already provide
+  // separation; bending them again can braid category wires near the hub.
+  const deviates = laneOffset !== 0;
+  if (deviates) {
+    const mid = { x: (source.x + target.x) / 2, y: source.y + laneOffset };
+    const tangent = Math.min(reach / 2, dx / 6);
+    segments = [
+      [source, base[1], { x: mid.x - tangent, y: mid.y }, mid],
+      [mid, { x: mid.x + tangent, y: mid.y }, base[2], target],
+    ];
+  }
+  const padding = Number.isFinite(input.padding) ? Math.max(0, input.padding!) : 12;
   for (const box of obstacles) {
     if (box.id === sourceId || box.id === targetId) continue;
-    const width = box.width ?? box.measured?.width ?? 0;
-    const height = box.height ?? box.measured?.height ?? 0;
-    const left = box.position.x - padding;
-    const right = box.position.x + width + padding;
-    const top = box.position.y - padding;
-    const bottom = box.position.y + height + padding;
-    for (const segment of [first, second]) {
-      for (let step = 0; step <= 32; step++) {
-        const p = cubicPoint(segment, step / 32);
-        if (p.x >= left && p.x <= right && p.y >= top && p.y <= bottom) {
-          return undefined;
-        }
-      }
-    }
+    const bounds = obstacleBox(box, padding);
+    if (segments.some((segment) => cubicHitsBox(segment, bounds))) return undefined;
   }
-  const repr = (point: RoutePoint) => point.x + ',' + point.y;
   return {
     path:
-      'M ' +
-      repr(source) +
-      ' C ' +
-      repr(first[1]) +
-      ' ' +
-      repr(first[2]) +
-      ' ' +
-      repr(mid) +
-      ' C ' +
-      repr(second[1]) +
-      ' ' +
-      repr(second[2]) +
-      ' ' +
-      repr(target),
-    center: mid,
+      `M ${repr(source)} ` + (deviates ? segments.map(cubicCommand).join(' ') : cubicCommand(base)),
+    center: segments[0][3],
     laneOffset,
-    segments: [first, second],
+    segments,
   };
+}
+
+export type ConnectionStyle = 'flow' | 'orthogonal' | 'direct';
+/** Both ELK objects and SmartEdge's raw number[][] are accepted without casts. */
+export type RoutePoints = readonly (RoutePoint | readonly number[])[];
+export interface DisplayedRoute {
+  path: string;
+  center: RoutePoint;
+}
+const repr = (point: RoutePoint): string => `${point.x},${point.y}`;
+const cubicCommand = (curve: Cubic): string =>
+  `C ${repr(curve[1])} ${repr(curve[2])} ${repr(curve[3])}`;
+const samePoint = (a: RoutePoint, b: RoutePoint): boolean => a.x === b.x && a.y === b.y;
+function obstacleBox(box: WireObstacle, padding = 0): RouteBox {
+  return {
+    left: box.position.x - padding,
+    right: box.position.x + (box.measured?.width ?? box.width ?? 0) + padding,
+    top: box.position.y - padding,
+    bottom: box.position.y + (box.measured?.height ?? box.height ?? 0) + padding,
+  };
+}
+
+/**
+ * Only delete exact loops and collinear retraces. Every replacement line is a
+ * subset of the original route; never shortcut a staircase across an obstacle.
+ * Malformed coordinates invalidate the whole route rather than bridging a gap.
+ */
+export function simplifyRoute(input: RoutePoints): RoutePoint[] {
+  const points = input.map((point) =>
+    'x' in point ? { x: point.x, y: point.y } : { x: point[0]!, y: point[1]! },
+  );
+  if (!points.every(finitePoint)) return [];
+  const cleaned: RoutePoint[] = [];
+  for (const point of points) {
+    const repeat = cleaned.findIndex((previous) => samePoint(previous, point));
+    if (repeat >= 0) {
+      cleaned.splice(repeat + 1);
+      continue;
+    }
+    while (cleaned.length >= 2) {
+      const a = cleaned.at(-2)!,
+        b = cleaned.at(-1)!;
+      const cross = (b.x - a.x) * (point.y - b.y) - (b.y - a.y) * (point.x - b.x);
+      if (cross !== 0) break;
+      cleaned.pop();
+    }
+    cleaned.push(point);
+  }
+  return cleaned;
+}
+
+/**
+ * Present an already routed polyline. Flow uses bounded tangent-continuous
+ * cubic rounds, orthogonal keeps sharp corners, direct is a literal straight
+ * endpoint chord and MAY cross nodes. This never runs a second router.
+ *
+ * Pass live nodes as the fourth argument for large rounds: each corner is
+ * shrunk until its curve clears every node, including endpoint node interiors.
+ * Without boxes node clearance is the caller's responsibility: a padded
+ * polyline alone does not prove that a large corner round will clear nodes.
+ * SmartEdge raw points exclude handles; prepend/append the live handle points.
+ */
+export function displayRoute(
+  input: RoutePoints,
+  style: ConnectionStyle,
+  radius = 36,
+  obstacles: readonly WireObstacle[] = [],
+): DisplayedRoute {
+  const points = simplifyRoute(input);
+  const first = points[0],
+    last = points.at(-1);
+  if (!first || !last) return { path: '', center: { x: 0, y: 0 } };
+  if (style === 'direct')
+    return {
+      path: `M ${repr(first)} L ${repr(last)}`,
+      center: { x: (first.x + last.x) / 2, y: (first.y + last.y) / 2 },
+    };
+  let path = `M ${repr(first)}`;
+  const sampled = [first];
+  const maxRadius =
+    style === 'flow' ? (Number.isFinite(radius) ? Math.min(64, Math.max(0, radius)) : 36) : 0;
+  const boxes = obstacles.map((box) => obstacleBox(box));
+  for (let i = 1; i < points.length - 1; i++) {
+    const before = points[i - 1]!,
+      corner = points[i]!,
+      after = points[i + 1]!;
+    const incoming = Math.hypot(corner.x - before.x, corner.y - before.y);
+    const outgoing = Math.hypot(after.x - corner.x, after.y - corner.y);
+    let distance = Math.min(maxRadius, incoming / 2, outgoing / 2);
+    let round: Cubic | undefined;
+    while (distance >= 0.5) {
+      const start = {
+        x: corner.x + ((before.x - corner.x) * distance) / incoming,
+        y: corner.y + ((before.y - corner.y) * distance) / incoming,
+      };
+      const end = {
+        x: corner.x + ((after.x - corner.x) * distance) / outgoing,
+        y: corner.y + ((after.y - corner.y) * distance) / outgoing,
+      };
+      // Quarter-circle approximation for orthogonal corners. It remains inside
+      // the original corner triangle; there is no overshoot into adjacent leads.
+      const k = 0.5522847498307936;
+      const candidate: Cubic = [
+        start,
+        { x: start.x + (corner.x - start.x) * k, y: start.y + (corner.y - start.y) * k },
+        { x: end.x + (corner.x - end.x) * k, y: end.y + (corner.y - end.y) * k },
+        end,
+      ];
+      if (!boxes.some((box) => cubicHitsBox(candidate, box))) {
+        round = candidate;
+        break;
+      }
+      distance /= 2;
+    }
+    if (round) {
+      path += ` L ${repr(round[0])} ${cubicCommand(round)}`;
+      sampled.push(round[0]);
+      for (let step = 1; step <= 16; step++) sampled.push(cubicPoint(round, step / 16));
+    } else {
+      path += ` L ${repr(corner)}`;
+      sampled.push(corner);
+    }
+  }
+  if (points.length > 1) {
+    path += ` L ${repr(last)}`;
+    sampled.push(last);
+  }
+  return { path, center: routeMidpoint(sampled) };
 }
 
 /**

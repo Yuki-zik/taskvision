@@ -153,7 +153,7 @@ export default function App() {
   const mobileDetail = !!(selection || module !== null || editor || transfer);
   const detailVisible = view !== 'map' || mobileDetail;
   return (
-    <div className="app-shell">
+    <div className="app-shell studio-app">
       <a className="skip-link" href="#workbench-content">
         跳到工作区
       </a>
@@ -302,6 +302,7 @@ export default function App() {
             <div className="tag-filters" aria-label="知识标签筛选">
               <button
                 className={!tag && !hotspots ? 'selected' : ''}
+                aria-pressed={!tag && !hotspots}
                 onClick={() => {
                   setTag('');
                   setHotspots(false);
@@ -313,6 +314,7 @@ export default function App() {
                 <button
                   key={item}
                   className={`${tag === item ? 'selected ' : ''}filter-${item.toLowerCase()}`}
+                  aria-pressed={tag === item}
                   onClick={() => setTag((current) => (current === item ? '' : item))}
                 >
                   {item}
