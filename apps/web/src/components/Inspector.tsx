@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -16,6 +16,9 @@ import { projectEntrypoints } from '../services/entrypoints';
 import { filesForScope, scopeLabel } from '../graph/scopes';
 import { Empty, Loading, Notice, PanelHeading, TagChip } from './ui';
 import { KnowledgeEntry } from './KnowledgeEntry';
+import { CodeSource } from './CodeSource';
+import type { SourceHighlightSettings, SourceTheme } from '../services/sourceHighlight';
+import '../code-source.css';
 
 interface Props {
   snapshot: Snapshot;
@@ -25,6 +28,8 @@ interface Props {
   onEdit: (annotation?: Annotation) => void;
   onDecide: (annotation: Annotation, decision: 'accept' | 'archive') => void;
   onClose: () => void;
+  theme?: SourceTheme;
+  highlightSettings?: SourceHighlightSettings;
 }
 export function Inspector({
   snapshot,
@@ -34,14 +39,19 @@ export function Inspector({
   onEdit,
   onDecide,
   onClose,
+  theme,
+  highlightSettings,
 }: Props) {
-  const [source, setSource] = useState<SourceResult | null>(null);
+  const [loadedSource, setSource] = useState<(SourceResult & { workspaceId: string }) | null>(null);
   const [sourceError, setSourceError] = useState('');
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<'knowledge' | 'source'>('knowledge');
   const [reload, setReload] = useState(0);
-  const selectedLine = useRef<HTMLDivElement | null>(null);
   const path = selection?.path ?? '';
+  const source =
+    loadedSource?.path === path && loadedSource.workspaceId === snapshot.project.workspaceId
+      ? loadedSource
+      : null;
   const file = snapshot.files.find((item) => item.path === path);
   const fileAnnotations = snapshot.annotations.filter(
     (item) => item.path === path && item.status !== 'archived',
@@ -60,9 +70,10 @@ export function Inspector({
     setSourceError('');
     setLoading(true);
     void api
-      .source(path, controller.signal)
+      .source(path, controller.signal, snapshot.project.workspaceId)
       .then((result) => {
-        if (!controller.signal.aborted) setSource(result);
+        if (!controller.signal.aborted)
+          setSource({ ...result, workspaceId: snapshot.project.workspaceId });
       })
       .catch((failure) => {
         if (!controller.signal.aborted) setSourceError(errorMessage(failure));
@@ -71,14 +82,10 @@ export function Inspector({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [path, sourceVersion, reload, snapshot.revision]);
+  }, [path, sourceVersion, reload, snapshot.revision, snapshot.project.workspaceId]);
   useEffect(() => {
     if (selection?.line && path) setTab('source');
   }, [selection, path]);
-  useEffect(() => {
-    if (tab === 'source')
-      selectedLine.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, [source, tab, selection?.line]);
   const activeAnnotations = snapshot.annotations.filter((item) => item.status !== 'archived');
   if (!selection && module !== null && module !== '') {
     const files = filesForScope(snapshot.files, module);
@@ -285,52 +292,16 @@ export function Inspector({
         ) : source ? (
           <>
             <div className="source-version">SHA256 {source.hash.slice(0, 12)} · 只读源码</div>
-            <div className="source-code" role="region" aria-label={`${path} 源码`} tabIndex={0}>
-              {source.text.split('\n').map((text, index) => {
-                const number = index + 1;
-                const tags = fileAnnotations.filter(
-                  (annotation) => annotation.line <= number && annotation.endLine >= number,
-                );
-                return (
-                  <div
-                    key={number}
-                    ref={number === selection.line ? selectedLine : undefined}
-                    className={`source-line${number === selection.line ? ' selected-line' : ''}${tags.length ? ' annotated-line' : ''}`}
-                  >
-                    <button
-                      className="line-number"
-                      title={`为第 ${number} 行添加指导`}
-                      onClick={() => onSelect({ path, line: number })}
-                    >
-                      {number}
-                    </button>
-                    <code>
-                      {text.split(/\b(CORE|REUSE|INTENT|REVIEW|TODO)\b/g).map((part, i) =>
-                        /^(CORE|REUSE|INTENT|REVIEW|TODO)$/.test(part) ? (
-                          <mark className={`source-tag tag-${part.toLowerCase()}`} key={i}>
-                            {part}
-                          </mark>
-                        ) : (
-                          <span key={i}>{part}</span>
-                        ),
-                      ) || ' '}
-                    </code>
-                    {tags.length > 0 && (
-                      <button
-                        className="source-annotation-dot"
-                        title={tags.map((annotation) => annotation.summary).join('\n')}
-                        aria-label={`查看第 ${number} 行知识`}
-                        onClick={() => {
-                          setTab('knowledge');
-                        }}
-                      >
-                        {tags.length > 1 ? tags.length : <span />}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <CodeSource
+              text={source.text}
+              path={path}
+              selectedLine={selection.line}
+              annotations={fileAnnotations}
+              theme={theme}
+              highlightSettings={highlightSettings}
+              onSelect={(line) => onSelect({ path, line })}
+              onKnowledge={() => setTab('knowledge')}
+            />
           </>
         ) : (
           <Empty title="没有可读取的源码">请选择项目内的文件。</Empty>

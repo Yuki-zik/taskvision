@@ -80,7 +80,11 @@ export function TransferPanel({
           <Download size={22} strokeWidth={1.5} />
           <h3>导出项目知识</h3>
           <p>保存注释、任务和审阅记录，作为可携带的知识档案。</p>
-          <a className="button" href="/api/export" download>
+          <a
+            className="button"
+            href={'/api/export?project=' + encodeURIComponent(snapshot.project.workspaceId)}
+            download
+          >
             <Download size={14} />
             下载 JSON
           </a>

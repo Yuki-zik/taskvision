@@ -1,0 +1,110 @@
+.source-rendering-note {
+  display: grid;
+  gap: 4px;
+  padding: 9px 14px;
+  font: 11px/1.5 var(--sans, system-ui, sans-serif);
+  color: inherit;
+  border-bottom: 1px solid currentColor;
+  border-bottom-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.source-code.tv-code-source[data-source-theme] {
+  min-height: 0;
+  padding: 10px 0 24px;
+  font: 12px/1.9 var(--mono, ui-monospace, monospace);
+  tab-size: 2;
+  overflow-x: auto;
+  --tv-code-muted: #a3a3a3;
+  --tv-code-selected: #264f784d;
+  --tv-code-annotation: #60a5fa;
+}
+
+.source-code.tv-code-source[data-source-theme='light'] {
+  --tv-code-muted: #5c6370;
+  --tv-code-selected: #add6ff66;
+  --tv-code-annotation: #2563eb;
+}
+
+.source-code.tv-code-source .source-line {
+  min-height: 24px;
+  width: max-content;
+  min-width: 100%;
+  border-left: 2px solid transparent;
+  color: inherit;
+  background: transparent;
+}
+
+.source-code.tv-code-source .source-line.annotated-line {
+  border-left-color: var(--tv-code-annotation);
+  background: transparent;
+}
+
+.source-code.tv-code-source .source-line.selected-line {
+  background: var(--tv-code-selected);
+  outline: 1px solid var(--tv-code-selected);
+  outline-offset: -1px;
+}
+
+.source-code.tv-code-source .source-line code {
+  display: block;
+  flex: 1;
+  font: inherit;
+  color: inherit;
+  white-space: pre;
+  padding-right: 22px;
+}
+
+.source-code.tv-code-source .line-number {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: 0 0 44px;
+  width: 44px;
+  padding: 0 10px 0 0;
+  color: var(--tv-code-muted);
+  font: inherit;
+  background: #1e1e1e;
+}
+
+.source-code.tv-code-source[data-source-theme='light'] .line-number {
+  background: #fff;
+}
+
+.source-code.tv-code-source .line-number:hover {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.source-code.tv-code-source .tv-source-tag {
+  /* Do not reuse semantic chip palettes: all decoration colors come from the manifest. */
+  box-decoration-break: clone;
+}
+
+.source-code.tv-code-source .source-annotation-dot {
+  height: 24px;
+  flex: 0 0 24px;
+  position: sticky;
+  right: 0;
+  color: var(--tv-code-annotation);
+  background: #1e1e1e;
+}
+
+.source-code.tv-code-source[data-source-theme='light'] .source-annotation-dot {
+  background: #fff;
+}
+
+.source-code.tv-code-source .source-annotation-dot span {
+  background: var(--tv-code-annotation);
+}
+
+.source-code.tv-code-source:focus-visible,
+.source-code.tv-code-source button:focus-visible {
+  outline: 2px solid var(--tv-code-annotation);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source-code.tv-code-source {
+    scroll-behavior: auto;
+  }
+}

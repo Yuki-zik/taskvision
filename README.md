@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.6.0_preview-3B82F6?style=flat-square" alt="Version 3.6.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.7.0_preview-3B82F6?style=flat-square" alt="Version 3.7.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -37,6 +37,14 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.7 preview: independent projects, personal layouts, source syntax and light/dark
+
+The Web workspace can register an explicitly chosen local Git project root and switch among approved roots. Each browser tab may inspect a different project; source, Review, knowledge, pending changes and layout preferences are scoped separately. Approved paths and user preferences stay in a private user directory, not Git or the Agent knowledge database.
+
+Appearance controls select light, dark or system theme. Navigation is collapsible/resizable; the inspector can dock left, right or bottom and supports mouse/keyboard splitters. Layout widths, graph node positions and camera persist across reloads and local server ports.
+
+Lazy TextMate/Shiki provides code syntax alongside real TaskVision manifest-derived annotation styles. Initial project sessions launched by the VS Code extension can inherit effective user color settings; other browsers/projects fall back to manifest defaults. Pixel-exact editor parity for arbitrary VS Code ThemeColor is not claimed. See [workspace guide](workspace/README.md).
 
 ## 3.6 preview: Graph Studio
 

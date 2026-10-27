@@ -1,0 +1,1140 @@
+/* Load after studio-theme.css. Original styles.css supplies the light foundation;
+   these resolved-theme overrides preserve Studio geometry and cover its surfaces.
+   Syntax-token colors and TaskVision source decorations belong to code-source.css. */
+html[data-theme='light'] {
+  color-scheme: light;
+  --rail: #f1f5fa;
+  --paper: #f7f9fc;
+  --ink: #202e42;
+  --muted: #526278;
+  --line: #c9d3e0;
+  --teal: #175da8;
+  --studio-canvas: #edf2f8;
+  --studio-surface: #ffffff;
+  --studio-elevated: #e7eef7;
+  --studio-border: #b5c3d5;
+  --studio-fg: #202e42;
+  --studio-secondary: #526278;
+  --studio-hover: #e3ebf6;
+  --studio-accent: #175da8;
+  --studio-accent-bg: #dceafd;
+  --studio-accent-border: #7095c2;
+  --studio-primary: #2163ad;
+  --studio-primary-hover: #174f90;
+  --studio-on-primary: #ffffff;
+  --studio-success: #176148;
+  --studio-success-bg: #e1f2eb;
+  --studio-success-border: #8bbbaa;
+  --studio-purple: #63409b;
+  --studio-purple-bg: #efe7fa;
+  --studio-purple-border: #b49cda;
+  --studio-warning: #805016;
+  --studio-warning-bg: #fff1dc;
+  --studio-warning-border: #c7a16a;
+  --studio-danger: #a1334c;
+  --studio-danger-bg: #fce8ed;
+  --studio-danger-border: #cf98a6;
+  --studio-focus: #175da8;
+  --studio-scrollbar: #77879c;
+  --studio-shadow: 0 8px 24px #20334f1a;
+  --studio-minimap-mask: #e7eef7b3;
+}
+
+html[data-theme='light'] body {
+  background: var(--paper);
+}
+html[data-theme='light'] ::selection {
+  background: var(--studio-accent-bg);
+  color: var(--ink);
+}
+html[data-theme='light'] * {
+  scrollbar-color: var(--studio-scrollbar) transparent;
+}
+html[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background-color: var(--studio-scrollbar);
+}
+
+/* Keep the measured Studio layout, legend and responsive behavior in both modes. */
+html[data-theme='light'] .studio-app {
+  grid-template-columns: 184px minmax(0, 1fr);
+}
+html[data-theme='light'] .studio-app .sidebar {
+  padding: 22px 12px 0;
+}
+html[data-theme='light'] .studio-app .brand {
+  gap: 10px;
+  padding: 0 8px 25px;
+  font-weight: 650;
+}
+html[data-theme='light'] .studio-app .brand-mark {
+  border-radius: 9px;
+}
+html[data-theme='light'] .studio-app .brand small {
+  letter-spacing: 0;
+  font-size: 11px;
+}
+html[data-theme='light'] .studio-app .rail-project {
+  border-radius: 9px;
+  margin-bottom: 20px;
+}
+html[data-theme='light'] .studio-app .project-monogram {
+  border-radius: 6px;
+}
+html[data-theme='light'] .studio-app .rail-project strong {
+  font-size: 12px;
+}
+html[data-theme='light'] .studio-app .primary-nav {
+  gap: 6px;
+}
+html[data-theme='light'] .studio-app .primary-nav button {
+  padding: 11px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+html[data-theme='light'] .studio-app .rail-section-title {
+  font-size: 10px;
+}
+html[data-theme='light'] .studio-app .topbar {
+  min-height: 66px;
+  padding: 12px 24px;
+}
+html[data-theme='light'] .studio-app .topbar h1 {
+  font-size: 18px;
+  font-weight: 630;
+  letter-spacing: -0.02em;
+}
+html[data-theme='light'] .studio-app .button,
+html[data-theme='light'] .studio-app .icon-button {
+  border-radius: 7px;
+}
+html[data-theme='light'] .studio-app .topbar-actions {
+  gap: 8px;
+}
+html[data-theme='light'] .studio-app .filterbar {
+  padding: 10px 24px;
+  min-height: 54px;
+}
+html[data-theme='light'] .studio-app .search-field {
+  border-radius: 7px;
+}
+html[data-theme='light'] .studio-app .search-field input {
+  font-size: 12px;
+}
+html[data-theme='light'] .studio-app .graph-workspace,
+html[data-theme='light'] .studio-app .flow-container,
+html[data-theme='light'] .studio-app .react-flow {
+  background: var(--studio-canvas);
+}
+html[data-theme='light'] .studio-app .graph-breadcrumb {
+  min-height: 43px;
+  padding: 8px 22px;
+}
+html[data-theme='light'] .studio-app .breadcrumb-trail button {
+  border-radius: 5px;
+}
+html[data-theme='light'] .studio-app .breadcrumb-trail button.current {
+  font-weight: 600;
+}
+html[data-theme='light'] .studio-app .graph-scope-meta {
+  font-size: 11px;
+}
+html[data-theme='light'] .studio-app .graph-view-options {
+  padding: 7px 22px;
+  min-height: 42px;
+}
+html[data-theme='light'] .studio-app .scope-switch button,
+html[data-theme='light'] .studio-app .detail-switch button {
+  border-radius: 5px;
+}
+html[data-theme='light'] .studio-app .detail-switch {
+  border-radius: 7px;
+}
+html[data-theme='light'] .studio-app .relation-toolbar {
+  padding: 8px 22px;
+  gap: 12px;
+}
+html[data-theme='light'] .studio-app .relation-mode-switch {
+  border-radius: 6px;
+}
+html[data-theme='light'] .studio-app .relation-reading {
+  font-size: 11px;
+}
+html[data-theme='light'] .studio-app .relation-toggles {
+  margin-left: auto;
+}
+html[data-theme='light'] .studio-app .relation-toggles button {
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+html[data-theme='light'] .studio-app .graph-actions {
+  border-radius: 8px;
+  padding: 5px;
+}
+html[data-theme='light'] .studio-app .canvas-button {
+  border-radius: 5px;
+}
+html[data-theme='light'] .studio-app .graph-actions .icon-button {
+  border: 0;
+}
+html[data-theme='light'] .studio-app .zoom-level {
+  font-size: 11px;
+}
+html[data-theme='light'] .studio-app .react-flow__controls {
+  border-radius: 8px;
+}
+html[data-theme='light'] .studio-app .react-flow__minimap {
+  border-radius: 8px;
+}
+html[data-theme='light'] .studio-app .react-flow__attribution {
+  font-size: 9px;
+}
+html[data-theme='light'] .studio-app .canvas-footer {
+  min-height: 30px;
+  font-size: 10px;
+}
+html[data-theme='light'] .studio-app input,
+html[data-theme='light'] .studio-app textarea,
+html[data-theme='light'] .studio-app select {
+  border-radius: 6px;
+}
+html[data-theme='light'] .studio-app .tag-chip,
+html[data-theme='light'] .studio-tag {
+  border-radius: 4px;
+  font: 550 10px/17px var(--font);
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+html[data-theme='light'] .studio-app .relation-details {
+  border-radius: 10px;
+}
+html[data-theme='light']
+  .studio-app
+  .graph-workspace
+  .react-flow__edge:focus-visible
+  .react-flow__edge-path {
+  filter: none;
+}
+html[data-theme='light']
+  .studio-app
+  .graph-workspace
+  .react-flow__node.tv-wire-endpoint
+  .graph-node {
+  outline-offset: 2px;
+}
+html[data-theme='light'] .studio-legend-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  position: relative;
+  flex-shrink: 0;
+}
+html[data-theme='light'] .studio-wire-switch {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 7px;
+  padding: 3px;
+}
+html[data-theme='light'] .studio-wire-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  min-height: 27px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+html[data-theme='light'] .studio-control-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+}
+html[data-theme='light'] .studio-legend-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 292px;
+  max-width: calc(100vw - 32px);
+  max-height: min(560px, 70vh);
+  overflow: auto;
+  z-index: 80;
+  padding: 16px;
+  border-radius: 10px;
+}
+html[data-theme='light'] .studio-legend-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+html[data-theme='light'] .studio-legend-panel header strong {
+  font-size: 13px;
+}
+html[data-theme='light'] .studio-legend-panel header button {
+  padding: 4px;
+  border-radius: 5px;
+}
+html[data-theme='light'] .studio-legend-direction {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+}
+html[data-theme='light'] .studio-legend-note {
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 8px;
+}
+html[data-theme='light'] .studio-legend-section-title {
+  padding-top: 11px;
+  margin-top: 13px;
+  margin-bottom: 7px;
+  font-size: 11px;
+  font-weight: 650;
+}
+html[data-theme='light'] .studio-legend-relation {
+  display: grid;
+  grid-template-columns: 38px 62px 1fr;
+  align-items: center;
+  gap: 5px;
+  min-height: 29px;
+  font-size: 11px;
+}
+html[data-theme='light'] .studio-legend-relation strong {
+  font-weight: 550;
+}
+html[data-theme='light'] .studio-legend-relation > span {
+  font-size: 10px;
+}
+html[data-theme='light'] .studio-legend-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+html[data-theme='light'] .studio-legend-warning {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+}
+html[data-theme='light'] .studio-route-caution {
+  font-size: 10px;
+  margin-left: auto;
+}
+@media (max-width: 1280px) {
+  html[data-theme='light'] .studio-app {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+  html[data-theme='light'] .studio-app .topbar,
+  html[data-theme='light'] .studio-app .filterbar {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+  html[data-theme='light'] .studio-app .relation-reading {
+    display: none;
+  }
+  html[data-theme='light'] .studio-app .relation-toolbar {
+    padding: 8px 16px;
+    gap: 8px;
+  }
+  html[data-theme='light'] .studio-app .relation-toggles {
+    gap: 3px;
+  }
+}
+@media (max-width: 800px) {
+  html[data-theme='light'] .studio-app {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+  html[data-theme='light'] .studio-app .sidebar {
+    padding: 16px 7px 0;
+  }
+  html[data-theme='light'] .studio-app .topbar {
+    padding: 10px 12px;
+  }
+  html[data-theme='light'] .studio-app .relation-summary-legend {
+    display: none;
+  }
+  html[data-theme='light'] .studio-app .graph-view-options {
+    padding: 7px 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  html[data-theme='light'] .studio-app .relation-toolbar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    min-height: 43px;
+  }
+  html[data-theme='light'] .studio-wire-switch button {
+    padding: 2px 5px;
+  }
+  html[data-theme='light'] .studio-app .detail-switch {
+    margin-left: auto;
+  }
+}
+@media (max-width: 600px) {
+  html[data-theme='light'] .studio-app {
+    display: flex;
+  }
+  html[data-theme='light'] .studio-app .sidebar {
+    min-width: 50px;
+    max-width: 50px;
+  }
+  html[data-theme='light'] .studio-app .topbar h1 {
+    font-size: 15px;
+  }
+  html[data-theme='light'] .studio-app .topbar-actions .button {
+    padding: 6px 8px;
+  }
+  html[data-theme='light'] .studio-app .topbar-actions .button span,
+  html[data-theme='light'] .studio-app .graph-context-toggle {
+    display: none;
+  }
+  html[data-theme='light'] .studio-app .filterbar {
+    padding: 8px;
+    gap: 7px;
+  }
+  html[data-theme='light'] .studio-app .graph-breadcrumb {
+    padding: 7px 10px;
+  }
+  html[data-theme='light'] .studio-app .graph-scope-meta {
+    display: none;
+  }
+  html[data-theme='light'] .studio-wire-switch svg {
+    width: 25px;
+  }
+  html[data-theme='light'] .studio-wire-switch button {
+    font-size: 10px;
+    gap: 2px;
+  }
+  html[data-theme='light'] .studio-app .graph-actions {
+    right: 5px;
+    margin: 6px;
+  }
+  html[data-theme='light'] .studio-legend-panel {
+    width: 265px;
+    max-width: calc(100vw - 67px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme='light'] .studio-app *,
+  html[data-theme='light'] .studio-legend-panel {
+    scroll-behavior: auto;
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}
+html[data-theme='light'] .studio-app .readable-mode {
+  border-radius: 5px;
+}
+
+/* Shell and navigation */
+html[data-theme='light'] .studio-app,
+html[data-theme='light'] .studio-app .workbench,
+html[data-theme='light'] .studio-app .workspace-stage,
+html[data-theme='light'] .studio-app .primary-pane,
+html[data-theme='light'] .studio-app .content-view,
+html[data-theme='light'] .studio-app .reviews-view,
+html[data-theme='light'] .studio-app .tasks-view {
+  background: var(--paper);
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .sidebar {
+  background: var(--rail);
+  color: var(--studio-secondary);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .brand,
+html[data-theme='light'] .studio-app .rail-project strong,
+html[data-theme='light'] .studio-app .topbar h1 {
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .brand-mark,
+html[data-theme='light'] .studio-app .project-monogram {
+  background: var(--studio-accent-bg);
+  color: var(--studio-accent);
+}
+html[data-theme='light'] .studio-app .rail-project {
+  background: var(--studio-surface);
+  border: 1px solid var(--line);
+}
+html[data-theme='light'] .studio-app .brand small,
+html[data-theme='light'] .studio-app .rail-project span,
+html[data-theme='light'] .studio-app .rail-section-title,
+html[data-theme='light'] .studio-app .connection-status,
+html[data-theme='light'] .studio-app .quick-files svg {
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .primary-nav button,
+html[data-theme='light'] .studio-app .quick-files button,
+html[data-theme='light'] .studio-app .rail-bottom > button {
+  color: var(--studio-secondary);
+  background: transparent;
+}
+html[data-theme='light'] .studio-app .primary-nav button:hover,
+html[data-theme='light'] .studio-app .quick-files button:hover,
+html[data-theme='light'] .studio-app .rail-bottom > button:hover {
+  color: var(--ink);
+  background: var(--studio-hover);
+}
+html[data-theme='light'] .studio-app .primary-nav button.active,
+html[data-theme='light'] .studio-app .primary-nav button.active svg {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+}
+html[data-theme='light'] .studio-app .primary-nav b {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+}
+html[data-theme='light'] .studio-app .rail-bottom {
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .connection-dot {
+  background: var(--studio-success);
+}
+html[data-theme='light'] .studio-app .connection-dot.disconnected {
+  background: var(--studio-warning);
+}
+html[data-theme='light'] .studio-app .connection-dot.connecting {
+  background: var(--studio-secondary);
+}
+
+/* Controls, including legacy form selectors with higher specificity. */
+html[data-theme='light'] .studio-app .topbar,
+html[data-theme='light'] .studio-app .filterbar {
+  background: var(--studio-surface);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .workspace-label {
+  color: var(--studio-secondary);
+  background: var(--rail);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .button,
+html[data-theme='light'] .studio-app .icon-button {
+  color: var(--ink);
+  background: var(--studio-surface);
+  border: 1px solid var(--studio-border);
+}
+html[data-theme='light'] .studio-app .button:hover,
+html[data-theme='light'] .studio-app .icon-button:hover {
+  background: var(--studio-hover);
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .studio-app .button.primary {
+  background: var(--studio-primary);
+  border-color: var(--studio-primary);
+  color: var(--studio-on-primary);
+}
+html[data-theme='light'] .studio-app .button.primary:hover {
+  background: var(--studio-primary-hover);
+  border-color: var(--studio-primary-hover);
+}
+html[data-theme='light'] .studio-app input:not([type='checkbox']):not([type='file']),
+html[data-theme='light'] .studio-app textarea,
+html[data-theme='light'] .studio-app select {
+  background: var(--studio-surface);
+  color: var(--ink);
+  border-color: var(--studio-border);
+}
+html[data-theme='light'] .studio-app input::placeholder,
+html[data-theme='light'] .studio-app textarea::placeholder {
+  color: var(--studio-secondary);
+  opacity: 1;
+}
+html[data-theme='light'] .studio-app .search-field {
+  background: var(--rail);
+  color: var(--studio-secondary);
+  border: 1px solid var(--studio-border);
+}
+html[data-theme='light'] .studio-app .search-field:focus-within {
+  border-color: var(--studio-focus);
+  box-shadow: 0 0 0 2px var(--studio-accent-bg);
+}
+html[data-theme='light']
+  .studio-app
+  .filterbar
+  .search-field
+  input:not([type='checkbox']):not([type='file']) {
+  background: transparent;
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .search-field kbd {
+  color: var(--studio-secondary);
+  background: var(--studio-surface);
+  border-color: var(--studio-border);
+}
+html[data-theme='light'] .studio-app .tag-filters button {
+  color: var(--studio-secondary);
+  background: transparent;
+  border-color: transparent;
+}
+html[data-theme='light'] .studio-app .tag-filters button:hover {
+  color: var(--studio-accent);
+  background: var(--studio-hover);
+}
+html[data-theme='light'] .studio-app .tag-filters button.selected,
+html[data-theme='light'] .studio-app .tag-filters button[aria-pressed='true'] {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .studio-app .tag-filters .hotspot-filter,
+html[data-theme='light'] .studio-app .tag-filters button.hotspot-filter.selected {
+  color: var(--studio-warning);
+  border-color: var(--studio-warning-border);
+}
+html[data-theme='light'] .studio-app .tag-filters button.hotspot-filter.selected {
+  background: var(--studio-warning-bg);
+}
+
+/* Panels, source fallback, tasks and review evidence */
+html[data-theme='light'] .studio-app .detail-slot,
+html[data-theme='light'] .studio-app .inspector,
+html[data-theme='light'] .studio-app .editor-pane,
+html[data-theme='light'] .studio-app .transfer-panel,
+html[data-theme='light'] .studio-app .knowledge-entry,
+html[data-theme='light'] .studio-app .task-card,
+html[data-theme='light'] .studio-app .review-detail,
+html[data-theme='light'] .studio-app .project-detail,
+html[data-theme='light'] .studio-app .file-difference {
+  background: var(--studio-surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .panel-heading,
+html[data-theme='light'] .studio-app .inspector-tabs,
+html[data-theme='light'] .studio-app .section-label,
+html[data-theme='light'] .studio-app .content-footer,
+html[data-theme='light'] .studio-app .content-view > header,
+html[data-theme='light'] .studio-app .diff-file-heading,
+html[data-theme='light'] .studio-app .diff-file-tabs,
+html[data-theme='light'] .studio-app .diff-hashes,
+html[data-theme='light'] .studio-app .review-evidence,
+html[data-theme='light'] .studio-app .review-metadata,
+html[data-theme='light'] .studio-app .human-decision {
+  background: var(--rail);
+  color: var(--studio-secondary);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .panel-heading h2,
+html[data-theme='light'] .studio-app .panel-heading strong,
+html[data-theme='light'] .studio-app .entry-title,
+html[data-theme='light'] .studio-app .source-heading,
+html[data-theme='light'] .studio-app .view-heading h2,
+html[data-theme='light'] .studio-app .scope-heading h3,
+html[data-theme='light'] .studio-app .file-detail-heading h3,
+html[data-theme='light'] .studio-app .task-main h3,
+html[data-theme='light'] .studio-app .task-form h3,
+html[data-theme='light'] .studio-app .task-group h2,
+html[data-theme='light'] .studio-app .review-title h3,
+html[data-theme='light'] .studio-app .human-decision h4,
+html[data-theme='light'] .studio-app .empty-state h3 {
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .entry-body,
+html[data-theme='light'] .studio-app .entry-meta > span:not(.tag-chip),
+html[data-theme='light'] .studio-app .entry-status,
+html[data-theme='light'] .studio-app .entry-bottom,
+html[data-theme='light'] .studio-app .form-intro,
+html[data-theme='light'] .studio-app .field-help,
+html[data-theme='light'] .studio-app .revision-note > span,
+html[data-theme='light'] .studio-app .task-meta,
+html[data-theme='light'] .studio-app .task-dependencies,
+html[data-theme='light'] .studio-app .task-main > p,
+html[data-theme='light'] .studio-app .review-title > p,
+html[data-theme='light'] .studio-app .review-switcher small,
+html[data-theme='light'] .studio-app .review-evidence li,
+html[data-theme='light'] .studio-app .review-evidence pre,
+html[data-theme='light'] .studio-app .project-detail p,
+html[data-theme='light'] .studio-app .project-detail code,
+html[data-theme='light'] .studio-app .project-detail > span,
+html[data-theme='light'] .studio-app .project-detail .project-introduction,
+html[data-theme='light'] .studio-app .section-label span,
+html[data-theme='light'] .studio-app .index-footnote,
+html[data-theme='light'] .studio-app .index-footnote span,
+html[data-theme='light'] .studio-app .scope-heading p,
+html[data-theme='light'] .studio-app .file-detail-heading p,
+html[data-theme='light'] .studio-app .source-version,
+html[data-theme='light'] .studio-app .view-heading p,
+html[data-theme='light'] .studio-app .symbol-list small,
+html[data-theme='light'] .studio-app .dependency-picker legend,
+html[data-theme='light'] .studio-app .dependency-picker small,
+html[data-theme='light'] .studio-app .coordination-note,
+html[data-theme='light'] .studio-app .human-decision > p,
+html[data-theme='light'] .studio-app .resolved-review p,
+html[data-theme='light'] .studio-app .resolved-review small,
+html[data-theme='light'] .studio-app .transfer-section > p,
+html[data-theme='light'] .studio-app .import-preview dt,
+html[data-theme='light'] .studio-app .empty-state,
+html[data-theme='light'] .studio-app .empty-state p,
+html[data-theme='light'] .studio-app .muted {
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .editor-form label,
+html[data-theme='light'] .studio-app .task-form label,
+html[data-theme='light'] .studio-app .human-decision label,
+html[data-theme='light'] .studio-app .import-preview dd {
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .inspector-tabs button,
+html[data-theme='light'] .studio-app .review-switcher button,
+html[data-theme='light'] .studio-app .diff-file-tabs button {
+  color: var(--studio-secondary);
+  background: transparent;
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .inspector-tabs button[aria-selected='true'],
+html[data-theme='light'] .studio-app .review-switcher button.selected,
+html[data-theme='light'] .studio-app .diff-file-tabs button[aria-selected='true'] {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .studio-app .diff-file-tabs button span {
+  color: inherit;
+}
+html[data-theme='light'] .studio-app .source-scroll,
+html[data-theme='light'] .studio-app .source-code,
+html[data-theme='light'] .studio-app .diff-code {
+  background: var(--studio-surface);
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .source-line,
+html[data-theme='light'] .studio-app .source-line code,
+html[data-theme='light'] .studio-app .diff-line > code {
+  color: var(--ink);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .source-line.annotated-line {
+  background: var(--rail);
+}
+html[data-theme='light'] .studio-app .source-line.selected-line {
+  background: var(--studio-accent-bg);
+}
+html[data-theme='light'] .studio-app .line-number,
+html[data-theme='light'] .studio-app .diff-line > span,
+html[data-theme='light'] .studio-app .diff-line > b {
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .line-number:hover {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+}
+html[data-theme='light'] .studio-app .diff-line.diff-add,
+html[data-theme='light'] .studio-app .diff-line.diff-add > code,
+html[data-theme='light'] .studio-app .diff-line.diff-add > b,
+html[data-theme='light'] .studio-app .diff-line.diff-add > span {
+  color: var(--studio-success);
+  background: var(--studio-success-bg);
+}
+html[data-theme='light'] .studio-app .diff-line.diff-remove,
+html[data-theme='light'] .studio-app .diff-line.diff-remove > code,
+html[data-theme='light'] .studio-app .diff-line.diff-remove > b,
+html[data-theme='light'] .studio-app .diff-line.diff-remove > span {
+  color: var(--studio-danger);
+  background: var(--studio-danger-bg);
+}
+html[data-theme='light'] .studio-app .module-file-list button,
+html[data-theme='light'] .studio-app .symbol-list button,
+html[data-theme='light'] .studio-app .path-link,
+html[data-theme='light'] .studio-app .text-button,
+html[data-theme='light'] .studio-app .add-guidance,
+html[data-theme='light'] .studio-app .diff-file-heading > button {
+  color: var(--studio-accent);
+}
+html[data-theme='light'] .studio-app .module-file-list button:hover,
+html[data-theme='light'] .studio-app .symbol-list button:hover,
+html[data-theme='light'] .studio-app .task-paths button,
+html[data-theme='light'] .studio-app .task-status-icon {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+}
+html[data-theme='light'] .studio-app .notice,
+html[data-theme='light'] .studio-app .help-strip,
+html[data-theme='light'] .studio-app .help-strip strong,
+html[data-theme='light'] .studio-app .help-strip p {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .studio-app .notice.danger,
+html[data-theme='light'] .studio-app .form-error {
+  color: var(--studio-danger);
+  background: var(--studio-danger-bg);
+  border-color: var(--studio-danger-border);
+}
+html[data-theme='light'] .studio-app .toast {
+  background: var(--studio-primary);
+  color: var(--studio-on-primary);
+  border-color: var(--studio-primary);
+}
+html[data-theme='light'] .studio-app .toast svg {
+  color: inherit;
+}
+html[data-theme='light'] .studio-app .global-notice,
+html[data-theme='light'] .studio-app .proposal-actions,
+html[data-theme='light'] .studio-app .review-history-banner,
+html[data-theme='light'] .studio-app .review-missing-baseline,
+html[data-theme='light'] .studio-app .review-version-track code {
+  color: var(--studio-warning);
+  background: var(--studio-warning-bg);
+  border-color: var(--studio-warning-border);
+}
+html[data-theme='light'] .studio-app .proposal-actions > span,
+html[data-theme='light'] .studio-app .proposal-actions button,
+html[data-theme='light'] .studio-app .review-version-track,
+html[data-theme='light'] .studio-app .review-missing-baseline strong,
+html[data-theme='light'] .studio-app .review-missing-baseline svg,
+html[data-theme='light'] .studio-app .entry-meta .entry-status.attention {
+  color: var(--studio-warning);
+}
+html[data-theme='light'] .studio-app .status-doing,
+html[data-theme='light'] .studio-app .status-done {
+  background: var(--studio-success-bg);
+  color: var(--studio-success);
+}
+html[data-theme='light'] .studio-app .status-todo {
+  background: var(--studio-elevated);
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .status-review,
+html[data-theme='light'] .studio-app .review-state {
+  background: var(--studio-warning-bg);
+  color: var(--studio-warning);
+}
+html[data-theme='light'] .studio-app .review-state-accepted {
+  background: var(--studio-success-bg);
+  color: var(--studio-success);
+}
+html[data-theme='light'] .studio-app .review-state-changes-requested {
+  background: var(--studio-danger-bg);
+  color: var(--studio-danger);
+}
+html[data-theme='light'] .studio-app .status-dot.status-doing,
+html[data-theme='light'] .studio-app .status-dot.status-done {
+  background: var(--studio-success);
+}
+html[data-theme='light'] .studio-app .status-dot.status-review {
+  background: var(--studio-warning);
+}
+html[data-theme='light'] .studio-app .status-dot.status-todo {
+  background: var(--studio-secondary);
+}
+
+/* Graph canvas, toolbar, legend and relation evidence */
+html[data-theme='light'] .studio-app .graph-workspace,
+html[data-theme='light'] .studio-app .flow-container,
+html[data-theme='light'] .studio-app .react-flow,
+html[data-theme='light'] .studio-app .graph-empty,
+html[data-theme='light'] .studio-app .graph-empty .empty-state {
+  background: var(--studio-canvas);
+  color: var(--studio-secondary);
+}
+/* React Flow may retain its own dark class; the resolved document theme wins. */
+html[data-theme='light'] .studio-app .react-flow {
+  --xy-background-color: var(--studio-canvas);
+  --xy-background-color-default: var(--studio-canvas);
+  --xy-background-pattern-color: var(--studio-border);
+  --xy-background-pattern-dots-color-default: var(--studio-border);
+  --xy-edge-stroke-default: var(--studio-secondary);
+  --xy-controls-button-background-color: var(--studio-surface);
+  --xy-controls-button-background-color-hover: var(--studio-hover);
+  --xy-controls-button-color: var(--ink);
+  --xy-controls-button-border-color: var(--line);
+  --xy-minimap-background-color: var(--studio-surface);
+  --xy-minimap-mask-background-color: var(--studio-minimap-mask);
+  --xy-node-boxshadow-hover-default: none;
+}
+html[data-theme='light'] .studio-app .graph-breadcrumb,
+html[data-theme='light'] .studio-app .graph-view-options,
+html[data-theme='light'] .studio-app .relation-toolbar,
+html[data-theme='light'] .studio-app .canvas-footer {
+  color: var(--studio-secondary);
+  background: var(--rail);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .breadcrumb-trail,
+html[data-theme='light'] .studio-app .breadcrumb-trail > span,
+html[data-theme='light'] .studio-app .breadcrumb-trail button,
+html[data-theme='light'] .studio-app .graph-scope-meta,
+html[data-theme='light'] .studio-app .scope-switch button,
+html[data-theme='light'] .studio-app .scope-switch button > span,
+html[data-theme='light'] .studio-app .detail-switch button,
+html[data-theme='light'] .studio-app .relation-reading,
+html[data-theme='light'] .studio-app .relation-summary-legend,
+html[data-theme='light'] .studio-app .zoom-level {
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .breadcrumb-trail button.current {
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .breadcrumb-trail button:hover,
+html[data-theme='light'] .studio-app .scope-switch button:hover,
+html[data-theme='light'] .studio-app .detail-switch button:hover,
+html[data-theme='light'] .studio-app .canvas-button:hover,
+html[data-theme='light'] .studio-app .canvas-button.active {
+  background: var(--studio-hover);
+  color: var(--studio-accent);
+}
+html[data-theme='light'] .studio-app .scope-switch button.active,
+html[data-theme='light'] .studio-app .detail-switch button.active {
+  background: var(--studio-accent-bg);
+  color: var(--studio-accent);
+}
+html[data-theme='light'] .studio-app .detail-switch,
+html[data-theme='light'] .studio-app .relation-mode-switch,
+html[data-theme='light'] .studio-wire-switch {
+  background: var(--studio-surface);
+  border-color: var(--studio-border);
+}
+html[data-theme='light'] .studio-app .relation-mode-switch button,
+html[data-theme='light'] .studio-app .relation-toggles button,
+html[data-theme='light'] .studio-wire-switch button {
+  color: var(--studio-secondary);
+  background: transparent;
+  border-color: var(--studio-border);
+}
+html[data-theme='light'] .studio-app .relation-mode-switch button[aria-pressed='true'],
+html[data-theme='light'] .studio-app .relation-toggles button[aria-pressed='true'],
+html[data-theme='light'] .studio-wire-switch button[aria-pressed='true'] {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+}
+html[data-theme='light'] .studio-wire-switch button:hover {
+  color: var(--studio-accent);
+  background: var(--studio-hover);
+}
+html[data-theme='light'] .studio-app .relation-toggles button[aria-pressed='false'] {
+  color: var(--studio-secondary);
+  background: transparent;
+  border-style: dashed;
+  opacity: 1;
+}
+html[data-theme='light'] .studio-app .relation-toggles button > span {
+  color: var(--studio-secondary);
+  background: var(--studio-elevated);
+}
+html[data-theme='light'] .studio-app .impact-toolbar {
+  background: var(--studio-elevated);
+  border-color: var(--studio-border);
+}
+html[data-theme='light'] .studio-app .impact-target,
+html[data-theme='light'] .studio-app .impact-summary,
+html[data-theme='light'] .studio-app .impact-toolbar button {
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .impact-toolbar button.active,
+html[data-theme='light'] .studio-app .impact-toolbar button[aria-pressed='true'] {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+}
+html[data-theme='light'] .studio-app .graph-actions,
+html[data-theme='light'] .studio-app .react-flow__controls,
+html[data-theme='light'] .studio-app .react-flow__minimap,
+html[data-theme='light'] .studio-app .relation-details,
+html[data-theme='light'] .studio-legend-panel {
+  color: var(--ink);
+  background: var(--studio-surface);
+  border-color: var(--studio-border);
+  box-shadow: var(--studio-shadow);
+}
+html[data-theme='light'] .studio-app .canvas-button,
+html[data-theme='light'] .studio-app .react-flow__controls-button {
+  color: var(--studio-secondary);
+  fill: currentColor;
+}
+html[data-theme='light'] .studio-app .graph-actions .icon-button {
+  background: transparent;
+  border: 0;
+}
+html[data-theme='light'] .studio-app .react-flow__controls-button {
+  background: var(--studio-surface);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .react-flow__controls-button:hover {
+  background: var(--studio-hover);
+}
+html[data-theme='light'] .studio-app .react-flow__attribution,
+html[data-theme='light'] .studio-app .react-flow__attribution a {
+  background: var(--studio-canvas);
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .layout-status,
+html[data-theme='light'] .studio-app .readable-mode {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .studio-app .relation-details h2,
+html[data-theme='light'] .studio-app .relation-details h3,
+html[data-theme='light'] .studio-app .relation-details strong,
+html[data-theme='light'] .studio-legend-panel header strong,
+html[data-theme='light'] .studio-legend-section-title,
+html[data-theme='light'] .studio-legend-relation strong {
+  color: var(--ink);
+}
+html[data-theme='light'] .studio-app .relation-details p,
+html[data-theme='light'] .studio-app .relation-direction,
+html[data-theme='light'] .studio-app .relation-direction > span,
+html[data-theme='light'] .studio-app .evidence-meta,
+html[data-theme='light'] .studio-app .relation-constraint,
+html[data-theme='light'] .studio-app .relation-kind,
+html[data-theme='light'] .studio-app .relation-evidence small,
+html[data-theme='light'] .studio-legend-note,
+html[data-theme='light'] .studio-legend-relation > span {
+  color: var(--studio-secondary);
+}
+html[data-theme='light'] .studio-app .relation-counts span,
+html[data-theme='light'] .studio-app .relation-evidence,
+html[data-theme='light'] .studio-app .evidence-item,
+html[data-theme='light'] .studio-legend-panel header button {
+  color: var(--studio-secondary);
+  background: var(--rail);
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-app .evidence-source,
+html[data-theme='light'] .studio-app .evidence-target,
+html[data-theme='light'] .studio-legend-direction {
+  color: var(--studio-accent);
+}
+html[data-theme='light'] .studio-control-divider {
+  background: var(--studio-border);
+}
+html[data-theme='light'] .studio-legend-section-title {
+  border-color: var(--line);
+}
+html[data-theme='light'] .studio-legend-warning {
+  color: var(--studio-warning);
+  background: var(--studio-warning-bg);
+}
+html[data-theme='light'] .studio-route-caution {
+  color: var(--studio-warning);
+}
+
+/* Node variables must be set on each card/popover: node-kit.css defines them locally.
+   Popovers may live outside .studio-app, so scope them to the document theme. */
+html[data-theme='light'] .tv-node-kit.graph-node,
+html[data-theme='light'] .tv-node-kit.tv-node-detail,
+html[data-theme='light'] .tv-node-kit.tv-node-actions {
+  --node-surface: var(--studio-surface);
+  --node-header: var(--rail);
+  --node-border: var(--studio-border);
+  --node-text: var(--ink);
+  --node-secondary: var(--studio-secondary);
+  --node-cyan: var(--studio-accent);
+}
+html[data-theme='light'] .tv-node-kit.graph-node:hover {
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .tv-node-kit.graph-node .node-icon,
+html[data-theme='light'] .tv-node-kit.graph-node.file-node .node-icon,
+html[data-theme='light'] .tv-node-kit.graph-node .node-marker,
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-marker {
+  background: var(--studio-elevated);
+  color: var(--studio-accent);
+  border-color: var(--studio-border);
+}
+html[data-theme='light'] .tv-node-kit.graph-node .node-drill:hover,
+html[data-theme='light'] .tv-node-kit.graph-node .node-expand:hover,
+html[data-theme='light'] .tv-node-kit.graph-node .node-expand[aria-expanded='true'],
+html[data-theme='light'] .tv-node-kit.tv-node-actions > button:hover,
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-detail-source:hover {
+  color: var(--studio-accent);
+  background: var(--studio-hover);
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-detail-source {
+  border-color: var(--studio-border);
+}
+html[data-theme='light'] .tv-node-kit.graph-node .node-state[data-state='stale'],
+html[data-theme='light'] .tv-node-kit.tv-node-detail .review-color,
+html[data-theme='light'] .tv-node-kit.graph-node .node-footer .review-color {
+  color: var(--studio-warning);
+}
+html[data-theme='light']
+  .studio-app
+  .graph-workspace
+  .react-flow__node.tv-wire-endpoint
+  .graph-node {
+  outline: 1px solid var(--studio-accent);
+  outline-offset: 2px;
+}
+
+/* The same semantic palette serves knowledge chips, visible facts and legend tags. */
+html[data-theme='light'] .studio-app .tag-core,
+html[data-theme='light'] .studio-tag.core,
+html[data-theme='light'] .tv-node-kit.graph-node .node-marker[data-tag='CORE'],
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-marker[data-tag='CORE'] {
+  color: var(--studio-accent);
+  background: var(--studio-accent-bg);
+  border-color: var(--studio-accent-border);
+}
+html[data-theme='light'] .studio-app .tag-reuse,
+html[data-theme='light'] .studio-tag.reuse,
+html[data-theme='light'] .tv-node-kit.graph-node .node-marker[data-tag='REUSE'],
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-marker[data-tag='REUSE'] {
+  color: var(--studio-success);
+  background: var(--studio-success-bg);
+  border-color: var(--studio-success-border);
+}
+html[data-theme='light'] .studio-app .tag-intent,
+html[data-theme='light'] .studio-tag.intent,
+html[data-theme='light'] .tv-node-kit.graph-node .node-marker[data-tag='INTENT'],
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-marker[data-tag='INTENT'] {
+  color: var(--studio-purple);
+  background: var(--studio-purple-bg);
+  border-color: var(--studio-purple-border);
+}
+html[data-theme='light'] .studio-app .tag-review,
+html[data-theme='light'] .studio-tag.review,
+html[data-theme='light'] .tv-node-kit.graph-node .node-marker[data-tag='REVIEW'],
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-marker[data-tag='REVIEW'] {
+  color: var(--studio-warning);
+  background: var(--studio-warning-bg);
+  border-color: var(--studio-warning-border);
+}
+html[data-theme='light'] .studio-app .tag-todo,
+html[data-theme='light'] .studio-tag.todo,
+html[data-theme='light'] .tv-node-kit.graph-node .node-marker[data-tag='TODO'],
+html[data-theme='light'] .tv-node-kit.tv-node-detail .node-marker[data-tag='TODO'] {
+  color: var(--studio-secondary);
+  background: var(--studio-elevated);
+  border-color: var(--studio-border);
+}
+
+html[data-theme='light'] .studio-app button:focus-visible,
+html[data-theme='light'] .studio-app a:focus-visible,
+html[data-theme='light'] .studio-app input:focus-visible,
+html[data-theme='light'] .studio-app textarea:focus-visible,
+html[data-theme='light'] .studio-app select:focus-visible,
+html[data-theme='light'] .studio-app [tabindex]:focus-visible {
+  outline: 2px solid var(--studio-focus);
+  outline-offset: 3px;
+}
+
+/* Studio-only elements do not have border geometry in the original light base. */
+html[data-theme='light'] .studio-wire-switch,
+html[data-theme='light'] .studio-legend-panel,
+html[data-theme='light'] .studio-app .readable-mode,
+html[data-theme='light'] .studio-tag {
+  border-width: 1px;
+  border-style: solid;
+}
+html[data-theme='light'] .studio-legend-section-title {
+  border-top: 1px solid var(--line);
+}
+
+/* React Flow's prop-driven SVG colors need theme-aware surface colors as well. */
+html[data-theme='light'] .studio-app .react-flow__background-pattern.dots {
+  fill: var(--studio-border);
+}
+html[data-theme='light'] .studio-app .react-flow__minimap-mask {
+  fill: var(--studio-minimap-mask);
+}
+/* Edge labels have inline presentation styles in the shared graph renderer. */
+html[data-theme='light'] .studio-app .react-flow__edge-text {
+  fill: var(--ink) !important;
+}
+html[data-theme='light'] .studio-app .react-flow__edge-textbg {
+  fill: var(--studio-surface) !important;
+}

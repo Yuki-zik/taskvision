@@ -2,7 +2,7 @@
 
 TaskVision retains the inherited Todo Tree MIT notice (Nigel Scott) in LICENSE and licenses/TodoTree-LICENSE.txt. Source: https://github.com/Gruntfuggly/todo-tree.
 
-The workbench uses unmodified open-source packages. License texts shipped in `licenses/` accompany their distributions. No paid React Flow Pro example has been copied. React Flow attribution remains visible.
+The workbench uses open-source packages and a locally adapted official React Flow UI component copy. License texts shipped in `licenses/` accompany their distributions. No paid React Flow Pro example has been copied. React Flow attribution remains visible.
 
 | Component | Purpose | License / source |
 |---|---|---|
@@ -16,6 +16,7 @@ The workbench uses unmodified open-source packages. License texts shipped in `li
 | TypeScript parser 5.9.3 | Pure-JavaScript syntax analysis | Apache-2.0, https://github.com/microsoft/TypeScript/tree/v5.9.3 |
 | MCP TypeScript SDK | Agent protocol | MIT, https://github.com/modelcontextprotocol/typescript-sdk |
 | Zod | Boundary validation | MIT, https://github.com/colinhacks/zod |
+| Shiki / @shikijs/core / @shikijs/engine-javascript | Lazy TextMate syntax coloring in the source inspector | MIT, https://github.com/shikijs/shiki; matching license copies in licenses/ |
 
 TypeScript 7 is a development-time compiler only. Runtime syntax parsing uses the pinned pure-JavaScript package alias `typescript-parser`, so a packaged extension does not require the compiler native binary.
 

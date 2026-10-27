@@ -10,6 +10,13 @@ import {
   isOperation,
 } from '../../../packages/shared/src/schemas.js';
 import type { Actor, ErrorCode, Workspace } from '../../../packages/shared/src/types.js';
+import { ProjectRegistry } from './projectRegistry.js';
+import {
+  MAX_PREFERENCES_BYTES,
+  PrivateState,
+  UserPreferenceStore,
+  stateError,
+} from './userPreferences.js';
 
 const HUMAN: Actor = { role: 'human', id: 'human' };
 const AGENT: Actor = { role: 'agent', id: 'http-read' };
@@ -41,17 +48,16 @@ function httpError(message: string, status: number): Error & { status: number } 
   return Object.assign(new Error(message), { status });
 }
 
-async function readJson(request: IncomingMessage): Promise<unknown> {
+async function readJson(request: IncomingMessage, maximum = 2 * 1024 * 1024): Promise<unknown> {
   // Import previews fit within this budget; ordinary edits remain bounded by their schemas.
-  const maximum = 2 * 1024 * 1024;
   if (Number(request.headers['content-length']) > maximum)
-    throw httpError('请求超过 2 MiB，请缩小知识导入文件。', 413);
+    throw httpError(`请求超过 ${maximum} 字节。`, 413);
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const value of request) {
     const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value as Uint8Array);
     size += chunk.length;
-    if (size > maximum) throw httpError('请求超过 2 MiB。', 413);
+    if (size > maximum) throw httpError(`请求超过 ${maximum} 字节。`, 413);
     chunks.push(chunk);
   }
   try {
@@ -87,6 +93,7 @@ export interface ServerOptions {
   root?: string;
   port?: number;
   publicRoot?: string;
+  preferencesDir?: string;
 }
 export interface RunningServer {
   server: Server;
@@ -102,7 +109,37 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   if (!Number.isInteger(port) || port < 0 || port > 65535)
     throw new Error('端口须为 0–65535 的整数。');
   const publicRoot = options.publicRoot ?? fileURLToPath(new URL('./public/', import.meta.url));
-  const workspace: Workspace = createWorkspace(root);
+  const privateState = new PrivateState(options.preferencesDir);
+  const registry = new ProjectRegistry(root, privateState);
+  const preferences = new UserPreferenceStore(privateState);
+  const workspaces = new Map<string, { workspace: Workspace; device: number; inode: number }>();
+  function workspaceFor(ids: string[]): Workspace {
+    const project = registry.resolve(ids);
+    const stat = fs.statSync(project.path);
+    let cached = workspaces.get(project.id);
+    if (cached && (cached.device !== stat.dev || cached.inode !== stat.ino))
+      throw stateError(
+        'Project directory was replaced. Register the new directory explicitly.',
+        'CONFLICT',
+      );
+    if (!cached) {
+      cached = { workspace: createWorkspace(project.path), device: stat.dev, inode: stat.ino };
+      workspaces.set(project.id, cached);
+    }
+    return cached.workspace;
+  }
+  function closeWorkspaces(): void {
+    // One failing cleanup must not prevent the remaining databases from closing.
+    for (const { workspace } of workspaces.values()) {
+      try {
+        workspace.close();
+      } catch {
+        /* Continue closing all project resources. */
+      }
+    }
+    workspaces.clear();
+  }
+  workspaceFor([]);
   const token = crypto.randomBytes(32).toString('hex');
   let url = '';
   let actualPort = 0;
@@ -133,18 +170,53 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
         });
       }
       const parsed = new URL(request.url ?? '/', url);
+      const ids = parsed.searchParams.getAll('project');
+      if (request.method === 'GET' && parsed.pathname === '/api/projects')
+        return sendJson(response, 200, registry.list());
+      if (request.method === 'GET' && parsed.pathname === '/api/highlight-settings') {
+        const selected = registry.resolve(ids);
+        const raw =
+          selected.id === registry.initialId ? process.env.TASKVISION_VSCODE_HIGHLIGHTS : undefined;
+        let settings: unknown = null;
+        if (raw && Buffer.byteLength(raw) <= 90 * 1024) {
+          try {
+            const candidate: unknown = JSON.parse(raw);
+            if (
+              isObject(candidate) &&
+              (candidate.customHighlight === undefined || isObject(candidate.customHighlight)) &&
+              (candidate.defaultHighlight === undefined || isObject(candidate.defaultHighlight)) &&
+              (candidate.enabled === undefined || typeof candidate.enabled === 'boolean')
+            )
+              settings = candidate;
+          } catch {
+            /* Corrupt user-local visual config safely falls back to defaults. */
+          }
+        }
+        return sendJson(response, 200, {
+          settings,
+          source: settings ? 'vscode-effective' : 'package-default',
+        });
+      }
+      if (request.method === 'GET' && parsed.pathname === '/api/preferences') {
+        const project = registry.resolve(ids);
+        return sendJson(response, 200, { preferences: preferences.get(project.id) });
+      }
+      // Each request keeps its own project; there is no globally mutable current workspace.
       if (request.method === 'GET') {
         switch (parsed.pathname) {
           case '/api/bootstrap':
-            return sendJson(response, 200, { token, snapshot: workspace.dispatch('snapshot') });
+            return sendJson(response, 200, {
+              token,
+              snapshot: workspaceFor(ids).dispatch('snapshot'),
+            });
           case '/api/snapshot':
-            return sendJson(response, 200, workspace.dispatch('snapshot'));
+            return sendJson(response, 200, workspaceFor(ids).dispatch('snapshot'));
           case '/api/source':
             return sendJson(
               response,
               200,
               dispatchValidated(
-                workspace,
+                workspaceFor(ids),
                 'source',
                 { path: parsed.searchParams.get('path') },
                 AGENT,
@@ -155,7 +227,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
               response,
               200,
               dispatchValidated(
-                workspace,
+                workspaceFor(ids),
                 'updates',
                 { after: Number(parsed.searchParams.get('after') ?? 0) },
                 AGENT,
@@ -166,7 +238,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
               'Content-Disposition',
               'attachment; filename="taskvision-knowledge.json"',
             );
-            return sendJson(response, 200, workspace.dispatch('export'));
+            return sendJson(response, 200, workspaceFor(ids).dispatch('export'));
           case '/favicon.ico':
             response.writeHead(204);
             return response.end();
@@ -177,7 +249,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
             response,
             200,
             dispatchValidated(
-              workspace,
+              workspaceFor(ids),
               'review_detail',
               { reviewId: decodeURIComponent(review[1]) },
               AGENT,
@@ -198,14 +270,47 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
             error: { code: 'NOT_FOUND', message: '工作台前端尚未构建。请执行 npm run build。' },
           });
       }
-      if (request.method === 'POST' && parsed.pathname === '/api/operation') {
+      if (
+        request.method === 'POST' &&
+        ['/api/operation', '/api/projects/register', '/api/preferences'].includes(parsed.pathname)
+      ) {
         if (!tokenMatches(request.headers['x-taskvision-token'], token))
           return sendJson(response, 403, {
             error: { code: 'FORBIDDEN', message: '页面会话已失效，请刷新后重试。' },
           });
         if (!/^application\/json(?:\s*;|$)/i.test(request.headers['content-type'] ?? ''))
           throw httpError('请求须使用 application/json。', 415);
-        const input = await readJson(request);
+        if (parsed.pathname !== '/api/projects/register') registry.resolve(ids);
+        const input = await readJson(
+          request,
+          parsed.pathname === '/api/preferences'
+            ? MAX_PREFERENCES_BYTES
+            : parsed.pathname === '/api/projects/register'
+              ? 8192
+              : 2 * 1024 * 1024,
+        );
+        if (parsed.pathname === '/api/projects/register') {
+          if (!isObject(input) || Object.keys(input).length !== 1 || !('root' in input))
+            throw httpError('Project registration requires only an absolute root.', 400);
+          const project = registry.register(input.root);
+          const cached = workspaces.get(project.id);
+          if (cached) {
+            const stat = fs.statSync(project.path);
+            if (cached.device !== stat.dev || cached.inode !== stat.ino) {
+              cached.workspace.close();
+              workspaces.delete(project.id);
+            }
+          }
+          return sendJson(response, 200, { project });
+        }
+        if (parsed.pathname === '/api/preferences') {
+          const project = registry.resolve(ids);
+          const patch =
+            isObject(input) && Object.keys(input).length === 1 && 'preferences' in input
+              ? input.preferences
+              : input;
+          return sendJson(response, 200, { preferences: preferences.update(project.id, patch) });
+        }
         if (
           !isObject(input) ||
           !isOperation(input.operation) ||
@@ -224,7 +329,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
         return sendJson(
           response,
           200,
-          dispatchValidated(workspace, input.operation, input.args, HUMAN),
+          dispatchValidated(workspaceFor(ids), input.operation, input.args, HUMAN),
         );
       }
       return sendJson(response, 404, {
@@ -243,6 +348,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
       });
     }
   });
+  server.once('close', closeWorkspaces);
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
   server.keepAliveTimeout = 2000;
@@ -252,12 +358,12 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
       server.listen(port, '127.0.0.1', resolve);
     });
   } catch (error) {
-    workspace.close();
+    closeWorkspaces();
     throw error;
   }
   const address = server.address();
   if (!address || typeof address === 'string') {
-    workspace.close();
+    closeWorkspaces();
     throw new Error('无法获取本地服务端口。');
   }
   actualPort = address.port;
@@ -274,7 +380,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
         server.close(() => resolve());
         server.closeIdleConnections();
       });
-      workspace.close();
+      closeWorkspaces();
     },
   };
 }

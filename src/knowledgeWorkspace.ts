@@ -76,8 +76,23 @@ function register(vscode: typeof import("vscode"), context: import("vscode").Ext
         record.ready = checkRuntime(runtime()).then(function () {
             if (record.cancelled) throw new Error(text('Workspace startup was cancelled.', '工作台启动已取消。'));
             return new Promise<string>(function (resolve, reject) {
+                // Read effective VS Code highlighting configuration once when
+                // the user explicitly starts this trusted project service.
+                // This is visual data only, never an executable path or script.
+                // The browser applies supported color/glow/glass scopes using the
+                // same package defaults; unresolved ThemeColor falls back safely.
+                const highlightConfig = vscode.workspace.getConfiguration('taskvision.highlights', vscode.Uri.file(root));
+                const effectiveStyles = {
+                    customHighlight: highlightConfig.get<Record<string, unknown>>('customHighlight', {}),
+                    defaultHighlight: highlightConfig.get<Record<string, unknown>>('defaultHighlight', {}),
+                    enabled: highlightConfig.get<boolean>('enabled', true)
+                };
+                const encodedStyles = JSON.stringify(effectiveStyles);
+                const environment = Object.assign({}, process.env);
+                if (Buffer.byteLength(encodedStyles) < 90 * 1024) environment.TASKVISION_VSCODE_HIGHLIGHTS = encodedStyles;
                 const child = cp.spawn(runtime(), [entry, '--root', root, '--port', '0'], {
-                    cwd: root, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
+                    cwd: root, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+                    env: environment
                 });
                 record.child = child;
                 let settled = false, received = '';

@@ -1,5 +1,13 @@
 # Current Tasks
 
+## 3.7 多项目个人工作台 — 2026-10-27
+
+用户要求在页面直接切换本地工程、查看真实 INTENT 和源码证据、个性化三栏尺寸及停靠位置、VS Code 兼容源码标签/语法高亮、明暗/系统主题。分支 feat/multi-project-personal-workspace-20261027，从 f068b5c 开发；源码权限、Review 和原插件约束保持。新增本机允许列表项目目录（需人工显式添加），HTTP 逐请求按工程注册 ID 读取/写入（无全局当前工程），隔离二个浏览器标签页。偏好保存到用户私有 0700/0600 路径而非 Git，画布节点/视角、导航和检查器左/右/底位置可持久恢复。Shiki 按语言与主题按需加载，继承 TaskVision manifest 标签通道，以及扩展启动时初始工程的有效高亮；浅色默认正文低对比度时自动压暗，保证至少 4.5:1。
+
+独立只读代码审查发现两条真实阻塞：TransferPanel 下载项目 B 时曾误导出默认项目 A，现 URL 精确传注册工程 ID，实际下载 Beta JSON 证实不含 Alpha；浅色默认 CORE/REUSE/INTENT/REVIEW 字色原来不符合可读性要求，新增专项 contrast 检验。两项经独立二次审查判定 PASS。另修复旧 Review 在窄屏被右栏覆盖、Shiki 并发语法加载首次内容不稳定问题。测试 32 Chrome 用户流程、102 Web、64 核心/MCP、170 原插件 QUnit、6 几何布局；8 个多工程/私有设置安全集成测试也通过。
+
+验收见 agent/personal-workspace-acceptance.md。工作证据存 Mac mini 的 agent-machine/workbench/taskvision-projects-layout-20261027；无新图形引擎、无远端 push、无 Marketplace 发布、无默认 2.0.1 替换。原用户更改 .taskvision/ai-status-report.md 只保留在工作树，严禁入库。本版还不支持所有 Toolbar 自由浮动；Web/VS Code 的自定义 ThemeColor 不保证逐像素一致。
+
 ## 3.6 Graph Studio — 2026-10-27
 
 User explicitly rejected3.5 screenshot: kinky/braided fans, outdated coarse interface, hidden node facts and insufficient legend. Branch `feat/graph-studio-20261027` from3400916. Main implementation is complete: coherent charcoal workbench; source-backed visible tag/fact/status cards; readable85% default vs explicit whole-mapFit; opt-in minimap; three geometry styles with semantic legend; route-aware near-socket ordering and socket-perimeter anchoring. Existing ReactFlow/ELK/SmartEdge kept, no runtime dependencies added.

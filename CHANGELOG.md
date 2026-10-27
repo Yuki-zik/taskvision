@@ -1,5 +1,15 @@
 # TaskVision Change Log
 
+## 3.7.0 Preview
+
+- Added opt-in local project registration, per-tab project switching and isolated source/knowledge/Review operations without mutating a global active workspace.
+- Added atomic 0700/0600 private user preferences for approved roots, theme, navigation and inspector layout, per-project graph positions and camera.
+- Added actual light/dark/system styles, repositionable/resizable inspector, keyboard-operable splitters and restore-default controls.
+- Integrated lazy TextMate/Shiki syntax into the read-only code inspector with TaskVision manifest-defined decoration scopes and optional VS Code user overrides.
+- Added multi-root Git/server validation, user preference security and real Chrome multi-project/theme/layout/source tests; all original MCP and editor behavior retained.
+- Corrected cross-project JSON export to bind to the currently selected registered project, with an actual browser download and isolation assertion.
+- Preserved exact dark VS Code annotation colors; adapted light-mode low-contrast tag bodies to at least 4.5:1 on a white code background. Tested system themes, left-dock keyboard resizing, and persisted node positions.
+
 ## 3.6.0 Preview
 
 - Introduced Graph Studio's coherent dark workbench, readable source-backed card facts and all nonzero knowledge chips.

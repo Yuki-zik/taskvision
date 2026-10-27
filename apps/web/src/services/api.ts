@@ -1,3 +1,6 @@
+import type { PersonalPreferences, PreferencePatch } from './personalization';
+import type { SourceHighlightSettings } from './sourceHighlight';
+import type { RegisteredProject } from '../components/ProjectSwitcher';
 import type {
   ErrorCode,
   OperationArgs,
@@ -56,16 +59,67 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   }
   return body as T;
 }
+// Per-tab URL selection; the server authorizes every registered ID. Never read a root from URL.
+export function currentProjectId(): string {
+  return typeof window === 'undefined'
+    ? ''
+    : (new URLSearchParams(window.location.search).get('project') ?? '');
+}
+function projectQuery(projectId: string): string {
+  return projectId ? '?project=' + encodeURIComponent(projectId) : '';
+}
+function projectUrl(route: string, projectId: string): string {
+  return route + projectQuery(projectId);
+}
 export const api = {
-  bootstrap: (signal?: AbortSignal) =>
-    request<{ token: string; snapshot: Snapshot }>('/api/bootstrap', { signal }),
-  snapshot: (signal?: AbortSignal) => request<Snapshot>('/api/snapshot', { signal }),
-  source: (path: string, signal?: AbortSignal) =>
-    request<SourceResult>(`/api/source?path=${encodeURIComponent(path)}`, { signal }),
-  review: (id: string, signal?: AbortSignal) =>
-    request<ReviewDetail>(`/api/reviews/${encodeURIComponent(id)}`, { signal }),
-  operation: <K extends OperationName>(token: string, operation: K, args: OperationArgs<K>) =>
-    request<OperationResult<K>>('/api/operation', {
+  bootstrap: (signal?: AbortSignal, projectId = currentProjectId()) =>
+    request<{ token: string; snapshot: Snapshot }>(projectUrl('/api/bootstrap', projectId), {
+      signal,
+    }),
+  snapshot: (signal?: AbortSignal, projectId = currentProjectId()) =>
+    request<Snapshot>(projectUrl('/api/snapshot', projectId), { signal }),
+  projects: (signal?: AbortSignal) =>
+    request<{ projects: RegisteredProject[]; initialId: string }>('/api/projects', { signal }),
+  registerProject: (token: string, root: string) =>
+    request<{ project: RegisteredProject }>('/api/projects/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-TaskVision-Token': token },
+      body: JSON.stringify({ root }),
+    }),
+  highlightSettings: (projectId: string, signal?: AbortSignal) =>
+    request<{
+      settings: SourceHighlightSettings | null;
+      source: 'vscode-effective' | 'package-default';
+    }>(projectUrl('/api/highlight-settings', projectId), { signal }),
+  preferences: (projectId: string, signal?: AbortSignal) =>
+    request<{ preferences: PersonalPreferences }>(projectUrl('/api/preferences', projectId), {
+      signal,
+    }),
+  savePreferences: (token: string, projectId: string, preferences: PreferencePatch) =>
+    request<{ preferences: PersonalPreferences }>(projectUrl('/api/preferences', projectId), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-TaskVision-Token': token },
+      body: JSON.stringify({ preferences }),
+      keepalive: new TextEncoder().encode(JSON.stringify({ preferences })).length < 60000,
+    }),
+  source: (path: string, signal?: AbortSignal, projectId = currentProjectId()) =>
+    request<SourceResult>(
+      '/api/source?path=' +
+        encodeURIComponent(path) +
+        (projectId ? '&project=' + encodeURIComponent(projectId) : ''),
+      { signal },
+    ),
+  review: (id: string, signal?: AbortSignal, projectId = currentProjectId()) =>
+    request<ReviewDetail>(projectUrl('/api/reviews/' + encodeURIComponent(id), projectId), {
+      signal,
+    }),
+  operation: <K extends OperationName>(
+    token: string,
+    operation: K,
+    args: OperationArgs<K>,
+    projectId = currentProjectId(),
+  ) =>
+    request<OperationResult<K>>(projectUrl('/api/operation', projectId), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-TaskVision-Token': token },
       body: JSON.stringify({ operation, args }),

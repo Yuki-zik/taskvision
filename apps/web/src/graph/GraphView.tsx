@@ -51,6 +51,7 @@ import { matchingRoute, displayRoute, separatedCable, obstacleLaneWaypoints } fr
 import { analyzeImpact, type ImpactMode } from './impact';
 import { ArchitectureNode } from './ArchitectureNode';
 import { GraphLegend, type WireDisplayStyle } from './GraphLegend';
+import { boundGraphViews, type GraphCanvasState } from '../services/personalization';
 
 const fitOptions = {
   padding: {
@@ -224,13 +225,26 @@ const nodeTypes = { knowledge: ArchitectureNode };
 const edgeTypes = { routed: RoutedEdge };
 interface Props {
   snapshot: Snapshot;
+  projectId?: string;
+  graphViews?: Record<string, GraphCanvasState>;
+  onGraphViewChange?: (scope: string, state: GraphCanvasState) => void;
+  theme?: 'dark' | 'light';
   filter: Filter;
   selection: Selection | null;
   onSelect: (selection: Selection) => void;
   onModule: (scope: string) => void;
 }
 
-function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props) {
+function GraphCanvas({
+  snapshot,
+  filter,
+  selection,
+  onSelect,
+  onModule,
+  graphViews = {},
+  onGraphViewChange,
+  theme = 'dark',
+}: Props) {
   const [scope, setScope] = useState('');
   const [expanded, setExpanded] = useState<string[]>([]);
   const [infrastructure, setInfrastructure] = useState(false);
@@ -261,6 +275,16 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const initialized = useNodesInitialized();
   const positions = useRef(new Map<string, Map<string, XYPosition>>());
   const viewports = useRef(new Map<string, Viewport>());
+  const hydrated = useRef(false);
+  if (!hydrated.current) {
+    for (const [key, saved] of Object.entries(boundGraphViews(graphViews))) {
+      positions.current.set(key, new Map(Object.entries(saved.positions)));
+      if (saved.viewport) viewports.current.set(key, saved.viewport);
+    }
+    hydrated.current = true;
+  }
+  const persistChange = useRef(onGraphViewChange);
+  persistChange.current = onGraphViewChange;
   const layoutContext = useRef('');
   const resetPositions = useRef(false);
   const pendingFit = useRef(false);
@@ -274,7 +298,8 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
     pendingInspector.current = null;
   }, []);
   useEffect(() => () => cancelPendingInspector(), [cancelPendingInspector]);
-  const context = `${snapshot.project.workspaceId}:${scope}:${infrastructure}:${detailed}`;
+  // Preferences are already isolated by registered project. JSON keeps scope keys unambiguous.
+  const context = JSON.stringify([scope, infrastructure, detailed]);
   const contextRef = useRef(context);
   contextRef.current = context;
   const model = useMemo(
@@ -321,9 +346,21 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
   const impactActive = impactMode !== 'all' && analysis.focusId !== null;
   const latest = useRef(model);
   latest.current = model;
+  const persistCanvas = useCallback(() => {
+    const key = contextRef.current;
+    if (layoutContext.current !== key || pendingFit.current) return;
+    const saved = boundGraphViews({
+      [key]: {
+        positions: Object.fromEntries(positions.current.get(key) ?? []),
+        viewport: viewports.current.get(key) ?? graph.getViewport(),
+      },
+    })[key];
+    if (saved) persistChange.current?.(key, saved);
+  }, [graph]);
   const rememberViewport = useCallback(() => {
     viewports.current.set(contextRef.current, graph.getViewport());
-  }, [graph]);
+    persistCanvas();
+  }, [graph, persistCanvas]);
   const drill = useCallback(
     (path: string) => {
       cancelPendingInspector();
@@ -572,7 +609,10 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       );
     if (visible) setSelectedId(visible.id);
   }, [selection, nodes, selectedEdgeId]);
+  const persistNodeMove = useRef(false);
   const onNodesChange: OnNodesChange<KnowledgeNode> = useCallback((changes) => {
+    if (changes.some((change) => change.type === 'position' && change.dragging !== true))
+      persistNodeMove.current = true;
     // React Flow keyboard Enter/Space emits a select change without onNodeClick.
     // Keep the human's analysis center in sync with mouse and keyboard actions.
     for (const change of changes) {
@@ -592,6 +632,12 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
       return next;
     });
   }, []);
+  useEffect(() => {
+    if (persistNodeMove.current && !layoutBusy) {
+      persistNodeMove.current = false;
+      persistCanvas();
+    }
+  }, [nodes, layoutBusy, persistCanvas]);
   const onEdgesChange: OnEdgesChange<KnowledgeEdge> = useCallback((changes) => {
     for (const change of changes)
       if (change.type === 'select') {
@@ -980,6 +1026,11 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               setSelectedEdgeId(null);
             }}
             onNodeDragStop={() => {
+              for (const node of graph.getNodes()) {
+                const points = positions.current.get(contextRef.current);
+                points?.set(node.id, node.position);
+              }
+              persistCanvas();
               // Keep the layout's local-route port order during manual moves.
               // Re-sorting by distant centers here would reintroduce fan braids;
               // explicit re-layout computes a fresh route-aware ordering.
@@ -998,12 +1049,13 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
             onMoveEnd={(_, viewport) => {
               setZoom(viewport.zoom);
               viewports.current.set(contextRef.current, viewport);
+              persistCanvas();
             }}
             nodesConnectable={false}
             nodesDraggable={!layoutBusy}
             elementsSelectable
             edgesFocusable
-            colorMode="dark"
+            colorMode={theme}
             minZoom={0.15}
             maxZoom={1.7}
             deleteKeyCode={null}
@@ -1026,7 +1078,12 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
               'handle.ariaLabel': '依赖连接点',
             }}
           >
-            <Background variant={BackgroundVariant.Dots} color="#2c384b" gap={24} size={0.8} />
+            <Background
+              variant={BackgroundVariant.Dots}
+              color={theme === 'dark' ? '#2c384b' : '#bac8d9'}
+              gap={24}
+              size={0.8}
+            />
             <Controls
               position="bottom-right"
               showInteractive={false}
@@ -1041,7 +1098,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
                 nodeColor={(node) =>
                   node.type === 'knowledge' && node.data.kind === 'module' ? '#506987' : '#7b6c94'
                 }
-                maskColor="rgba(16,21,31,0.8)"
+                maskColor={theme === 'dark' ? 'rgba(16,21,31,0.8)' : 'rgba(237,242,248,0.8)'}
               />
             )}
             <Panel position="top-right" className="graph-actions">
@@ -1049,6 +1106,7 @@ function GraphCanvas({ snapshot, filter, selection, onSelect, onModule }: Props)
                 className="canvas-button"
                 onClick={() => {
                   resetPositions.current = true;
+                  persistNodeMove.current = true;
                   setLayoutTick((tick) => tick + 1);
                 }}
                 disabled={layoutBusy}

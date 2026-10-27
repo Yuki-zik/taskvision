@@ -8,6 +8,13 @@ import './styles.css';
 import './graph/graph.css';
 import './graph/node-kit.css';
 import './studio-theme.css';
+import './studio-light.css';
+import './code-source.css';
+import './personal-layout.css';
+
+document.documentElement.dataset.theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+  ? 'dark'
+  : 'light';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('无法找到工作台入口');

@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import {
   ArrowDownToLine,
   ArrowUpRight,
@@ -12,6 +20,8 @@ import {
   ListTodo,
   Network,
   PanelRightOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   RefreshCw,
   Search,
@@ -30,7 +40,15 @@ import {
 } from './domain';
 import { GraphView } from './graph/GraphView';
 import { useWorkspace } from './hooks/useWorkspace';
-import { errorMessage } from './services/api';
+import { api, currentProjectId, errorMessage } from './services/api';
+import {
+  DEFAULT_PREFERENCES,
+  boundGraphViews,
+  systemTheme,
+  type GraphCanvasState,
+} from './services/personalization';
+import { ProjectSwitcher, type RegisteredProject } from './components/ProjectSwitcher';
+import { WorkspaceAppearance } from './components/WorkspaceAppearance';
 import { AnnotationEditor, type EditorTarget } from './components/AnnotationEditor';
 import { Inspector } from './components/Inspector';
 import { KnowledgeView } from './components/KnowledgeView';
@@ -46,8 +64,232 @@ const navigation = [
   { id: 'reviews', label: '人工审阅', icon: ShieldCheck },
 ] satisfies Array<{ id: View; label: string; icon: typeof Network }>;
 
+function setProjectLocation(id: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('project', id);
+  window.history.replaceState(null, '', url);
+}
+
 export default function App() {
-  const { snapshot, error, loading, refresh, mutate } = useWorkspace();
+  const [projects, setProjects] = useState<RegisteredProject[]>([]);
+  const [projectId, setProjectId] = useState('');
+  const [registryError, setRegistryError] = useState('');
+  const refreshProjects = useCallback(async () => {
+    try {
+      const registry = await api.projects();
+      setProjects(registry.projects);
+      setRegistryError('');
+      setProjectId((previous) => {
+        if (previous) return previous;
+        const requested = currentProjectId();
+        const selected = registry.projects.some((item) => item.id === requested)
+          ? requested
+          : registry.initialId;
+        setProjectLocation(selected);
+        return selected;
+      });
+    } catch (failure) {
+      setRegistryError(errorMessage(failure));
+    }
+  }, []);
+  useEffect(() => {
+    void refreshProjects();
+  }, [refreshProjects]);
+  const changeProject = useCallback((id: string) => {
+    setProjectLocation(id);
+    setProjectId(id);
+  }, []);
+  if (!projectId)
+    return (
+      <div className="project-loading" role="status">
+        {registryError ? (
+          <>
+            <Notice danger>{registryError}</Notice>
+            <button
+              className="button"
+              onClick={() => {
+                void refreshProjects();
+              }}
+            >
+              重新连接项目列表
+            </button>
+          </>
+        ) : (
+          <Loading>正在读取已登记工程…</Loading>
+        )}
+      </div>
+    );
+  return (
+    <Workspace
+      key={projectId}
+      projectId={projectId}
+      projects={projects}
+      onProjectChange={changeProject}
+      refreshProjects={refreshProjects}
+      registryError={registryError}
+    />
+  );
+}
+
+interface ResizeSeparatorProps {
+  label: string;
+  value: number;
+  minimum: number;
+  maximum: number;
+  horizontal?: boolean;
+  direction: number;
+  onChange: (value: number) => void;
+  controls: string;
+  className?: string;
+}
+function ResizeSeparator({
+  label,
+  value,
+  minimum,
+  maximum,
+  horizontal = false,
+  direction,
+  onChange,
+  controls,
+  className = '',
+}: ResizeSeparatorProps) {
+  const drag = useRef<{ coordinate: number; value: number } | null>(null);
+  const clamp = (next: number) => Math.round(Math.max(minimum, Math.min(maximum, next)));
+  return (
+    <div
+      role="separator"
+      tabIndex={0}
+      aria-label={label}
+      aria-controls={controls}
+      aria-orientation={horizontal ? 'horizontal' : 'vertical'}
+      aria-valuenow={value}
+      aria-valuemin={minimum}
+      aria-valuemax={maximum}
+      className={`personal-resizer ${horizontal ? 'horizontal' : 'vertical'} ${className}`}
+      title={`${label}；方向键调整，Shift 加速，Home / End 调到最小 / 最大`}
+      onKeyDown={(event) => {
+        const delta = horizontal
+          ? event.key === 'ArrowDown'
+            ? 1
+            : event.key === 'ArrowUp'
+              ? -1
+              : 0
+          : event.key === 'ArrowRight'
+            ? 1
+            : event.key === 'ArrowLeft'
+              ? -1
+              : 0;
+        if (!delta && event.key !== 'Home' && event.key !== 'End') return;
+        event.preventDefault();
+        onChange(
+          event.key === 'Home'
+            ? minimum
+            : event.key === 'End'
+              ? maximum
+              : clamp(value + delta * direction * (event.shiftKey ? 32 : 8)),
+        );
+      }}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        drag.current = { coordinate: horizontal ? event.clientY : event.clientX, value };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        if (!drag.current) return;
+        onChange(
+          clamp(
+            drag.current.value +
+              ((horizontal ? event.clientY : event.clientX) - drag.current.coordinate) * direction,
+          ),
+        );
+      }}
+      onPointerUp={(event) => {
+        drag.current = null;
+        if (event.currentTarget.hasPointerCapture(event.pointerId))
+          event.currentTarget.releasePointerCapture(event.pointerId);
+      }}
+      onLostPointerCapture={() => {
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
+    />
+  );
+}
+
+function Workspace({
+  projectId,
+  projects,
+  onProjectChange,
+  refreshProjects,
+  registryError,
+}: {
+  projectId: string;
+  projects: RegisteredProject[];
+  onProjectChange: (id: string) => void;
+  refreshProjects: () => Promise<void>;
+  registryError: string;
+}) {
+  const {
+    snapshot,
+    error,
+    loading,
+    refresh,
+    mutate,
+    registerProject,
+    pendingOperations,
+    highlightSettings,
+    preferences,
+    preferencesReady,
+    preferenceError,
+    updatePreferences,
+    flushPreferences,
+  } = useWorkspace(projectId);
+  const [projectBusy, setProjectBusy] = useState(false);
+  const [projectError, setProjectError] = useState('');
+  const [detailHidden, setDetailHidden] = useState(false);
+  const [compactWindow, setCompactWindow] = useState(() => window.innerWidth <= 760);
+  const [inspectorRequested, setInspectorRequested] = useState(false);
+  const [graphReset, setGraphReset] = useState(0);
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
+  );
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  const effectiveTheme = systemTheme(preferences.theme, systemDark);
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const change = () => setSystemDark(media.matches);
+    media.addEventListener('change', change);
+    const resize = () => {
+      setWindowHeight(window.innerHeight);
+      setCompactWindow(window.innerWidth <= 760);
+    };
+    window.addEventListener('resize', resize);
+    return () => {
+      media.removeEventListener('change', change);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+  useLayoutEffect(() => {
+    if (preferencesReady) document.documentElement.dataset.theme = effectiveTheme;
+  }, [effectiveTheme, preferencesReady]);
+  const bottomMaximum = Math.min(2000, Math.max(220, Math.floor(windowHeight * 0.65)));
+  const graphViews = useRef(preferences.graphViews);
+  graphViews.current = preferences.graphViews;
+  const graphStateChange = useCallback(
+    (scope: string, state: GraphCanvasState) => {
+      // The ref avoids dropping one scope when several move-end events batch.
+      const views = graphViews.current;
+      const next = { ...views };
+      delete next[scope];
+      next[scope] = state;
+      graphViews.current = boundGraphViews(next);
+      updatePreferences({ graphViews: graphViews.current });
+    },
+    [updatePreferences],
+  );
   const [view, setView] = useState<View>('map');
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState<Tag | ''>('');
@@ -80,6 +322,7 @@ export default function App() {
     setTransfer(false);
   }, []);
   const closeDetail = useCallback(() => {
+    setInspectorRequested(false);
     setSelection(null);
     setModule(null);
     setEditor(null);
@@ -151,13 +394,93 @@ export default function App() {
     [snapshot],
   );
   const mobileDetail = !!(selection || module !== null || editor || transfer);
-  const detailVisible = view !== 'map' || mobileDetail;
+  // On narrow screens the secondary inspector is an overlay: it must never
+  // obscure Tasks/Reviews/Knowledge by default. Open explicitly or when the
+  // user selects actual source/edit detail.
+  const detailVisible =
+    !detailHidden && (mobileDetail || (view !== 'map' && (!compactWindow || inspectorRequested)));
+  const approveSwitch = useCallback(async () => {
+    if (pendingOperations) {
+      setProjectError('当前操作正在保存，请完成后再切换工程。');
+      return false;
+    }
+    const fields = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      '.workspace-stage input:not([type="range"]):not([type="checkbox"]), .workspace-stage textarea',
+    );
+    const hasDraft =
+      !!editor ||
+      !!transfer ||
+      Array.from(fields).some((field) => !field.readOnly && !!field.value.trim());
+    if (
+      hasDraft &&
+      !window.confirm(
+        '当前工程有未提交的编辑。切换会关闭编辑面板；已自动保存的草稿仍属于原工程。确认切换？',
+      )
+    )
+      return false;
+    try {
+      await flushPreferences();
+      return true;
+    } catch {
+      setProjectError('个人布局尚未保存。请重试保存后再切换，避免丢失设置。');
+      return false;
+    }
+  }, [pendingOperations, editor, transfer, flushPreferences]);
+  const selectProject = useCallback(
+    async (id: string) => {
+      if (id === projectId) return true;
+      if (projectBusy || !projects.some((item) => item.id === id)) return false;
+      setProjectBusy(true);
+      try {
+        if (!(await approveSwitch())) return false;
+        onProjectChange(id);
+        return true;
+      } finally {
+        setProjectBusy(false);
+      }
+    },
+    [projectId, projectBusy, projects, approveSwitch, onProjectChange],
+  );
+  useEffect(() => {
+    const pop = () => {
+      const requested = currentProjectId();
+      setProjectLocation(projectId);
+      if (requested) void selectProject(requested);
+    };
+    window.addEventListener('popstate', pop);
+    return () => window.removeEventListener('popstate', pop);
+  }, [projectId, selectProject]);
+  useEffect(() => {
+    if (mobileDetail) setDetailHidden(false);
+  }, [selection, module, editor, transfer]);
+  const resetLayout = () => {
+    updatePreferences({ ...DEFAULT_PREFERENCES, theme: preferences.theme });
+    graphViews.current = {};
+    setDetailHidden(false);
+    setInspectorRequested(false);
+    setGraphReset((value) => value + 1);
+  };
+  const layoutStyle = {
+    '--personal-nav-width': `${preferences.sidebarCollapsed ? 58 : preferences.sidebarWidth}px`,
+    '--personal-detail-width': `${preferences.detailWidth}px`,
+    '--personal-detail-height': `${Math.min(preferences.detailHeight, bottomMaximum)}px`,
+  } as CSSProperties;
+  if (loading && !preferencesReady)
+    return (
+      <div className="project-loading">
+        <Loading>正在读取工程与个人布局…</Loading>
+      </div>
+    );
   return (
-    <div className="app-shell studio-app">
+    <div
+      className={`app-shell studio-app personal-workspace${preferences.sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+      style={layoutStyle}
+      data-detail-dock={preferences.detailDock}
+    >
       <a className="skip-link" href="#workbench-content">
         跳到工作区
       </a>
-      <aside className="sidebar">
+      <aside className="sidebar" id="workspace-navigation">
         <div className="brand">
           <span className="brand-mark">
             <Layers3 size={22} strokeWidth={1.7} />
@@ -224,23 +547,101 @@ export default function App() {
           </div>
         </div>
       </aside>
+      <button
+        className="personal-nav-toggle"
+        aria-label={preferences.sidebarCollapsed ? '展开导航栏' : '收起导航栏'}
+        aria-expanded={!preferences.sidebarCollapsed}
+        aria-controls="workspace-navigation"
+        onClick={() => updatePreferences({ sidebarCollapsed: !preferences.sidebarCollapsed })}
+      >
+        {preferences.sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+      </button>
+      {!preferences.sidebarCollapsed && (
+        <ResizeSeparator
+          className="nav-resizer"
+          label="调整左侧导航宽度"
+          controls="workspace-navigation"
+          value={preferences.sidebarWidth}
+          minimum={160}
+          maximum={340}
+          direction={1}
+          onChange={(sidebarWidth) => updatePreferences({ sidebarWidth })}
+        />
+      )}
       <main className="workbench" id="workbench-content">
         <header className="topbar">
           <div className="topbar-title">
             <h1>{navigation.find((item) => item.id === view)?.label}</h1>
-            <span className="workspace-label">{snapshot?.project.name || 'TaskVision'}</span>
+            <ProjectSwitcher
+              key={projectId}
+              projects={projects}
+              currentId={projectId}
+              currentName={
+                snapshot?.project.name || projects.find((item) => item.id === projectId)?.name || ''
+              }
+              onSelect={selectProject}
+              onRefresh={refreshProjects}
+              busy={projectBusy || loading}
+              error={projectError || registryError}
+              onRegister={async (root) => {
+                if (!(await approveSwitch())) throw new Error('已取消切换');
+                setProjectBusy(true);
+                setProjectError('');
+                try {
+                  const result = await registerProject(root);
+                  await refreshProjects();
+                  onProjectChange(result.project.id);
+                } catch (failure) {
+                  setProjectError(errorMessage(failure));
+                  throw failure;
+                } finally {
+                  setProjectBusy(false);
+                }
+              }}
+            />
           </div>
           <div className="topbar-actions">
+            {preferencesReady && (
+              <WorkspaceAppearance
+                bottomMaximum={bottomMaximum}
+                preferences={preferences}
+                onChange={updatePreferences}
+                onReset={resetLayout}
+              />
+            )}
+            {view !== 'map' && (
+              <IconButton
+                label={detailVisible ? '隐藏详情面板' : '展开详情面板'}
+                onClick={() => {
+                  if (compactWindow) {
+                    setInspectorRequested(!detailVisible);
+                    setDetailHidden(false);
+                  } else {
+                    setDetailHidden((value) => !value);
+                  }
+                }}
+              >
+                <PanelRightOpen size={16} />
+              </IconButton>
+            )}
             {view === 'map' && (
               <button
                 className="button graph-context-toggle"
                 aria-label="切换项目上下文"
-                aria-expanded={mobileDetail}
-                title={mobileDetail ? '收起详情，专注结构' : '查看项目上下文'}
-                onClick={() => (mobileDetail ? closeDetail() : onModule(''))}
+                aria-expanded={detailVisible}
+                title={detailVisible ? '收起详情，专注结构' : '查看项目上下文'}
+                onClick={() => {
+                  if (detailVisible) {
+                    closeDetail();
+                    setDetailHidden(true);
+                  } else {
+                    setDetailHidden(false);
+                    if (!mobileDetail) onModule('');
+                  }
+                }}
               >
                 <PanelRightOpen size={15} />
-                <span>{mobileDetail ? '收起详情' : '项目上下文'}</span>
+                <span>{detailVisible ? '收起详情' : '项目上下文'}</span>
               </button>
             )}
             <IconButton
@@ -331,10 +732,20 @@ export default function App() {
             </div>
           )}
         </div>
-        {(error || actionError) && (
+        {(error || actionError || preferenceError) && (
           <div className="global-notice">
             <Notice danger>
-              {actionError || error}{' '}
+              {actionError || error || preferenceError}{' '}
+              {preferenceError && (
+                <button
+                  className="text-button"
+                  onClick={() => {
+                    void flushPreferences().catch(() => {});
+                  }}
+                >
+                  重试保存布局
+                </button>
+              )}
               {actionError ? (
                 <button onClick={() => setActionError('')} className="text-button">
                   关闭
@@ -368,11 +779,17 @@ export default function App() {
         )}
         {snapshot ? (
           <div
-            className={`workspace-stage${mobileDetail ? ' detail-open' : ''}${!detailVisible ? ' canvas-first' : ''}`}
+            className={`workspace-stage personal-stage${detailVisible ? ' detail-open' : ' canvas-first'}`}
+            data-dock={preferences.detailDock}
           >
             <div className="primary-pane">
               {view === 'map' && (
                 <GraphView
+                  key={`${projectId}:${graphReset}`}
+                  projectId={projectId}
+                  graphViews={preferences.graphViews}
+                  onGraphViewChange={graphStateChange}
+                  theme={effectiveTheme}
                   snapshot={snapshot}
                   filter={filter}
                   selection={selection}
@@ -419,7 +836,30 @@ export default function App() {
               )}
             </div>
             {detailVisible && (
-              <div className="detail-slot">
+              <div className="detail-slot" id="workspace-detail">
+                <ResizeSeparator
+                  className="detail-resizer"
+                  label={
+                    preferences.detailDock === 'bottom' ? '调整详情面板高度' : '调整详情面板宽度'
+                  }
+                  controls="workspace-detail"
+                  horizontal={preferences.detailDock === 'bottom'}
+                  value={
+                    preferences.detailDock === 'bottom'
+                      ? Math.min(preferences.detailHeight, bottomMaximum)
+                      : preferences.detailWidth
+                  }
+                  minimum={preferences.detailDock === 'bottom' ? 220 : 290}
+                  maximum={preferences.detailDock === 'bottom' ? bottomMaximum : 740}
+                  direction={preferences.detailDock === 'left' ? 1 : -1}
+                  onChange={(value) =>
+                    updatePreferences(
+                      preferences.detailDock === 'bottom'
+                        ? { detailHeight: value }
+                        : { detailWidth: value },
+                    )
+                  }
+                />
                 {editor ? (
                   <AnnotationEditor
                     key={`${editor.annotation?.id ?? `new:${editor.path}`}`}
@@ -441,6 +881,9 @@ export default function App() {
                   />
                 ) : (
                   <Inspector
+                    {...{ projectId }}
+                    theme={effectiveTheme}
+                    highlightSettings={highlightSettings}
                     snapshot={snapshot}
                     selection={selection}
                     module={module}
@@ -449,7 +892,10 @@ export default function App() {
                     onDecide={(annotation, decision) => {
                       void decide(annotation, decision);
                     }}
-                    onClose={closeDetail}
+                    onClose={() => {
+                      closeDetail();
+                      setDetailHidden(true);
+                    }}
                   />
                 )}
               </div>

@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.6.0_preview-3B82F6?style=flat-square" alt="Version 3.6.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.7.0_preview-3B82F6?style=flat-square" alt="Version 3.7.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -35,6 +35,20 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.7 预览：多项目切换、个人布局与明暗主题
+
+网页标题旁可选择已登记的工程，也可输入绝对路径并确认添加本地 Git 项目。不同浏览器标签页独立观察不同工程，索引、INTENT、Review 和源码读取都按工程隔离。已登记的工程及个人偏好保存在本机用户私有目录（通常为 ~/.config/taskvision），不进入 Git 或 Agent 知识索引。
+
+新增浅色／深色／跟随系统主题、可拖拽与收起的左侧导航、左／右／下方可停靠的源码详情，鼠标／键盘调整分隔线尺寸。项目图节点位置、缩放视角按工程和结构范围持久保存，支持恢复默认布局。
+
+源码面板使用延迟加载的 Shiki/TextMate 语法规则，结合 VS Code 插件 package.json 中真实 CORE／REUSE／INTENT／REVIEW／TODO 等高亮通道。由 VS Code 扩展打开的初始工程还可只读继承有效的用户高亮配置；独立 Web 或其他登记工程回退默认样式。规则尽量对齐，但浏览器和 VS Code 编辑器的字体、ThemeColor 不保证像素级完全一致。
+
+项目切换后，**JSON 导出也严格跟随当前工程**，不会误导出启动时的默认项目。浅色模式会压暗原本适合深色 VS Code 的浅亮标签正文，保证至少 4.5:1 对比度；深色标签颜色保持不变。分隔线支持方向键与 Shift 加速，也可恢复默认布局。
+
+边界：支持详情面板左／右／底部停靠，尚未支持所有 Toolbar 和面板随意浮动；项目登记必须明确授权本地目录。Web 的 TextMate 与 VS Code 完整编辑器、ThemeColor、字体渲染不能保证逐像素一致。VS Code 用户样式在启动本地工作台服务时读取，其他附加工程回退 manifest 默认规则。
+
+详见 [工作台指南](workspace/README.md) 及 [3.7 验收](agent/personal-workspace-acceptance.md)。
 
 ## 3.6 预览：Graph Studio
 
