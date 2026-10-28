@@ -155,23 +155,21 @@ test('contextual zoom removes tiny detail clutter while source actions stay avai
   const core = page.locator('.react-flow__node[data-id="module:packages/core"]');
   await core.focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('heading', { name: '模块详情', exact: true })).toBeVisible();
-  const toolbar = page
-    .locator('.react-flow__node-toolbar')
-    .filter({ has: page.getByRole('button', { name: /源码|查看源码/ }) })
-    .first();
-  await expect(toolbar).toBeVisible();
-  const toolbarFont = await toolbar.evaluate((item) => parseFloat(getComputedStyle(item).fontSize));
-  expect(toolbarFont).toBeGreaterThanOrEqual(11);
-  await toolbar
-    .getByRole('button', { name: /源码|查看源码/ })
-    .first()
-    .click();
+  const popup = page.locator('.node-detail-popover');
+  await expect(popup).toBeVisible();
+  await expect(popup).toContainText('core');
+  const sourceButton = popup.getByRole('button', { name: '打开源码', exact: true });
+  await expect(sourceButton).toBeVisible();
+  const actionFont = await sourceButton.evaluate((item) =>
+    parseFloat(getComputedStyle(item).fontSize),
+  );
+  expect(actionFont).toBeGreaterThanOrEqual(11);
+  await sourceButton.click();
   await expect(page.locator('.source-code')).toContainText('Existing engine');
   await expect(page.locator('.source-code')).toContainText('export function run');
 });
 
-test('upstream tooltip supports pointer and keyboard inspection without disrupting editors', async ({
+test('single-click detail remains accessible with pointer and keyboard without disrupting annotation editor', async ({
   page,
 }) => {
   const failures: string[] = [];
@@ -180,13 +178,16 @@ test('upstream tooltip supports pointer and keyboard inspection without disrupti
   await settle(page);
   const core = page.locator('.react-flow__node[data-id="module:packages/core"]');
   await core.hover();
-  const tooltip = page.locator('.tv-node-detail[role=dialog]');
-  await expect(tooltip).toBeVisible();
-  await expect(tooltip).toContainText('Existing engine');
-  await tooltip.hover();
-  await expect(tooltip).toBeVisible();
+  await expect(page.locator('.node-detail-popover')).toHaveCount(0);
+  await core.locator('.node-icon').click();
+  const popup = page.locator('.node-detail-popover');
+  await expect(popup).toBeVisible();
+  await expect(popup).toContainText('Existing engine');
+  await popup.hover();
+  await expect(popup).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(tooltip).toBeHidden();
+  await expect(popup).toHaveCount(0);
+  await expect(core).toBeFocused();
   await page.getByRole('button', { name: '添加指导', exact: true }).click();
   await page
     .getByRole('textbox', { name: '指导摘要', exact: true })
@@ -211,8 +212,8 @@ test('node details and selected actions flip inside the viewport and card has on
   const node = page.locator(`.react-flow__node[data-id="${bottomId}"]`);
   await expect(node).toHaveAttribute('tabindex', '0');
   await expect(node.locator('.graph-node')).toHaveAttribute('tabindex', '-1');
-  await node.hover();
-  const panel = page.locator('.tv-node-detail[role=dialog]');
+  await node.locator('.node-icon').click();
+  const panel = page.locator('.node-detail-popover[role=dialog]');
   await expect(panel).toBeVisible();
   const inside = async (target: ReturnType<Page['locator']>) => {
     const canvas = await page.locator('.react-flow').boundingBox();
@@ -228,16 +229,16 @@ test('node details and selected actions flip inside the viewport and card has on
   };
   await expect.poll(() => inside(panel)).toBe(true);
   await panel.hover();
-  await expect(panel.getByRole('button', { name: /打开源码/ })).toBeVisible();
-  await panel.getByRole('button', { name: /打开源码/ }).focus();
+  await expect(panel.getByRole('button', { name: '打开源码', exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: '打开源码', exact: true }).focus();
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
   await expect(node).toBeFocused();
   await node.focus();
   await page.keyboard.press('Enter');
-  const actions = page.locator('.tv-node-actions');
+  const actions = page.locator('.node-detail-popover .ndp-actions');
   await expect(actions).toBeVisible();
-  await expect.poll(() => inside(actions)).toBe(true);
+  await expect.poll(() => inside(page.locator('.node-detail-popover'))).toBe(true);
 });
 
 test('Escape returns keyboard focus to a zoomed-out file after inspecting source details', async ({
@@ -259,13 +260,15 @@ test('Escape returns keyboard focus to a zoomed-out file after inspecting source
     await page.waitForTimeout(220);
   }
   await expect(file.locator('.graph-node')).toHaveAttribute('data-reading-mode', 'map');
-  await file.hover();
-  const panel = page.locator('.tv-node-detail[role=dialog]');
+  await file.focus();
+  await page.keyboard.press('Enter');
+  const panel = page.locator('.node-detail-popover[role=dialog]');
   await expect(panel).toBeVisible();
-  await panel.getByRole('button', { name: /打开源码/ }).focus();
+  await panel.getByRole('button', { name: '打开源码', exact: true }).focus();
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
   await expect(file).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('heading', { name: '文件详情', exact: true })).toBeVisible();
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('engine.ts');
 });

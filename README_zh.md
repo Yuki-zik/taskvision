@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.7.0_preview-3B82F6?style=flat-square" alt="Version 3.7.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.8.0_preview-3B82F6?style=flat-square" alt="Version 3.8.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -35,6 +35,18 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.8 预览：恢复原版霓虹与玻璃高亮，单击节点展示完整详情
+
+本版直接对齐原 GitHub README 的源码截图：黑色代码画布、按标签颜色发光、低透明度的整行玻璃描边。原来的四通道高亮机制继续生效。CORE、REUSE、INTENT、REVIEW 的默认颜色分别是蓝、绿、紫、黄；默认开启 neon+glass，标签范围辉光 56%，整行玻璃填充 9%、边缘描边 34%。只改变内置缺省值，不覆盖用户已有的自定义方案。
+
+**网页中单击模块/文件节点**会在节点旁打开独立、可滚动的详情卡片，显示实际职责、路径、文件和代码行数、引用/依赖、知识标签、源码注释与来源及相关操作；固定侧栏不会自动挤压画布。点击空白或按 Escape 关闭，双击进入模块，打开完整检查器是独立的显式操作。详情卡采用与原版对应的霓虹标签、细玻璃描边和深色半透明背景，并保留内容可读性。
+
+新注册工程默认深色霓虹，已经保存的浅色/跟随系统个人偏好仍会生效。侧栏标题仅保留打开工作台、刷新和 Quick Actions 三个主要入口，更多原生任务/标签/外观/AI/MCP 操作统一在分组快捷菜单和右键菜单中；命令可以搜索，设置可以直接打开 VS Code Settings。知识标签不再被误标为隐式 [idea]，真正声明的任务状态仍照常显示。
+
+注意：Web 使用 CSS 再现原版视觉语言，VS Code 仍使用原生四通道装饰机制；不能声称二者对任意用户主题和字体逐像素一致。大图线条仍可能交叉。默认深色只用于未保存过偏好的新工程。
+
+详见工作台指南 workspace/README.md 及验收要求 agent/click-detail-vscode-acceptance.md。
 
 ## 3.7 预览：多项目切换、个人布局与明暗主题
 

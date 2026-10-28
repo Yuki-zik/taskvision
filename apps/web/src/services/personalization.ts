@@ -18,7 +18,7 @@ export interface PersonalPreferences {
 }
 export type PreferencePatch = Partial<PersonalPreferences>;
 export const DEFAULT_PREFERENCES: PersonalPreferences = {
-  theme: 'system',
+  theme: 'dark',
   sidebarWidth: 184,
   sidebarCollapsed: false,
   detailDock: 'right',
@@ -33,7 +33,7 @@ export function normalizePreferences(value: unknown): PersonalPreferences {
       ? Math.min(maximum, Math.max(minimum, Math.round(v[key] as number)))
       : fallback;
   return {
-    theme: v.theme === 'dark' || v.theme === 'light' || v.theme === 'system' ? v.theme : 'system',
+    theme: v.theme === 'dark' || v.theme === 'light' || v.theme === 'system' ? v.theme : 'dark',
     sidebarWidth: width('sidebarWidth', 184, 160, 340),
     sidebarCollapsed: v.sidebarCollapsed === true,
     detailDock:

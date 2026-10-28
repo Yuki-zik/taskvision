@@ -104,11 +104,17 @@ const extensions: Record<string, string> = {
 // caused inconsistent first-pass grammar tokens under concurrent requests.
 // Cache separate cores per language and theme to keep the result deterministic.
 const loaded = new Map<string, Promise<HighlighterCore>>();
+// Shiki's JS regex engine resolves embedded grammar dependencies lazily.
+// Even separate cores can see a cold-registry race when multiple languages
+// initialize in the same event-loop turn. Serialize ONLY initialization;
+// later tokenization is synchronous and can use the cached cores freely.
+let initializationTail: Promise<void> = Promise.resolve();
 function highlighter(language: string, theme: SourceTheme): Promise<HighlighterCore> {
   const key = language + ':' + theme;
   const cached = loaded.get(key);
   if (cached) return cached;
-  const pending = Promise.all([import('shiki/core'), import('shiki/engine/javascript')])
+  const pending = initializationTail
+    .then(() => Promise.all([import('shiki/core'), import('shiki/engine/javascript')]))
     .then(async ([{ createHighlighterCore }, { createJavaScriptRegexEngine }]) => {
       const instance = await createHighlighterCore({
         themes: [],
@@ -121,12 +127,42 @@ function highlighter(language: string, theme: SourceTheme): Promise<HighlighterC
           ? import('shiki/themes/dark-plus.mjs')
           : import('shiki/themes/light-plus.mjs'),
       );
+      // TextMate/Oniguruma can defer embedded token scopes until the first
+      // codeToTokens pass. Pre-warm this isolated language/theme instance
+      // before revealing user source so a cold comment is never silently
+      // treated as executable syntax merely because grammar setup raced.
+      const warmup =
+        language === 'python' || language === 'shellscript' || language === 'yaml'
+          ? '# CORE: warming comment scope\nvalue = 1'
+          : language === 'html' ||
+              language === 'vue' ||
+              language === 'svelte' ||
+              language === 'markdown'
+            ? '<!-- CORE: warming comment scope -->\n<div>sample</div>'
+            : language === 'cpp' || language === 'c'
+              ? '// CORE: warming comment scope\nint main() {return 0;}\n#include <stdio.h>'
+              : '// CORE: warming comment scope\nconst value = 1;';
+      // Code scopes and embedded regex patterns may compile on first use.
+      // Prime both comment and executable syntax before exposing real source.
+      for (let pass = 0; pass < 2; pass++) {
+        instance.codeToTokens(warmup, {
+          lang: language,
+          theme: theme === 'dark' ? 'dark-plus' : 'light-plus',
+          includeExplanation: 'tokenType',
+          tokenizeMaxLineLength: 10000,
+          tokenizeTimeLimit: 1500,
+        });
+      }
       return instance;
     })
     .catch((error: unknown) => {
       loaded.delete(key);
       throw error;
     });
+  initializationTail = pending.then(
+    () => undefined,
+    () => undefined,
+  );
   loaded.set(key, pending);
   return pending;
 }
@@ -439,7 +475,7 @@ export async function highlightSource(
       theme: theme === 'dark' ? 'dark-plus' : 'light-plus',
       includeExplanation: 'tokenType',
       tokenizeMaxLineLength: 10000,
-      tokenizeTimeLimit: 500,
+      tokenizeTimeLimit: 1500,
     });
     const sourceLines = text.split('\n');
     let hasPlainLines = false;

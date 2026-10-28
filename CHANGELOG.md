@@ -1,5 +1,15 @@
 # TaskVision Change Log
 
+## 3.8.0 Preview - heritage neon and one-click source details
+
+- Returned to the original GitHub screenshot visual language: near-black canvas, localized neon label glow, translucent thin full-line glass boundaries. Replaced generic light administrative popovers with restrained dark acrylic surfaces.
+- CORE/REUSE/INTENT/REVIEW now ship with their existing semantic blue/green/violet/amber colors, neon+glass scheme, tag-only glow (56%), whole-line outline (34%) and 9% translucent line tint. This changes shipped defaults, not existing user configuration overrides.
+- New Web projects default to dark heritage neon; saved Light/System choices remain effective. Actual light mode and OS-following mode continue to work.
+- Single-click any module/file to open a screen-sized floating detail card near that node, showing true summary, files/LOC, relationships, knowledge tags, source-anchored annotation preview, owner/review status and real actions. Escape/outside click dismiss, Enter opens, double click drills without automatic fixed-inspector resizing. Minimized hover overlays.
+- Native VS Code Activity Bar tree title prioritizes Open Workspace, Refresh and Quick Actions; grouped picker gives task, appearance, source, agent/MCP and settings workflows. All original context menus/commands remain. Native real editor and task tree were verified with an isolated VSIX/VS Code GUI, not solely command existence.
+- Fixed invalid native gutter icon defaults for CORE/REUSE and suppressed misleading implicit idea-status prefixes for knowledge tags while preserving true explicit statuses. Appearance pickers await actual settings updates.
+- Added source-anchored UI/keyboard/mobile tests and default-neon source tests. Isolated Shiki grammar initialization and prewarmed comment scopes to stabilize first syntax load under concurrent language requests.
+
 ## 3.7.0 Preview
 
 - Added opt-in local project registration, per-tab project switching and isolated source/knowledge/Review operations without mutating a global active workspace.

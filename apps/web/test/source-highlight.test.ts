@@ -19,8 +19,14 @@ test('TaskVision colors and TODO channels come from the actual extension default
     assert.equal(plan.color.scope, 'text');
     assert.equal(plan.font.style.fontWeight, 'bold');
     assert.equal(plan.font.scope, 'tag');
-    assert.deepEqual(plan.glow.style, {});
-    assert.deepEqual(plan.glass.style, {});
+    // The original GitHub identity uses tag-only neon glow with a subtle
+    // full-line acrylic outline. The shared VS Code manifest is the source.
+    assert.equal(plan.glow.scope, custom[tag].glowType);
+    assert.equal(plan.glass.scope, custom[tag].glassType);
+    assert.equal(custom[tag].scheme, 'neon+glass');
+    assert.match(String(plan.glow.style.textShadow), /0 0 5px rgba/);
+    assert.match(String(plan.glass.style.backgroundColor), /^rgba\(/);
+    assert.match(String(plan.glass.style.boxShadow), /inset 0 0 0 1px rgba/);
   }
   const todo = resolveHighlightStyle('TODO', 'dark');
   assert.equal(todo.color.style.color, custom.TODO.iconColour);

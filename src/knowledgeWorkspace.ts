@@ -1,4 +1,5 @@
 import {errorMessage} from './validation';
+import {registerWorkspaceActions} from './workspaceActions';
 interface Service {child?: childProcess.ChildProcess; ready: Promise<string>; cancelled: boolean}
 
 import * as path from 'path';
@@ -163,6 +164,7 @@ function register(vscode: typeof import("vscode"), context: import("vscode").Ext
     commands.forEach(function (entry) {
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.' + entry[0], entry[1]));
     });
+    registerWorkspaceActions(vscode, context);
     const disposable = { dispose: function () { stopAll(); output.dispose(); } };
     context.subscriptions.push(disposable);
     return disposable;

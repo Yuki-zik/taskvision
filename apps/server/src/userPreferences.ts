@@ -39,7 +39,7 @@ const preferencePatch = z
   .strict();
 export type UserPreferences = Required<z.infer<typeof preferencePatch>>;
 export const DEFAULT_PREFERENCES: UserPreferences = {
-  theme: 'system',
+  theme: 'dark',
   sidebarWidth: 184,
   detailWidth: 364,
   detailHeight: 300,

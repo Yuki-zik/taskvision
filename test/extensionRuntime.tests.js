@@ -115,3 +115,58 @@ QUnit.test('stopping a bridge during runtime detection cancels its pending spawn
         assert.ok(host.messages.some(message => message.includes('cancelled')));
     });
 });
+
+
+QUnit.test('implicit knowledge tags are not idea tasks while explicit statuses survive', async assert => {
+    const host=createHost({settings:{
+        'taskvision.general.tags': ['TODO','CORE','REUSE','INTENT','REVIEW'],
+        'taskvision.tree.labelFormat': '$'+'{tag} '+'$'+'{after}',
+        'taskvision.tree.showStatusPrefix': true,
+    }});
+    host.vscode.Position=class {constructor(line,character){this.line=line;this.character=character;}};
+    host.vscode.Selection=class {constructor(start,end){this.start=start;this.end=end;}};
+    await withHost(host, load => {
+        const config=load('config'),utils=load('utils'),attributes=load('attributes');
+        config.init(host.context);utils.init(config);attributes.init(config);
+        const provider=new (load('tree').TreeNodeProvider)(host.context,()=>{},()=>{});
+        provider.clear(host.vscode.workspace.workspaceFolders);
+        const uri=host.vscode.Uri.file('/tmp/taskvision-project/knowledge.ts');
+        ['// CORE: Contract invariant','// REUSE: Shared helper','// INTENT: Preserve API','// REVIEW: Human checkpoint','// TODO [doing] implement behavior','// CORE [doing] explicit source cleanup'].forEach((match,index)=>provider.add({uri,match,line:index+1,column:1}));
+        const nodes=provider.getAllTodoNodes();
+        assert.strictEqual(nodes.length,6);
+        const labels=nodes.map(node=>String(provider.getTreeItem(node).label));
+        for (const tag of ['CORE','REUSE','INTENT','REVIEW']) {
+            const label=labels.find(line=>line.includes(tag + ' '));
+            assert.ok(label,'found '+tag);
+            assert.notOk(label.startsWith('[idea]'),tag+' is not an invented pending idea');
+        }
+        assert.ok(labels.some(line=>line.startsWith('[doing] TODO')),'real TODO status preserved');
+        assert.ok(labels.some(line=>line.startsWith('[doing] CORE')),'explicit knowledge status preserved');
+    });
+});
+
+QUnit.test('all default knowledge gutter icons are supported Octicons and do not warn on activation', assert => {
+    const host = createHost();
+    const octicons = require('@primer/octicons');
+    const props = Object.assign({}, ...require('../package.json').contributes.configuration.map(section => section.properties));
+    const configured = props['taskvision.highlights.customHighlight'].default;
+    for (const tag of ['CORE', 'REUSE', 'INTENT', 'REVIEW']) {
+        assert.ok(octicons[configured[tag].icon], tag + ': ' + configured[tag].icon);
+        assert.ok(configured[tag].gutterIcon, tag + ' still renders in editor gutter');
+    }
+});
+
+QUnit.test('CORE REUSE INTENT REVIEW inherit original GitHub neon glass channels', assert => {
+    const contributions = require('../package.json').contributes.configuration;
+    const props = Object.assign({}, ...contributions.map(group => group.properties));
+    const rules = props['taskvision.highlights.customHighlight'].default;
+    for (const name of ['CORE', 'REUSE', 'INTENT', 'REVIEW']) {
+        const rule = rules[name];
+        assert.equal(rule.scheme, 'neon+glass', name + ' original neon/glass effect');
+        assert.equal(rule.glowType, 'tag', name + ' glow remains localized at tag text');
+        assert.equal(rule.glassType, 'whole-line', name + ' original full-line outlined glass');
+        assert.equal(rule.colorType, 'text', name + ' annotation text color remains source-linked');
+        assert.ok(rule.glassOpacity <= 15 && rule.glassBorderOpacity >= 25, name + ' legible translucent bar');
+        assert.strictEqual(rule.background, rule.foreground, name + ' glass accent matches semantic color');
+    }
+});

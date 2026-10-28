@@ -50,7 +50,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
           },
         ];
 
-        vscode.window
+        return vscode.window
           .showQuickPick(items, {
             placeHolder: 'Choose a highlight scheme for ' + node.tag,
             matchOnDetail: true,
@@ -73,7 +73,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
               updated[node.tag!].scheme = selection.value;
             }
 
-            currentConfig.update('customHighlight', updated, customHighlightTarget);
+            return currentConfig.update('customHighlight', updated, customHighlightTarget);
           });
       }
     }),
@@ -112,7 +112,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
         },
       ];
 
-      vscode.window
+      return vscode.window
         .showQuickPick(items, {
           placeHolder: 'Choose a highlight scheme to apply to ALL tags',
           matchOnDetail: true,

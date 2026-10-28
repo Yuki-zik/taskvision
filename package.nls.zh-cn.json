@@ -153,5 +153,9 @@
     "taskvision.command.copyMcpConfig.title": "复制 Agent MCP 配置",
     "taskvision.command.enableKnowledgeTags.title": "启用知识标签（保留自定义标签）",
     "taskvision.configuration.workspace": "TaskVision 项目工作台",
-    "taskvision.configuration.workspace.nodePath": "可选 Web/MCP 工作台使用的 Node.js 22.18+ 路径。请在用户设置中配置；忽略仓库级覆盖。仅在主动打开工作台时启动服务。"
+    "taskvision.configuration.workspace.nodePath": "可选 Web/MCP 工作台使用的 Node.js 22.18+ 路径。请在用户设置中配置；忽略仓库级覆盖。仅在主动打开工作台时启动服务。",
+    "taskvision.command.quickActions.title": "快捷操作",
+    "taskvision.command.configureAppearanceAndWorkspace.title": "配置外观与工作台",
+    "taskvision.command.setScheme.title": "设置高亮方案",
+    "taskvision.command.customizeAppearance.title": "自定义标签外观"
 }

@@ -236,6 +236,11 @@ test('system appearance follows OS color scheme and left dock uses keyboard resi
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto(app.url);
   await ready(page, 'alpha');
+  // New projects use their original dark neon appearance. Opt into the saved
+  // Follow System mode before testing OS theme changes.
+  await page.getByRole('button', { name: '个性化布局与主题' }).click();
+  await page.getByRole('button', { name: '跟随系统', exact: true }).click();
+  await page.getByRole('button', { name: '关闭外观设置' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -267,18 +272,36 @@ test('manually moved graph node positions and camera persist across reload, with
 }) => {
   await page.goto(app.url);
   await ready(page, 'alpha');
+  // Complete the actual initial Fit interaction before testing a manual drag.
+  // The page's layout spinner can disappear while a CSS/React Flow viewport
+  // animation is still running and a pointer-down may hit an old position.
+  await page.getByRole('button', { name: '适合画布，保留文字可读', exact: true }).click();
+  await page.waitForTimeout(390);
   const node = page.locator('.react-flow__node[data-id="module:src"]');
   await expect(node).toHaveClass(/draggable/);
   const readPosition = () => node.evaluate((el) => el.style.transform);
   const before = await readPosition();
   const title = node.locator('.node-title');
   await title.hover();
+  await expect(node).toHaveClass(/draggable/);
   const rect = await title.boundingBox();
   expect(rect).toBeTruthy();
   const from = { x: rect!.x + Math.min(rect!.width * 0.5, 70), y: rect!.y + rect!.height / 2 };
+  // A pointer test is meaningful only if the graph node is actually under the
+  // cursor after asynchronous Fit/ELK measurement; a missed down cannot drag.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ x, y }) =>
+          document.elementFromPoint(x, y)?.closest('.react-flow__node')?.getAttribute('data-id'),
+        from,
+      ),
+    )
+    .toBe('module:src');
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
-  await page.mouse.move(from.x + 76, from.y + 52, { steps: 8 });
+  await page.mouse.move(from.x + 76, from.y + 52, { steps: 12 });
+  await expect(node).toHaveClass(/dragging/);
   await page.mouse.up();
   await expect.poll(readPosition, { timeout: 10000 }).not.toBe(before);
   const moved = await readPosition();

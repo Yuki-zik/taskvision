@@ -42,7 +42,7 @@ test('per-project personal preferences restore across server/port changes, patch
   )
     .json()
     .then((body) => body.preferences);
-  assert.equal(defaults.theme, 'system');
+  assert.equal(defaults.theme, 'dark');
   const changed = {
     theme: 'light',
     sidebarWidth: 280,

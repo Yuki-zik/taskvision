@@ -226,6 +226,17 @@ function buildTodoLabel(extracted: ExtractedTag, result: SearchResult) {
     return label;
 }
 
+// Semantic knowledge tags do not automatically become an "idea" task.
+// Keep the status prefix for explicit inline statuses or real TODO tasks.
+const KNOWLEDGE_MARKERS = new Set(['CORE', 'REUSE', 'INTENT', 'REVIEW']);
+function hasDisplayTaskStatus(node: TreeNode): boolean {
+    if (!node.status) return false;
+    if (isTodoNode(node) &&
+        KNOWLEDGE_MARKERS.has(String(node.actualTag || node.tag || '').toUpperCase()) &&
+        node.hasExplicitStatus !== true && node.status === 'idea') return false;
+    return true;
+}
+
 function renderTodoDisplayLabel(node: TreeNode) {
     if (isContextAnnotationNode(node)) {
         return "[ctx:" + (node.contextKind || 'context') + "] " + (node.after || node.label) + (node.pathLabel ? (" " + node.pathLabel) : "");
@@ -241,13 +252,13 @@ function renderTodoDisplayLabel(node: TreeNode) {
     if (format !== "" && (node.extraLines === undefined || node.extraLines.length === 0)) {
         label = utils.formatLabel(format, node);
         if (config.shouldShowStatusPrefix() &&
-            node.status &&
+            hasDisplayTaskStatus(node) &&
             format.indexOf("${status}") === -1 &&
             format === DEFAULT_LABEL_FORMAT) {
             label = "[" + node.status + "] " + label;
         }
     }
-    else if (config.shouldShowStatusPrefix() && node.status && node.isExtraLine !== true) {
+    else if (config.shouldShowStatusPrefix() && hasDisplayTaskStatus(node) && node.isExtraLine !== true) {
         label = "[" + node.status + "] " + label;
     }
 

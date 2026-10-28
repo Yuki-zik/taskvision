@@ -50,6 +50,8 @@ import { RelationDetails } from './RelationDetails';
 import { matchingRoute, displayRoute, separatedCable, obstacleLaneWaypoints } from './routing';
 import { analyzeImpact, type ImpactMode } from './impact';
 import { ArchitectureNode } from './ArchitectureNode';
+import { NodeDetailPopover } from './NodeDetailPopover';
+import './node-detail-popover.css';
 import { GraphLegend, type WireDisplayStyle } from './GraphLegend';
 import { boundGraphViews, type GraphCanvasState } from '../services/personalization';
 
@@ -195,7 +197,7 @@ function RoutedEdge(props: EdgeProps<KnowledgeEdge>) {
         strokeDasharray={relation.dash}
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity={data?.muted && !emphasized ? 0.12 : 1}
+        style={{ opacity: data?.muted && !emphasized ? 0.12 : 1 }}
       />
       <BaseEdge
         id={props.id}
@@ -237,6 +239,7 @@ interface Props {
 
 function GraphCanvas({
   snapshot,
+  projectId,
   filter,
   selection,
   onSelect,
@@ -254,6 +257,11 @@ function GraphCanvas({
   const [focusId, setFocusId] = useState<string | null>(null);
   const [impactMode, setImpactMode] = useState<ImpactMode>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const detailAnchor = useRef<HTMLElement | null>(null);
+  const pendingAnchor = useRef<HTMLElement | null>(null);
+  const inspectorSelection = useRef(selection);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
   const [focusedEdge, setFocusedEdge] = useState<string | null>(null);
@@ -289,15 +297,52 @@ function GraphCanvas({
   const resetPositions = useRef(false);
   const pendingFit = useRef(false);
   const fitAsOverview = useRef(false);
-  // Keep a first node click from opening the side inspector until React Flow
-  // can distinguish a double click. Opening it immediately resizes this
-  // canvas between click #1 and #2 and can swallow the second click.
-  const pendingInspector = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelPendingInspector = useCallback(() => {
-    if (pendingInspector.current !== null) clearTimeout(pendingInspector.current);
-    pendingInspector.current = null;
+  // Delay pointer activation so a double click cannot flash a popup or resize the canvas.
+  const pendingDetail = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPendingDetail = useCallback(() => {
+    if (pendingDetail.current !== null) clearTimeout(pendingDetail.current);
+    pendingDetail.current = null;
+    pendingAnchor.current = null;
   }, []);
-  useEffect(() => () => cancelPendingInspector(), [cancelPendingInspector]);
+  const closeDetail = useCallback(
+    (restoreFocus = true) => {
+      const anchor = pendingAnchor.current ?? detailAnchor.current;
+      cancelPendingDetail();
+      setDetailId(null);
+      detailAnchor.current = null;
+      if (restoreFocus && anchor?.isConnected) anchor.focus({ preventScroll: true });
+    },
+    [cancelPendingDetail],
+  );
+  useEffect(() => () => cancelPendingDetail(), [cancelPendingDetail]);
+  useEffect(() => {
+    closeDetail(false);
+  }, [projectId, snapshot.project.root, filter.query, filter.tag, filter.hotspots, closeDetail]);
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest('.node-detail-popover')) return;
+      const node = event.target.closest('.react-flow__node');
+      if (node && stage.current?.contains(node)) return;
+      // Pointer-down outside closes the nonmodal card. It should not steal
+      // focus back from the clicked canvas/toolbar; Escape and the close
+      // button restore focus explicitly.
+      closeDetail(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || (!detailAnchor.current && pendingDetail.current === null))
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeDetail();
+    };
+    document.addEventListener('pointerdown', outside, true);
+    document.addEventListener('keydown', escape, true);
+    return () => {
+      document.removeEventListener('pointerdown', outside, true);
+      document.removeEventListener('keydown', escape, true);
+    };
+  }, [closeDetail]);
   // Preferences are already isolated by registered project. JSON keeps scope keys unambiguous.
   const context = JSON.stringify([scope, infrastructure, detailed]);
   const contextRef = useRef(context);
@@ -363,7 +408,7 @@ function GraphCanvas({
   }, [graph, persistCanvas]);
   const drill = useCallback(
     (path: string) => {
-      cancelPendingInspector();
+      closeDetail(false);
       rememberViewport();
       setScope(path);
       setExpanded([]);
@@ -373,7 +418,7 @@ function GraphCanvas({
       setImpactMode('all');
       onModule(path);
     },
-    [rememberViewport, onModule, cancelPendingInspector],
+    [rememberViewport, onModule, closeDetail],
   );
   const toggle = useCallback((path: string) => {
     setExpanded((previous) =>
@@ -553,26 +598,38 @@ function GraphCanvas({
       ),
     );
   }, [model, decorate]);
-  // One activation path for mouse and keyboard. The parent inspector selection must
-  // change with the graph center, otherwise its reconciliation effect restores the
-  // previously selected file after the next graph update.
   const activateNode = useCallback(
-    (node: KnowledgeNode) => {
-      cancelPendingInspector();
-      setSelectedEdgeId(null);
-      setSelectedId(node.id);
-      if (node.data.kind === 'file') {
-        onSelect({ path: node.data.path, line: 1 });
-      } else {
-        const target = node.data.path;
-        pendingInspector.current = setTimeout(() => {
-          pendingInspector.current = null;
-          onModule(target);
-        }, 280);
+    (node: KnowledgeNode, keyboard = false, clickCount = 1) => {
+      cancelPendingDetail();
+      // The second click is followed by React Flow's double-click handler.
+      if (clickCount > 1) {
+        closeDetail(false);
+        return;
       }
+      const anchor = [
+        ...(stage.current?.querySelectorAll<HTMLElement>('.react-flow__node') ?? []),
+      ].find((element) => element.dataset.id === node.id);
+      if (!anchor) return;
+      pendingAnchor.current = anchor;
+      const open = () => {
+        pendingDetail.current = null;
+        if (!anchor.isConnected || !latest.current.nodes.some((item) => item.id === node.id))
+          return;
+        detailAnchor.current = anchor;
+        pendingAnchor.current = null;
+        setSelectedEdgeId(null);
+        setSelectedId(node.id);
+        setDetailId(node.id);
+      };
+      if (keyboard) open();
+      else pendingDetail.current = setTimeout(open, 230);
     },
-    [onSelect, onModule, cancelPendingInspector],
+    [cancelPendingDetail, closeDetail],
   );
+  const detailNode = nodes.find((node) => node.id === detailId);
+  useEffect(() => {
+    if (detailId && !model.nodes.some((node) => node.id === detailId)) closeDetail(false);
+  }, [detailId, model, closeDetail]);
   // Polling may change evidence/counts without changing topology or the saved view.
   useEffect(() => {
     const fresh = new Map(model.edges.map((edge) => [edge.id, edge.data!]));
@@ -587,7 +644,14 @@ function GraphCanvas({
     );
   }, [model]);
   useEffect(() => {
-    if (!selection?.path || selectedEdgeId) return;
+    if (!selection?.path || selectedEdgeId || detailId || pendingDetail.current !== null) return;
+    if (
+      inspectorSelection.current === selection &&
+      selectedId &&
+      nodes.some((node) => node.id === selectedId)
+    )
+      return;
+    inspectorSelection.current = selection;
     const visible =
       nodes.find((node) => node.id === `file:${selection.path}`) ??
       nodes.find(
@@ -608,7 +672,7 @@ function GraphCanvas({
           ).length > 0,
       );
     if (visible) setSelectedId(visible.id);
-  }, [selection, nodes, selectedEdgeId]);
+  }, [selection, nodes, selectedEdgeId, detailId, selectedId]);
   const persistNodeMove = useRef(false);
   const onNodesChange: OnNodesChange<KnowledgeNode> = useCallback((changes) => {
     if (changes.some((change) => change.type === 'position' && change.dragging !== true))
@@ -638,16 +702,20 @@ function GraphCanvas({
       persistCanvas();
     }
   }, [nodes, layoutBusy, persistCanvas]);
-  const onEdgesChange: OnEdgesChange<KnowledgeEdge> = useCallback((changes) => {
-    for (const change of changes)
-      if (change.type === 'select') {
-        // A dependency detail is part of the selected module's impact context.
-        // Selecting its arrow must not silently erase the current lens target.
-        setSelectedEdgeId((previous) =>
-          change.selected ? change.id : previous === change.id ? null : previous,
-        );
-      }
-  }, []);
+  const onEdgesChange: OnEdgesChange<KnowledgeEdge> = useCallback(
+    (changes) => {
+      if (changes.some((change) => change.type === 'select' && change.selected)) closeDetail();
+      for (const change of changes)
+        if (change.type === 'select') {
+          // A dependency detail is part of the selected module's impact context.
+          // Selecting its arrow must not silently erase the current lens target.
+          setSelectedEdgeId((previous) =>
+            change.selected ? change.id : previous === change.id ? null : previous,
+          );
+        }
+    },
+    [closeDetail],
+  );
   const activeNode = impactActive ? null : (hoveredId ?? selectedId);
   const wireLanes = useMemo(() => {
     const grouped = new Map<string, KnowledgeEdge[]>();
@@ -674,7 +742,8 @@ function GraphCanvas({
     }
     return lanes;
   }, [edges]);
-  const activeWire = hoveredEdge ?? focusedEdge ?? selectedEdgeId;
+  // Explicit keyboard focus outranks an unrelated stale mouse hover.
+  const activeWire = focusedEdge ?? selectedEdgeId ?? hoveredEdge;
   const displayedEdges = useMemo(
     () =>
       edges.map((edge) => ({
@@ -979,7 +1048,11 @@ function GraphCanvas({
         </span>
       </section>
       <div
+        ref={stage}
         className="flow-container"
+        onClickCapture={(event) => {
+          if ((event.target as Element).closest('button, a')) closeDetail(false);
+        }}
         onKeyDownCapture={(event) => {
           // React Flow's built-in Enter/Space handler can update its internal
           // selection without emitting a usable controlled onNodesChange.
@@ -990,7 +1063,11 @@ function GraphCanvas({
             return;
           if (event.key === 'Enter' || event.key === ' ') {
             const node = nodes.find((item) => item.id === target.getAttribute('data-id'));
-            if (node) activateNode(node);
+            if (node) {
+              event.preventDefault();
+              event.stopPropagation();
+              activateNode(node, true);
+            }
           }
           if (event.key === 'Escape') {
             setSelectedId(null);
@@ -999,6 +1076,15 @@ function GraphCanvas({
         }}
         onFocusCapture={(event) => {
           const edge = event.target.closest('.react-flow__edge');
+          if (edge) {
+            // Keyboard navigation to a dependency supersedes a previously
+            // clicked node. Cancel its delayed popup before it steals focus,
+            // and keep this edge selected if a later graph poll remounts its
+            // SVG group. A stale pointer hover must not override it.
+            closeDetail(false);
+            setHoveredEdge(null);
+            setSelectedEdgeId(edge.getAttribute('data-id'));
+          }
           setFocusedEdge(edge?.getAttribute('data-id') ?? null);
         }}
         onBlurCapture={(event) => {
@@ -1018,13 +1104,17 @@ function GraphCanvas({
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onEdgeClick={(_, edge) => {
-              cancelPendingInspector();
+              closeDetail();
               setSelectedEdgeId(edge.id);
             }}
             onPaneClick={() => {
-              cancelPendingInspector();
+              closeDetail();
               setSelectedEdgeId(null);
             }}
+            onNodeDragStart={() => closeDetail(false)}
+            // Node drag, blank-canvas pointerdown, and double click each
+            // cancel pending details. Avoid onMoveStart cancellation:
+            // React Flow fires it during initial Fit even after a real click.
             onNodeDragStop={() => {
               for (const node of graph.getNodes()) {
                 const points = positions.current.get(contextRef.current);
@@ -1038,8 +1128,13 @@ function GraphCanvas({
                 current.map((edge) => ({ ...edge, data: { ...edge.data!, points: undefined } })),
               );
             }}
-            onNodeClick={(_, node) => activateNode(node)}
-            onNodeDoubleClick={(_, node) => {
+            onNodeClick={(event, node) => {
+              if ((event.target as Element).closest('button, a, input, select, textarea')) return;
+              activateNode(node, false, event.detail);
+            }}
+            onNodeDoubleClick={(event, node) => {
+              if ((event.target as Element).closest('button, a, input, select, textarea')) return;
+              closeDetail(false);
               if (node.data.kind === 'module') drill(node.data.path);
             }}
             onNodeMouseEnter={(_, node) => setHoveredId(node.id)}
@@ -1063,9 +1158,9 @@ function GraphCanvas({
             aria-label="可缩放、拖动的项目结构"
             ariaLabelConfig={{
               'node.a11yDescription.default':
-                '按 Enter 或空格选择节点。使用方向键移动，按 Escape 取消选择。',
+                '按 Enter 或空格打开节点详情。使用方向键移动，按 Escape 关闭详情。',
               'node.a11yDescription.keyboardDisabled':
-                '按 Enter 或空格选择节点，按 Escape 取消选择。',
+                '按 Enter 或空格打开节点详情，按 Escape 关闭详情。',
               'node.a11yDescription.ariaLiveMessage': ({ x, y }) =>
                 `节点已移动到横坐标 ${Math.round(x)}，纵坐标 ${Math.round(y)}。`,
               'edge.a11yDescription.default': '按 Enter 或空格选择依赖关系。',
@@ -1177,6 +1272,21 @@ function GraphCanvas({
           </div>
         )}
       </div>
+      {detailNode && detailAnchor.current && (
+        <NodeDetailPopover
+          key={detailNode.id}
+          node={detailNode}
+          reference={detailAnchor.current}
+          limits={snapshot.limits}
+          theme={theme}
+          onClose={() => closeDetail()}
+          onInspect={() => {
+            closeDetail(false);
+            if (detailNode.data.kind === 'module') onModule(detailNode.data.path);
+            else onSelect({ path: detailNode.data.path, line: 1 });
+          }}
+        />
+      )}
       <footer className="canvas-footer">
         <span>
           {wireStyle === 'direct'

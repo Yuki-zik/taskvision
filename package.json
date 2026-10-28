@@ -10,7 +10,7 @@
         "ai-agents",
         "code-reuse"
     ],
-    "version": "3.7.0",
+    "version": "3.8.0",
     "license": "MIT",
     "icon": "resources/taskvision.png",
     "publisher": "A-Znk",
@@ -86,27 +86,27 @@
                 {
                     "command": "taskvision.exportTree",
                     "when": "view =~ /taskvision/ && taskvision-show-export-button == true",
-                    "group": "navigation@1"
+                    "group": "5-context@5"
                 },
                 {
                     "command": "taskvision.syncDataModel",
                     "when": "view =~ /taskvision/",
-                    "group": "navigation@1.05"
+                    "group": "5-context@1"
                 },
                 {
                     "command": "taskvision.exportAiContext",
                     "when": "view =~ /taskvision/",
-                    "group": "navigation@1.1"
+                    "group": "5-context@2"
                 },
                 {
                     "command": "taskvision.openAiStatusReport",
                     "when": "view =~ /taskvision/",
-                    "group": "navigation@1.2"
+                    "group": "5-context@3"
                 },
                 {
                     "command": "taskvision.addMissingTaskStatuses",
                     "when": "view =~ /taskvision/",
-                    "group": "navigation@1.3"
+                    "group": "5-context@4"
                 },
                 {
                     "command": "taskvision.setHighlightSchemeForAllTags",
@@ -116,97 +116,97 @@
                 {
                     "command": "taskvision.reveal",
                     "when": "view =~ /taskvision/ && taskvision-tags-only == false && taskvision-show-reveal-button == true",
-                    "group": "navigation@2"
+                    "group": "3-tree@2"
                 },
                 {
                     "command": "taskvision.scanOpenFilesOnly",
                     "when": "view =~ /taskvision/ && taskvision-scan-mode == 'workspace only' && taskvision-show-scan-mode-button == true",
-                    "group": "navigation@3"
+                    "group": "3-tree@3"
                 },
                 {
                     "command": "taskvision.scanCurrentFileOnly",
                     "when": "view =~ /taskvision/ && taskvision-scan-mode == 'open files' && taskvision-show-scan-mode-button == true",
-                    "group": "navigation@3"
+                    "group": "3-tree@3"
                 },
                 {
                     "command": "taskvision.scanWorkspaceAndOpenFiles",
                     "when": "view =~ /taskvision/ && taskvision-scan-mode == 'current file' && taskvision-show-scan-mode-button == true",
-                    "group": "navigation@3"
+                    "group": "3-tree@3"
                 },
                 {
                     "command": "taskvision.scanWorkspaceOnly",
                     "when": "view =~ /taskvision/ && taskvision-scan-mode == 'workspace' && taskvision-show-scan-mode-button == true",
-                    "group": "navigation@3"
+                    "group": "3-tree@3"
                 },
                 {
                     "command": "taskvision.showFlatView",
                     "when": "view =~ /taskvision/ && taskvision-flat == false && taskvision-tags-only == false && taskvision-show-view-style-button == true",
-                    "group": "navigation@4"
+                    "group": "3-tree@4"
                 },
                 {
                     "command": "taskvision.showTagsOnlyView",
                     "when": "view =~ /taskvision/ && taskvision-flat == true && taskvision-tags-only == false && taskvision-show-view-style-button == true",
-                    "group": "navigation@4"
+                    "group": "3-tree@4"
                 },
                 {
                     "command": "taskvision.showTreeView",
                     "when": "view =~ /taskvision/ && taskvision-flat == false && taskvision-tags-only == true && taskvision-show-view-style-button == true",
-                    "group": "navigation@4"
+                    "group": "3-tree@4"
                 },
                 {
                     "command": "taskvision.groupByTag",
                     "when": "view =~ /taskvision/ && taskvision-grouped-by-tag == false && taskvision-show-group-by-tag-button == true",
-                    "group": "navigation@5"
+                    "group": "3-tree@5"
                 },
                 {
                     "command": "taskvision.ungroupByTag",
                     "when": "view =~ /taskvision/ && taskvision-grouped-by-tag == true && taskvision-show-group-by-tag-button == true",
-                    "group": "navigation@5"
+                    "group": "3-tree@5"
                 },
                 {
                     "command": "taskvision.groupBySubTag",
                     "when": "view =~ /taskvision/ && taskvision-grouped-by-sub-tag == false && taskvision-show-group-by-sub-tag-button == true && taskvision-has-sub-tags == true",
-                    "group": "navigation@6"
+                    "group": "3-tree@6"
                 },
                 {
                     "command": "taskvision.ungroupBySubTag",
                     "when": "view =~ /taskvision/ && taskvision-grouped-by-sub-tag == true && taskvision-show-group-by-sub-tag-button == true && taskvision-has-sub-tags == true",
-                    "group": "navigation@6"
+                    "group": "3-tree@6"
                 },
                 {
                     "command": "taskvision.filter",
                     "when": "view =~ /taskvision/ && taskvision-filtered == false && taskvision-show-filter-button == true",
-                    "group": "navigation@7"
+                    "group": "2-filters@1"
                 },
                 {
                     "command": "taskvision.filterClear",
                     "when": "view =~ /taskvision/ && taskvision-filtered == true && taskvision-show-filter-button == true",
-                    "group": "navigation@7"
+                    "group": "2-filters@2"
                 },
                 {
                     "command": "taskvision.filterByStatus",
                     "when": "view =~ /taskvision/",
-                    "group": "navigation@7.1"
+                    "group": "2-filters@3"
                 },
                 {
                     "command": "taskvision.filterStatusClear",
                     "when": "view =~ /taskvision/ && taskvision-status-filter-active",
-                    "group": "navigation@7.2"
+                    "group": "2-filters@4"
                 },
                 {
                     "command": "taskvision.refresh",
                     "when": "view =~ /taskvision/ && taskvision-show-refresh-button == true",
-                    "group": "navigation@8"
+                    "group": "navigation@1"
                 },
                 {
                     "command": "taskvision.expand",
                     "when": "view =~ /taskvision/ && taskvision-expanded == false && taskvision-show-expand-button == true",
-                    "group": "navigation@9"
+                    "group": "3-tree@9"
                 },
                 {
                     "command": "taskvision.collapse",
                     "when": "view =~ /taskvision/ && taskvision-expanded == true && taskvision-show-expand-button == true",
-                    "group": "navigation@9"
+                    "group": "3-tree@9"
                 },
                 {
                     "command": "taskvision.openWorkspace",
@@ -216,17 +216,27 @@
                 {
                     "command": "taskvision.stopWorkspace",
                     "when": "view =~ /taskvision/",
-                    "group": "0-workspace"
+                    "group": "0-workspace@1"
                 },
                 {
                     "command": "taskvision.copyMcpConfig",
                     "when": "view =~ /taskvision/",
-                    "group": "0-workspace"
+                    "group": "0-workspace@2"
                 },
                 {
                     "command": "taskvision.enableKnowledgeTags",
                     "when": "view =~ /taskvision/",
-                    "group": "0-workspace"
+                    "group": "0-workspace@3"
+                },
+                {
+                    "command": "taskvision.quickActions",
+                    "when": "view =~ /taskvision/",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "taskvision.configureAppearanceAndWorkspace",
+                    "when": "view =~ /taskvision/",
+                    "group": "0-workspace@4"
                 }
             ],
             "view/item/context": [
@@ -717,12 +727,12 @@
             },
             {
                 "command": "taskvision.setScheme",
-                "title": "Set Highlight Scheme",
+                "title": "%taskvision.command.setScheme.title%",
                 "category": "%taskvision.command.category%"
             },
             {
                 "command": "taskvision.customizeAppearance",
-                "title": "Customize Tag Appearance",
+                "title": "%taskvision.command.customizeAppearance.title%",
                 "category": "%taskvision.command.category%"
             },
             {
@@ -754,6 +764,18 @@
                 "title": "%taskvision.command.enableKnowledgeTags.title%",
                 "category": "%taskvision.command.category%",
                 "icon": "$(tag)"
+            },
+            {
+                "command": "taskvision.quickActions",
+                "title": "%taskvision.command.quickActions.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(list-selection)"
+            },
+            {
+                "command": "taskvision.configureAppearanceAndWorkspace",
+                "title": "%taskvision.command.configureAppearanceAndWorkspace.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(settings-gear)"
             }
         ],
         "configuration": [
@@ -1038,27 +1060,39 @@
                             },
                             "CORE": {
                                 "foreground": "#60A5FA",
-                                "icon": "symbol-namespace",
+                                "icon": "repo",
                                 "iconColour": "#60A5FA",
                                 "rulerColour": "#60A5FA",
                                 "gutterIcon": true,
                                 "colorType": "text",
-                                "glowType": "none",
-                                "glassType": "none",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
                                 "fontType": "tag",
-                                "fontWeight": "bold"
+                                "fontWeight": "bold",
+                                "scheme": "neon+glass",
+                                "background": "#60A5FA",
+                                "glowOpacity": 56,
+                                "glassOpacity": 9,
+                                "glassBorderOpacity": 34,
+                                "borderRadius": "5px"
                             },
                             "REUSE": {
                                 "foreground": "#34D399",
-                                "icon": "references",
+                                "icon": "link",
                                 "iconColour": "#34D399",
                                 "rulerColour": "#34D399",
                                 "gutterIcon": true,
                                 "colorType": "text",
-                                "glowType": "none",
-                                "glassType": "none",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
                                 "fontType": "tag",
-                                "fontWeight": "bold"
+                                "fontWeight": "bold",
+                                "scheme": "neon+glass",
+                                "background": "#34D399",
+                                "glowOpacity": 56,
+                                "glassOpacity": 9,
+                                "glassBorderOpacity": 34,
+                                "borderRadius": "5px"
                             },
                             "INTENT": {
                                 "foreground": "#A78BFA",
@@ -1067,10 +1101,16 @@
                                 "rulerColour": "#A78BFA",
                                 "gutterIcon": true,
                                 "colorType": "text",
-                                "glowType": "none",
-                                "glassType": "none",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
                                 "fontType": "tag",
-                                "fontWeight": "bold"
+                                "fontWeight": "bold",
+                                "scheme": "neon+glass",
+                                "background": "#A78BFA",
+                                "glowOpacity": 56,
+                                "glassOpacity": 9,
+                                "glassBorderOpacity": 34,
+                                "borderRadius": "5px"
                             },
                             "REVIEW": {
                                 "foreground": "#FBBF24",
@@ -1079,10 +1119,16 @@
                                 "rulerColour": "#FBBF24",
                                 "gutterIcon": true,
                                 "colorType": "text",
-                                "glowType": "none",
-                                "glassType": "none",
+                                "glowType": "tag",
+                                "glassType": "whole-line",
                                 "fontType": "tag",
-                                "fontWeight": "bold"
+                                "fontWeight": "bold",
+                                "scheme": "neon+glass",
+                                "background": "#FBBF24",
+                                "glowOpacity": 56,
+                                "glassOpacity": 9,
+                                "glassBorderOpacity": 34,
+                                "borderRadius": "5px"
                             }
                         },
                         "markdownDescription": "%taskvision.configuration.highlights.customHighlight.markdownDescription%",

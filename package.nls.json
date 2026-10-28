@@ -153,5 +153,9 @@
     "taskvision.command.copyMcpConfig.title": "Copy Agent MCP Configuration",
     "taskvision.command.enableKnowledgeTags.title": "Enable Knowledge Tags (Preserve Custom Tags)",
     "taskvision.configuration.workspace": "TaskVision Workspace",
-    "taskvision.configuration.workspace.nodePath": "Node.js 22.18+ executable for the optional local Web/MCP workspace. Set in User Settings; workspace overrides are ignored. Nothing runs until you open the workspace."
+    "taskvision.configuration.workspace.nodePath": "Node.js 22.18+ executable for the optional local Web/MCP workspace. Set in User Settings; workspace overrides are ignored. Nothing runs until you open the workspace.",
+    "taskvision.command.quickActions.title": "Quick Actions",
+    "taskvision.command.configureAppearanceAndWorkspace.title": "Configure Appearance and Workspace",
+    "taskvision.command.setScheme.title": "Set Highlight Scheme",
+    "taskvision.command.customizeAppearance.title": "Customize Tag Appearance"
 }

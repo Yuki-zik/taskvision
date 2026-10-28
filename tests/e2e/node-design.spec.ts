@@ -95,14 +95,20 @@ test('architecture cards show genuine information with accessible source/drill/e
     expect(card.footerInBounds).toBe(true);
   }
   const core = page.locator('.react-flow__node[data-id="module:packages/core"]');
-  // Overview deliberately shows only the most urgent marker. Full truthful
-  // labels must remain visible in the official unscaled detail panel.
-  await page.locator('.react-flow__node[data-id="module:apps/web"]').hover();
-  await expect(page.locator('.tv-node-detail')).toContainText('CORE');
+  // The overview stays compact; one click reveals source-backed knowledge
+  // and an explicit details card without forcing the fixed inspector open.
+  // This geometry/facts regression exercises the immediate keyboard path
+  // so transient initial auto-fit does not masquerade as missing data.
+  // Dedicated click-node-detail.spec.ts separately asserts a real pointer
+  // single click opens the same card, with no fixed sidebar.
+  await page.locator('.react-flow__node[data-id="module:apps/web"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.node-detail-popover')).toContainText('CORE');
   await page.keyboard.press('Escape');
-  await core.hover();
-  await expect(page.locator('.tv-node-detail')).toContainText('REUSE');
-  await expect(page.locator('.tv-node-detail')).toContainText('INTENT');
+  await core.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.node-detail-popover')).toContainText('REUSE');
+  await expect(page.locator('.node-detail-popover')).toContainText('INTENT');
   await page.keyboard.press('Escape');
   await core.getByRole('button', { name: '展开 packages/core' }).click();
   await expect(page.locator('.graph-node.file-node')).toHaveCount(2);

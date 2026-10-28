@@ -1,5 +1,11 @@
 # Current Tasks
 
+## 3.8 original GitHub neon + native usability — 2026-10-28
+
+TaskVision 3.8 on branch feat/click-detail-vscode-ux-20261027, baseline 8adadde. User first requested one-click unscaled node popup with real data and full VS Code extension settings/sidebar verification, then rejected generic light/gray visual versus original GitHub neon screenshot. Reference source is resources/PixPin_2026-02-21_01-04-22.png. Web now uses restrained dark neon/acrylic palette in neon-heritage.css and node-detail-popover.css, with keyboard/pointer accessible popover and explicit source/review actions. New project defaults dark, saved personal preferences remain effective. Native package defaults CORE/REUSE/INTENT/REVIEW use neon+glass with original colors/tag glow/full-line transparent outline. Tree title actions consolidated to Open Workspace/Refresh/Quick Actions, settings discoverable, implicit knowledge idea prefix removed, invalid gutter icons repaired, original commands retained.
+
+Tests include native real VS Code screenshots, source decoration visual inspections, dedicated click/modal/keyboard/zoom/mobile/multi-project browser flows, combined legacy/core/Web/layout and source grammar stability. The user-owned .taskvision/ai-status-report.md preexisting changes are explicitly excluded. No remote push, Marketplace or daily-profile replacement. Local reproducible evidence: ~/agent-machine/workbench/taskvision-click-detail-20261027/ and acceptance agent/click-detail-vscode-acceptance.md.
+
 ## 3.7 多项目个人工作台 — 2026-10-27
 
 用户要求在页面直接切换本地工程、查看真实 INTENT 和源码证据、个性化三栏尺寸及停靠位置、VS Code 兼容源码标签/语法高亮、明暗/系统主题。分支 feat/multi-project-personal-workspace-20261027，从 f068b5c 开发；源码权限、Review 和原插件约束保持。新增本机允许列表项目目录（需人工显式添加），HTTP 逐请求按工程注册 ID 读取/写入（无全局当前工程），隔离二个浏览器标签页。偏好保存到用户私有 0700/0600 路径而非 Git，画布节点/视角、导航和检查器左/右/底位置可持久恢复。Shiki 按语言与主题按需加载，继承 TaskVision manifest 标签通道，以及扩展启动时初始工程的有效高亮；浅色默认正文低对比度时自动压暗，保证至少 4.5:1。

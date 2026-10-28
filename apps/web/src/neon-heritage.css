@@ -1,0 +1,183 @@
+/*
+ * TaskVision heritage neon / acrylic skin.
+ *
+ * Matches the original GitHub README's dark editor identity: near-black
+ * canvas, bright per-tag accent, delicate full-line glass outline, localized
+ * tag-only glow. This is an OPT-IN light/dark-compatible *presentation* layer,
+ * never an alternative source semantics or second graph engine.
+ *
+ * All values are CSS only. Do not change graph geometry, interaction boxes,
+ * code evidence, keyboard targets, or the existing light theme.
+ */
+html[data-theme='dark'] {
+  --tv-neon-core: #60a5fa;
+  --tv-neon-reuse: #34d399;
+  --tv-neon-intent: #a78bfa;
+  --tv-neon-review: #fbbf24;
+  --tv-neon-todo: #42a5f5;
+  --tv-neon-fixme: #e040fb;
+  --tv-neon-note: #ffee58;
+  --tv-neon-bug: #ff7043;
+  --tv-neon-stroke: #324058;
+  --tv-neon-surface: #0c111a;
+}
+
+html[data-theme='dark'] .studio-app {
+  --paper: #0d111b;
+  --studio-canvas: #0b1019;
+  --studio-surface: #121a29;
+  --studio-elevated: #1a2738;
+  --studio-border: #344967;
+  --studio-fg: #edf3ff;
+  --studio-secondary: #a8bfd6;
+  background: #0d111b;
+}
+
+html[data-theme='dark'] .studio-app .sidebar,
+html[data-theme='dark'] .studio-app .workbench {
+  background: #0b1019;
+}
+html[data-theme='dark'] .studio-app .topbar {
+  background: linear-gradient(105deg, #101727, #0d111b 74%);
+  border-bottom-color: #2a3b55;
+  box-shadow: 0 2px 18px #00000036;
+}
+html[data-theme='dark'] .studio-app .rail-project,
+html[data-theme='dark'] .studio-app .project-switcher-panel,
+html[data-theme='dark'] .studio-app .appearance-popover {
+  background: linear-gradient(145deg, #182335ed, #0d1422f5);
+  border-color: #3d5874;
+  box-shadow:
+    inset 0 1px #e5f3ff0b,
+    0 12px 30px #0006;
+}
+html[data-theme='dark'] .studio-app .primary-nav button.active {
+  color: #c0e9ff;
+  background: linear-gradient(90deg, #19374d 0%, #1b2d46 100%);
+  box-shadow:
+    inset 2px 0 0 #45cdf7,
+    inset 0 0 13px #45cdf710;
+}
+html[data-theme='dark'] .studio-app .project-monogram,
+html[data-theme='dark'] .studio-app .brand-mark {
+  background: #183342;
+  color: #77e5ff;
+  border: 1px solid #46c9f844;
+  box-shadow: 0 0 11px #40c8fa20;
+}
+html[data-theme='dark'] .studio-app .button.primary {
+  color: #e2faff;
+  background: #123951;
+  border-color: #47bef077;
+  box-shadow:
+    inset 0 0 11px #31abf729,
+    0 0 10px #39b7fc18;
+}
+html[data-theme='dark'] .studio-app .button.primary:hover {
+  color: #fff;
+  background: #184d67;
+  border-color: #80dbff;
+  box-shadow:
+    inset 0 0 13px #54d5ff2e,
+    0 0 17px #41d0ff40;
+}
+
+/* Keep the graph itself almost black, to read bright labels as in README. */
+html[data-theme='dark'] .studio-app .graph-workspace,
+html[data-theme='dark'] .studio-app .flow-container,
+html[data-theme='dark'] .studio-app .react-flow {
+  background: #0d141e;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node {
+  --node-surface: #121a29;
+  --node-header: #182235;
+  --node-border: #40516b;
+  --node-text: #eef5ff;
+  --node-secondary: #aac1dc;
+  --node-cyan: #60d5f7;
+  background: linear-gradient(160deg, #182235f2, #101722fa 85%);
+  border-color: #3e536f;
+  box-shadow:
+    inset 0 1px 0 #d4ecff0d,
+    0 5px 18px #0000004a;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node:hover {
+  border-color: #65cbedaa;
+  box-shadow:
+    inset 0 1px 0 #e4f6ff14,
+    0 0 0 1px #51c0f823,
+    0 0 16px #43c0f51b;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node.is-selected {
+  border-color: #6cdbff;
+  outline: 1px solid #6cdbff;
+  outline-offset: 1px;
+  box-shadow:
+    inset 0 1px 0 #b6ebff20,
+    0 0 15px #47bfff50,
+    0 0 33px #43c4f21d;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-heading {
+  background: linear-gradient(110deg, #1b2941, #142033);
+  border-bottom-color: #354b65;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-icon {
+  color: #77dbff;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-marker {
+  --tv-mark-color: #61c9f5;
+  background: color-mix(in srgb, var(--tv-mark-color) 11%, transparent);
+  color: var(--tv-mark-color);
+  border-color: color-mix(in srgb, var(--tv-mark-color) 47%, transparent);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--tv-mark-color) 68%, transparent);
+  box-shadow: inset 0 0 7px color-mix(in srgb, var(--tv-mark-color) 7%, transparent);
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-marker[data-tag='CORE'] {
+  --tv-mark-color: #60a5fa;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-marker[data-tag='REUSE'] {
+  --tv-mark-color: #34d399;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-marker[data-tag='INTENT'] {
+  --tv-mark-color: #a78bfa;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-marker[data-tag='REVIEW'] {
+  --tv-mark-color: #fbbf24;
+}
+html[data-theme='dark'] .tv-node-kit.graph-node .node-marker[data-tag='TODO'] {
+  --tv-mark-color: #42a5f5;
+}
+/* Highlighting in source is still governed by the exact manifest and Shiki.
+ * Restore the familiar black canvas rather than a separate generic code card. */
+html[data-theme='dark'] .studio-app .source-code.tv-code-source,
+html[data-theme='dark'] .studio-app .source-code.tv-code-source .line-number,
+html[data-theme='dark'] .studio-app .source-code.tv-code-source .source-annotation-dot {
+  background-color: #0d1018;
+}
+html[data-theme='dark'] .studio-app .source-code.tv-code-source .source-line.annotated-line {
+  border-left-color: #6ed9ff;
+}
+html[data-theme='dark'] .studio-app .source-code.tv-code-source .tv-source-tag {
+  text-shadow: inherit;
+}
+
+/* Original palette on knowledge chips outside the graph, no unrelated rainbow. */
+html[data-theme='dark'] .studio-app [data-tag='CORE'] {
+  --tv-mark-color: #60a5fa;
+}
+html[data-theme='dark'] .studio-app [data-tag='REUSE'] {
+  --tv-mark-color: #34d399;
+}
+html[data-theme='dark'] .studio-app [data-tag='INTENT'] {
+  --tv-mark-color: #a78bfa;
+}
+html[data-theme='dark'] .studio-app [data-tag='REVIEW'] {
+  --tv-mark-color: #fbbf24;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme='dark'] .studio-app .button,
+  html[data-theme='dark'] .tv-node-kit.graph-node {
+    transition: none !important;
+  }
+}

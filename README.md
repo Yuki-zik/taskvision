@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.7.0_preview-3B82F6?style=flat-square" alt="Version 3.7.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.8.0_preview-3B82F6?style=flat-square" alt="Version 3.8.0 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -37,6 +37,14 @@ code --install-extension A-Znk.taskvision
 
 ---
 
+
+## 3.8 preview: return to the original neon/glass visual identity
+
+The original TaskVision README screenshot is the appearance reference: near-black editor, bright tag-only neon glow and fine translucent full-line outlines. Built-in CORE, REUSE, INTENT and REVIEW defaults use their original blue/green/violet/amber accents plus the same four-channel neon+glass renderer as the classic labels. User-set highlight overrides take precedence.
+
+New Web projects start in dark neon mode; saved Light and System preferences remain effective. Single click on a graph node opens a real floating source-detail card, showing annotations, relationships and navigation, without automatically resizing the canvas or opening the fixed inspector. Close with Escape or outside click; double-click drills. Source, Review, Agent and MCP capabilities remain.
+
+The native VS Code TaskVision sidebar has three primary title actions: Open Workspace, Refresh and Quick Actions. Its grouped picker exposes the existing filters, tag themes, source/AI tools and Settings. Original editor highlighting and context menus are retained. See the workbench guide and the 3.8 acceptance record.
 
 ## 3.7 preview: independent projects, personal layouts, source syntax and light/dark
 
