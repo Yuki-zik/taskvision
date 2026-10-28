@@ -862,7 +862,7 @@ function Workspace({
                 />
                 {editor ? (
                   <AnnotationEditor
-                    key={`${editor.annotation?.id ?? `new:${editor.path}`}`}
+                    key={`${editor.annotation?.id ?? `new:${editor.path}:${editor.line}`}`}
                     target={editor}
                     snapshot={snapshot}
                     mutate={mutate}

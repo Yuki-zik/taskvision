@@ -1,5 +1,14 @@
 # TaskVision Change Log
 
+## 3.8.1 Preview - source-anchored guidance draft isolation
+
+- Fixed a reproducible data-integrity issue: creating draft guidance for two different lines of the same file no longer reuses the first line's content or anchor.
+- New drafts are keyed by workspace, source path and selected line. Existing annotation drafts still use their stable annotation IDs.
+- Compatible older path-only drafts migrate to the matching source line after persistence succeeds. Mismatched legacy drafts are preserved instead of being consumed by unrelated anchors.
+- Added real Chrome regression tests for multi-line draft isolation, reload persistence and legacy draft migration; all 10 project workflow E2E tests and 182 original VS Code, 64 core/MCP and 107 Web tests passed.
+- Local preview only: no change to SQLite schema, MCP tools, remote repository, Marketplace or the daily VS Code extension.
+
+
 ## 3.8.0 Preview - heritage neon and one-click source details
 
 - Returned to the original GitHub screenshot visual language: near-black canvas, localized neon label glow, translucent thin full-line glass boundaries. Replaced generic light administrative popovers with restrained dark acrylic surfaces.

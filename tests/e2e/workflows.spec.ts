@@ -126,6 +126,73 @@ test('human guidance survives polling, reload and concurrent editing without sil
   await peer.close();
 });
 
+test('new guidance drafts stay bound to the selected source line across navigation and reload', async ({ page }) => {
+  await open(page);
+  await navigate(page, '知识索引');
+  await page.getByRole('button', { name: 'Training entry for acceptance', exact: true }).click();
+  const inspector = page.locator('.source-inspector');
+  await expect(inspector).toBeVisible();
+  await inspector.getByRole('button', { name: '指导', exact: true }).click();
+  await expect(page.getByLabel('锚点行号')).toHaveValue('1');
+  await page.getByRole('textbox', { name: '指导摘要', exact: true }).fill('Line one has its own unfinished draft');
+  await page.getByRole('button', { name: '保留草稿并关闭' }).click();
+
+  await inspector.getByRole('button', { name: '选择第 2 行' }).click();
+  await inspector.getByRole('button', { name: '指导', exact: true }).click();
+  await expect(page.getByLabel('锚点行号')).toHaveValue('2');
+  await expect(page.getByRole('textbox', { name: '指导摘要', exact: true })).toHaveValue('');
+  await page.getByRole('textbox', { name: '指导摘要', exact: true }).fill('Line two independent draft');
+  await page.getByRole('button', { name: '保留草稿并关闭' }).click();
+
+  await inspector.getByRole('button', { name: '选择第 1 行' }).click();
+  await inspector.getByRole('button', { name: '指导', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '指导摘要', exact: true })).toHaveValue('Line one has its own unfinished draft');
+  await expect(page.getByLabel('锚点行号')).toHaveValue('1');
+  await page.reload();
+  await navigate(page, '知识索引');
+  await page.getByRole('button', { name: 'Training entry for acceptance', exact: true }).click();
+  await page.locator('.source-inspector').getByRole('button', { name: '指导', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '指导摘要', exact: true })).toHaveValue('Line one has its own unfinished draft');
+});
+
+test('old path-only drafts migrate only at the matching line and are not silently discarded', async ({ page }) => {
+  await open(page);
+  const workspaceId = workspace.dispatch('snapshot').project.workspaceId;
+  const oldKey = `taskvision:${workspaceId}:note:new:${feature}`;
+  const legacyDraft = {
+    tag: 'INTENT',
+    summary: 'Preserve the unfinished legacy draft',
+    body: 'The author left this before updating TaskVision',
+    path: feature,
+    line: 1,
+    baseHash: null,
+  };
+  await page.evaluate(({ key, draft }) => {
+    localStorage.setItem(key, JSON.stringify(draft));
+  }, { key: oldKey, draft: legacyDraft });
+  await navigate(page, '知识索引');
+  await page.getByRole('button', { name: 'Training entry for acceptance', exact: true }).click();
+  const inspector = page.locator('.source-inspector');
+
+  await inspector.getByRole('button', { name: '选择第 2 行' }).click();
+  await inspector.getByRole('button', { name: '指导', exact: true }).click();
+  await expect(page.getByLabel('锚点行号')).toHaveValue('2');
+  await expect(page.getByRole('textbox', { name: '指导摘要', exact: true })).toHaveValue('');
+  expect(await page.evaluate((key) => localStorage.getItem(key), oldKey)).toContain('unfinished legacy draft');
+  await page.getByRole('button', { name: '保留草稿并关闭' }).click();
+
+  await inspector.getByRole('button', { name: '选择第 1 行' }).click();
+  await inspector.getByRole('button', { name: '指导', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '指导摘要', exact: true })).toHaveValue(legacyDraft.summary);
+  await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), oldKey)).toBeNull();
+  expect(await page.evaluate((key) => localStorage.getItem(key + ':1'), oldKey)).toContain(legacyDraft.summary);
+  await page.getByRole('button', { name: '保留草稿并关闭' }).click();
+
+  await inspector.getByRole('button', { name: '选择第 2 行' }).click();
+  await inspector.getByRole('button', { name: '指导', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '指导摘要', exact: true })).toHaveValue('');
+});
+
 test('review displays real before/after and rejects changes made after submission', async ({ page }) => {
   const task = workspace.dispatch('task_create', { title: 'Review the training change', paths: [feature] }, human).task;
   const claim = workspace.dispatch('task_claim', { taskId: task.id, agentId: 'e2e-agent' }).claim;

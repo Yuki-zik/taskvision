@@ -32,16 +32,42 @@ export function AnnotationEditor({ target, snapshot, mutate, onClose, onSaved }:
   const source = annotation?.origin === 'source';
   const existing = annotation && annotation.origin !== 'legacy';
   const latest = snapshot.annotations.find((item) => item.id === annotation?.id);
-  const key = `taskvision:${snapshot.project.workspaceId}:note:${existing ? annotation.id : `new:${target.path}`}`;
-  const { draft, setDraft, clear, storageError } = useDraft<NoteDraft>(key, {
-    tag: annotation?.tag ?? 'INTENT',
-    summary: annotation?.summary ?? '',
-    body: annotation?.body ?? '',
-    path: target.path,
-    line: target.line,
-    baseRevision: existing ? annotation.revision : undefined,
-    baseHash: annotation?.fileHash ?? null,
-  });
+  const namespace = `taskvision:${snapshot.project.workspaceId}:note:`;
+  // New notes are anchored to both file and line; old drafts lacked the line.
+  const key = namespace + (existing ? annotation.id : `new:${target.path}:${target.line}`);
+  const legacy = existing
+    ? undefined
+    : {
+        key: namespace + `new:${target.path}`,
+        accepts: (value: unknown): value is NoteDraft =>
+          typeof value === 'object' &&
+          value !== null &&
+          'path' in value &&
+          value.path === target.path &&
+          'line' in value &&
+          value.line === target.line &&
+          'tag' in value &&
+          TAGS.includes(value.tag as Tag) &&
+          'summary' in value &&
+          typeof value.summary === 'string' &&
+          'body' in value &&
+          typeof value.body === 'string' &&
+          'baseHash' in value &&
+          (value.baseHash === null || typeof value.baseHash === 'string'),
+      };
+  const { draft, setDraft, clear, storageError } = useDraft<NoteDraft>(
+    key,
+    {
+      tag: annotation?.tag ?? 'INTENT',
+      summary: annotation?.summary ?? '',
+      body: annotation?.body ?? '',
+      path: target.path,
+      line: target.line,
+      baseRevision: existing ? annotation.revision : undefined,
+      baseHash: annotation?.fileHash ?? null,
+    },
+    legacy,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
