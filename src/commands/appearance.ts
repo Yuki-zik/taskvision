@@ -3,6 +3,10 @@ import type { TreeNode, HighlightSettings } from '../model';
 import { cloneJson } from '../validation';
 import * as highlightScheme from '../highlightScheme';
 
+const tt = (english: string, chinese: string): string =>
+  /^zh(?:[-_]|$)/i.test(vscode.env.language || '') ? chinese : english;
+
+
 // REUSE: Legacy picker values and independent channel settings remain canonical.
 export function registerAppearanceCommands(context: vscode.ExtensionContext): void {
   function resolveConfigTarget() {
@@ -25,34 +29,34 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
 
         const items = [
           {
-            label: '$(zap) Neon',
-            description: currentScheme === 'neon' ? '$(check) Current' : '',
-            detail: 'Enable glow preset only',
+            label: tt('$(zap) Neon', '$(zap) 霓虹'),
+            description: currentScheme === 'neon' ? tt('$(check) Current', '$(check) 当前使用') : '',
+            detail: tt('Enable glow preset only', '仅启用霓虹辉光'),
             value: 'neon',
           },
           {
-            label: '$(browser) Glass',
-            description: currentScheme === 'glass' ? '$(check) Current' : '',
-            detail: 'Enable glass preset only',
+            label: tt('$(browser) Glass', '$(browser) 玻璃'),
+            description: currentScheme === 'glass' ? tt('$(check) Current', '$(check) 当前使用') : '',
+            detail: tt('Enable glass preset only', '仅启用玻璃背景'),
             value: 'glass',
           },
           {
-            label: '$(sparkle) Neon + Glass',
-            description: currentScheme === 'neon+glass' ? '$(check) Current' : '',
-            detail: 'Enable both glow and glass presets',
+            label: tt('$(sparkle) Neon + Glass', '$(sparkle) 霓虹 + 玻璃'),
+            description: currentScheme === 'neon+glass' ? tt('$(check) Current', '$(check) 当前使用') : '',
+            detail: tt('Enable both glow and glass presets', '同时启用霓虹辉光和玻璃背景'),
             value: 'neon+glass',
           },
           {
-            label: '$(circle-slash) None',
-            description: !currentScheme || currentScheme === '' ? '$(check) Current' : '',
-            detail: 'Clear scheme preset',
+            label: tt('$(circle-slash) None', '$(circle-slash) 不使用'),
+            description: !currentScheme || currentScheme === '' ? tt('$(check) Current', '$(check) 当前使用') : '',
+            detail: tt('Clear scheme preset', '取消预设样式'),
             value: 'none',
           },
         ];
 
         return vscode.window
           .showQuickPick(items, {
-            placeHolder: 'Choose a highlight scheme for ' + node.tag,
+            placeHolder: tt('Choose a highlight scheme for ', '为标签选择高亮方案：') + node.tag,
             matchOnDetail: true,
           })
           .then(function (selection) {
@@ -91,30 +95,30 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
 
       const items = [
         {
-          label: '$(zap) Neon',
-          detail: 'Enable glow preset for every tag',
+          label: tt('$(zap) Neon', '$(zap) 霓虹'),
+          detail: tt('Enable glow preset for every tag', '为所有标签启用霓虹辉光'),
           value: 'neon',
         },
         {
-          label: '$(browser) Glass',
-          detail: 'Enable glass preset for every tag',
+          label: tt('$(browser) Glass', '$(browser) 玻璃'),
+          detail: tt('Enable glass preset for every tag', '为所有标签启用玻璃背景'),
           value: 'glass',
         },
         {
-          label: '$(sparkle) Neon + Glass',
-          detail: 'Enable both glow and glass presets for every tag',
+          label: tt('$(sparkle) Neon + Glass', '$(sparkle) 霓虹 + 玻璃'),
+          detail: tt('Enable both glow and glass presets for every tag', '为所有标签启用霓虹与玻璃效果'),
           value: 'neon+glass',
         },
         {
-          label: '$(circle-slash) None',
-          detail: 'Clear scheme preset for every tag',
+          label: tt('$(circle-slash) None', '$(circle-slash) 不使用'),
+          detail: tt('Clear scheme preset for every tag', '清除所有标签的预设方案'),
           value: 'none',
         },
       ];
 
       return vscode.window
         .showQuickPick(items, {
-          placeHolder: 'Choose a highlight scheme to apply to ALL tags',
+          placeHolder: tt('Choose a highlight scheme to apply to ALL tags', '选择应用到全部标签的高亮方案'),
           matchOnDetail: true,
         })
         .then(function (selection) {
@@ -140,7 +144,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
             })
             .then(function () {
               vscode.window.showInformationMessage(
-                'Applied "' + selection.value + '" highlight scheme to all tags',
+                tt('Applied "', '已为全部标签应用“') + selection.value + tt('" highlight scheme to all tags', '”高亮方案'),
               );
             });
         });
@@ -164,48 +168,48 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
 
         const mainItems = [
           {
-            label: '$(zap) Toggle Glow Effect',
-            description: neonOn ? '$(check) ON' : '$(circle-slash) OFF',
-            detail: 'Enable or disable Neon glow preset',
+            label: tt('$(zap) Toggle Glow Effect', '$(zap) 切换辉光效果'),
+            description: neonOn ? tt('$(check) ON', '$(check) 已开启') : tt('$(circle-slash) OFF', '$(circle-slash) 已关闭'),
+            detail: tt('Enable or disable Neon glow preset', '启用或关闭霓虹辉光'),
             value: 'toggle-neon',
           },
           {
-            label: '$(browser) Toggle Glass Effect',
-            description: glassOn ? '$(check) ON' : '$(circle-slash) OFF',
-            detail: 'Enable or disable Glass background preset',
+            label: tt('$(browser) Toggle Glass Effect', '$(browser) 切换玻璃效果'),
+            description: glassOn ? tt('$(check) ON', '$(check) 已开启') : tt('$(circle-slash) OFF', '$(circle-slash) 已关闭'),
+            detail: tt('Enable or disable Glass background preset', '启用或关闭玻璃背景'),
             value: 'toggle-glass',
           },
           {
-            label: '$(screen-full) Set Effect Scope',
-            detail: 'Set independent scopes for color / glow / glass / font channels',
+            label: tt('$(screen-full) Set Effect Scope', '$(screen-full) 调整效果范围'),
+            detail: tt('Set independent scopes for color / glow / glass / font channels', '分别设置颜色、辉光、玻璃、字体四个通道的范围'),
             value: 'scope',
           },
           {
-            label: '$(symbol-color) Set Foreground Color',
+            label: tt('$(symbol-color) Set Foreground Color', '$(symbol-color) 设置文字颜色'),
             detail:
-              'Set text color for ' +
+              tt('Set text color for ', '设置标签文字颜色：') +
               node.tag +
-              ' (current: ' +
-              (tagConfig.foreground || 'default') +
-              ')',
+              tt(' (current: ', '（当前：') +
+              (tagConfig.foreground || tt('default', '默认')) +
+              tt(')', '）'),
             value: 'foreground',
           },
           {
-            label: '$(symbol-misc) Set Icon',
+            label: tt('$(symbol-misc) Set Icon', '$(symbol-misc) 设置图标'),
             detail:
-              'Change icon for ' + node.tag + ' (current: ' + (tagConfig.icon || 'default') + ')',
+              tt('Change icon for ', '修改标签图标：') + node.tag + tt(' (current: ', '（当前：') + (tagConfig.icon || tt('default', '默认')) + tt(')', '）'),
             value: 'icon',
           },
           {
-            label: '$(bold) Set Font Style',
-            detail: 'Set bold / italic style for tag font channel',
+            label: tt('$(bold) Set Font Style', '$(bold) 设置字体样式'),
+            detail: tt('Set bold / italic style for tag font channel', '设置标签字体的粗体或斜体'),
             value: 'font',
           },
         ];
 
         vscode.window
           .showQuickPick(mainItems, {
-            placeHolder: 'Customize appearance for ' + node.tag,
+            placeHolder: tt('Customize appearance for ', '自定义标签外观：') + node.tag,
             matchOnDetail: true,
           })
           .then(function (selection) {
@@ -243,41 +247,41 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
 
             const scopeValues = [
               {
-                label: '$(symbol-key) Tag Only',
-                detail: 'Only highlight tag keyword',
+                label: tt('$(symbol-key) Tag Only', '$(symbol-key) 仅标签'),
+                detail: tt('Only highlight tag keyword', '仅高亮 CORE、TODO 等标签文字'),
                 value: 'tag',
               },
               {
-                label: '$(symbol-text) Tag + Content',
-                detail: 'Highlight from tag through comment text',
+                label: tt('$(symbol-text) Tag + Content', '$(symbol-text) 标签与内容'),
+                detail: tt('Highlight from tag through comment text', '高亮标签及后面的注释内容'),
                 value: 'text',
               },
               {
-                label: '$(comment-discussion) Text + Comment',
-                detail: 'Highlight from comment content to line end',
+                label: tt('$(comment-discussion) Text + Comment', '$(comment-discussion) 正文与注释'),
+                detail: tt('Highlight from comment content to line end', '从注释正文高亮到行末'),
                 value: 'text-and-comment',
               },
               {
-                label: '$(comment) Tag + Comment',
-                detail: 'Alias of text-and-comment',
+                label: tt('$(comment) Tag + Comment', '$(comment) 标签与注释'),
+                detail: tt('Alias of text-and-comment', '与 text-and-comment 相同'),
                 value: 'tag-and-comment',
               },
               {
-                label: '$(symbol-enum) Tag + Sub Tag',
-                detail: 'Highlight tag and detected sub tag',
+                label: tt('$(symbol-enum) Tag + Sub Tag', '$(symbol-enum) 标签与子标签'),
+                detail: tt('Highlight tag and detected sub tag', '高亮标签与识别出的子标签'),
                 value: 'tag-and-subTag',
               },
               {
-                label: '$(list-unordered) Line',
-                detail: 'Highlight text range of the full line',
+                label: tt('$(list-unordered) Line', '$(list-unordered) 整行文本'),
+                detail: tt('Highlight text range of the full line', '高亮整行的文本范围'),
                 value: 'line',
               },
               {
-                label: '$(symbol-file) Whole Line',
-                detail: 'Highlight entire visual line width',
+                label: tt('$(symbol-file) Whole Line', '$(symbol-file) 整行宽度'),
+                detail: tt('Highlight entire visual line width', '高亮编辑器中整行的可视宽度'),
                 value: 'whole-line',
               },
-              { label: '$(circle-slash) None', detail: 'Disable this channel', value: 'none' },
+              { label: tt('$(circle-slash) None', '$(circle-slash) 不使用'), detail: tt('Disable this channel', '禁用此通道'), value: 'none' },
             ];
 
             function showScopePicker(
@@ -296,8 +300,8 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
 
               if (allowInherit) {
                 items.unshift({
-                  label: '$(debug-step-over) Inherit default',
-                  detail: 'Remove override and use defaultHighlight channel scope',
+                  label: tt('$(debug-step-over) Inherit default', '$(debug-step-over) 继承默认值'),
+                  detail: tt('Remove override and use defaultHighlight channel scope', '移除单标签覆盖，继承默认高亮的通道范围'),
                   description: currentValue === undefined ? '$(check)' : '',
                   value: 'inherit',
                 });
@@ -317,45 +321,45 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
               const newNeon = !neonOn;
               const newScheme = computeScheme(newNeon, glassOn);
               updateConfig('scheme', newScheme);
-              vscode.window.showInformationMessage(node.tag + ': Glow ' + (newNeon ? 'ON' : 'OFF'));
+              vscode.window.showInformationMessage(node.tag + tt(': Glow ', '：辉光') + (newNeon ? tt('ON', '已开启') : tt('OFF', '已关闭')));
             } else if (selection.value === 'toggle-glass') {
               const newGlass = !glassOn;
               const newScheme = computeScheme(neonOn, newGlass);
               updateConfig('scheme', newScheme);
               vscode.window.showInformationMessage(
-                node.tag + ': Glass ' + (newGlass ? 'ON' : 'OFF'),
+                node.tag + tt(': Glass ', '：玻璃') + (newGlass ? tt('ON', '已开启') : tt('OFF', '已关闭')),
               );
             } else if (selection.value === 'scope') {
               const scopeConfigItems = [
                 {
-                  label: '$(symbol-color) Set Color Scope (colorType)',
-                  detail: 'Controls where foreground color is applied',
-                  description: 'Current: ' + (tagConfig.colorType || '(inherit default)'),
+                  label: tt('$(symbol-color) Set Color Scope (colorType)', '$(symbol-color) 颜色范围（colorType）'),
+                  detail: tt('Controls where foreground color is applied', '控制文字颜色应用到哪些内容'),
+                  description: tt('Current: ', '当前：') + (tagConfig.colorType || tt('(inherit default)', '（继承默认值）')),
                   value: 'scope-color',
                 },
                 {
-                  label: '$(zap) Set Glow Scope (glowType)',
-                  detail: 'Controls where glow text-shadow is applied',
-                  description: 'Current: ' + (tagConfig.glowType || '(inherit default)'),
+                  label: tt('$(zap) Set Glow Scope (glowType)', '$(zap) 辉光范围（glowType）'),
+                  detail: tt('Controls where glow text-shadow is applied', '控制霓虹文字辉光的范围'),
+                  description: tt('Current: ', '当前：') + (tagConfig.glowType || tt('(inherit default)', '（继承默认值）')),
                   value: 'scope-glow',
                 },
                 {
-                  label: '$(browser) Set Glass Scope (glassType)',
-                  detail: 'Controls where glass background is applied',
-                  description: 'Current: ' + (tagConfig.glassType || '(inherit default)'),
+                  label: tt('$(browser) Set Glass Scope (glassType)', '$(browser) 玻璃范围（glassType）'),
+                  detail: tt('Controls where glass background is applied', '控制玻璃背景的覆盖范围'),
+                  description: tt('Current: ', '当前：') + (tagConfig.glassType || tt('(inherit default)', '（继承默认值）')),
                   value: 'scope-glass',
                 },
                 {
-                  label: '$(bold) Set Font Scope (fontType)',
-                  detail: 'Controls where font style is applied',
-                  description: 'Current: ' + (tagConfig.fontType || '(inherit default)'),
+                  label: tt('$(bold) Set Font Scope (fontType)', '$(bold) 字体范围（fontType）'),
+                  detail: tt('Controls where font style is applied', '控制粗体／斜体等字体效果的范围'),
+                  description: tt('Current: ', '当前：') + (tagConfig.fontType || tt('(inherit default)', '（继承默认值）')),
                   value: 'scope-font',
                 },
               ];
 
               vscode.window
                 .showQuickPick(scopeConfigItems, {
-                  placeHolder: 'Choose a channel scope to edit for ' + node.tag,
+                  placeHolder: tt('Choose a channel scope to edit for ', '选择要调整的高亮通道：') + node.tag,
                 })
                 .then(function (scopeConfig) {
                   if (!scopeConfig) {
@@ -365,7 +369,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
                   if (scopeConfig.value === 'scope-color') {
                     showScopePicker(
                       tagConfig.colorType,
-                      'Set colorType for ' + node.tag,
+                      tt('Set colorType for ', '设置文字颜色范围：') + node.tag,
                       true,
                     ).then(function (scopeValue) {
                       if (scopeValue) {
@@ -376,7 +380,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
                       }
                     });
                   } else if (scopeConfig.value === 'scope-glow') {
-                    showScopePicker(tagConfig.glowType, 'Set glowType for ' + node.tag, true).then(
+                    showScopePicker(tagConfig.glowType, tt('Set glowType for ', '设置霓虹辉光范围：') + node.tag, true).then(
                       function (scopeValue) {
                         if (scopeValue) {
                           updateConfig(
@@ -389,7 +393,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
                   } else if (scopeConfig.value === 'scope-glass') {
                     showScopePicker(
                       tagConfig.glassType,
-                      'Set glassType for ' + node.tag,
+                      tt('Set glassType for ', '设置玻璃背景范围：') + node.tag,
                       true,
                     ).then(function (scopeValue) {
                       if (scopeValue) {
@@ -400,7 +404,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
                       }
                     });
                   } else if (scopeConfig.value === 'scope-font') {
-                    showScopePicker(tagConfig.fontType, 'Set fontType for ' + node.tag, true).then(
+                    showScopePicker(tagConfig.fontType, tt('Set fontType for ', '设置字体效果范围：') + node.tag, true).then(
                       function (scopeValue) {
                         if (scopeValue) {
                           updateConfig(
@@ -415,12 +419,12 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
             } else if (selection.value === 'foreground') {
               vscode.window
                 .showInputBox({
-                  prompt: 'Input foreground color for ' + node.tag + ' (Hex)',
+                  prompt: tt('Input foreground color for ', '输入标签文字颜色：') + node.tag + tt(' (Hex)', '（十六进制颜色）'),
                   placeHolder: '#FF0044',
                   value: tagConfig.foreground || '',
                   validateInput: function (value) {
                     if (!value.match(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/)) {
-                      return 'Please input a valid hex color (e.g. #FF0044)';
+                      return tt('Please input a valid hex color (e.g. #FF0044)', '请输入有效的十六进制颜色，如 #FF0044');
                     }
                     return null;
                   },
@@ -458,7 +462,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
 
               vscode.window
                 .showQuickPick(iconItems, {
-                  placeHolder: 'Choose icon for ' + node.tag,
+                  placeHolder: tt('Choose icon for ', '选择标签图标：') + node.tag,
                 })
                 .then(function (icon) {
                   if (icon) {
@@ -468,8 +472,8 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
             } else if (selection.value === 'font') {
               const fontItems = [
                 {
-                  label: '$(bold) Bold',
-                  detail: 'Bold',
+                  label: tt('$(bold) Bold', '$(bold) 粗体'),
+                  detail: tt('Bold', '粗体'),
                   description:
                     tagConfig.fontWeight === 'bold' && tagConfig.fontStyle !== 'italic'
                       ? '$(check)'
@@ -478,8 +482,8 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
                   fontStyle: 'normal',
                 },
                 {
-                  label: '$(italic) Italic',
-                  detail: 'Italic',
+                  label: tt('$(italic) Italic', '$(italic) 斜体'),
+                  detail: tt('Italic', '斜体'),
                   description:
                     tagConfig.fontWeight !== 'bold' && tagConfig.fontStyle === 'italic'
                       ? '$(check)'
@@ -488,8 +492,8 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
                   fontStyle: 'italic',
                 },
                 {
-                  label: '$(bold) Bold + Italic',
-                  detail: 'Bold + Italic',
+                  label: tt('$(bold) Bold + Italic', '$(bold) 粗体 + 斜体'),
+                  detail: tt('Bold + Italic', '粗体 + 斜体'),
                   description:
                     tagConfig.fontWeight === 'bold' && tagConfig.fontStyle === 'italic'
                       ? '$(check)'
@@ -498,8 +502,8 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
                   fontStyle: 'italic',
                 },
                 {
-                  label: '$(symbol-text) Normal',
-                  detail: 'Normal',
+                  label: tt('$(symbol-text) Normal', '$(symbol-text) 常规'),
+                  detail: tt('Normal', '常规'),
                   description: !tagConfig.fontWeight && !tagConfig.fontStyle ? '$(check)' : '',
                   fontWeight: 'normal',
                   fontStyle: 'normal',
@@ -508,7 +512,7 @@ export function registerAppearanceCommands(context: vscode.ExtensionContext): vo
 
               vscode.window
                 .showQuickPick(fontItems, {
-                  placeHolder: 'Choose font style for ' + node.tag,
+                  placeHolder: tt('Choose font style for ', '选择标签字体样式：') + node.tag,
                 })
                 .then(function (font) {
                   if (font) {

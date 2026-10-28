@@ -1,5 +1,14 @@
 # TaskVision Change Log
 
+## 3.8.2 Preview - clearer native VS Code UX and bilingual onboarding
+
+- Added a first-run QuickPick guide with three real existing actions: read source tags, open the knowledge workspace, and copy project-scoped Agent MCP configuration; opening/canceling the guide changes no settings.
+- Renamed the Activity Bar area to TaskVision and its native tree to Tasks & Knowledge / 任务与知识, reflecting its code knowledge and review role beyond legacy TODOs.
+- Localized all native configuration group headings, descriptions (including advanced per-channel JSON fields), and input-validation help to English/Simplified Chinese through VS Code NLS keys, without changing setting names or defaults.
+- Localized native task tree filter/scan/session state, appearance presets and channel editors, and common task status, priority, note and tag pickers. Persisted status tokens and Agent protocol values stay language-independent.
+- Clarified common settings vs advanced knobs and refreshed English/Chinese VS Code quick start docs. Added no service, dependency or external telemetry; existing neon rendering and Web graph behavior are unchanged.
+
+
 ## 3.8.1 Preview - source-anchored guidance draft isolation
 
 - Fixed a reproducible data-integrity issue: creating draft guidance for two different lines of the same file no longer reuses the first line's content or anchor.

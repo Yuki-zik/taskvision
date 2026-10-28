@@ -62,6 +62,36 @@ const NEVER_SHOW_AGAIN_BUTTON = "Never Show This Again";
 const OPEN_SETTINGS_BUTTON = "Open Settings";
 const OK_BUTTON = "OK";
 
+// Display-only localization; internal task statuses, priorities and source
+// comment tokens stay English so Agent contracts and existing code remain stable.
+const nativeText = (en: string, zh: string): string =>
+    /^zh(?:[-_]|$)/i.test(vscode.env.language || '') ? zh : en;
+const statusZh: Record<string, {name: string; detail: string}> = {
+    todo: {name: '待办', detail: '尚未开始、需要处理的工作'},
+    doing: {name: '进行中', detail: '正在处理的工作'},
+    blocked: {name: '阻塞', detail: '任务阻塞：等待依赖或问题解决后才能继续'},
+    paused: {name: '暂停', detail: '主动推迟到以后处理'},
+    review: {name: '待审阅', detail: '已实现或调查完成，等待人工确认'},
+    done: {name: '已完成', detail: '已完成的工作'},
+    wontdo: {name: '不处理', detail: '已明确决定不再处理'},
+    idea: {name: '想法', detail: '尚未确定实施的观察或想法'},
+};
+const priorityZh: Record<string, {name: string; detail: string}> = {
+    critical: {name: '紧急', detail: '阻塞发布或紧急生产问题'},
+    high: {name: '高', detail: '重要且应尽快处理'},
+    normal: {name: '普通', detail: '默认优先级'},
+    low: {name: '低', detail: '有用但不紧急'},
+    trivial: {name: '很低', detail: '锦上添花或清理工作'},
+};
+const statusTitle = (key: string): string =>
+    nativeText(key, key + ' · ' + (statusZh[key]?.name || key));
+const statusDetail = (key: string, english: string): string =>
+    nativeText(english, statusZh[key]?.detail || english);
+const priorityTitle = (key: string): string =>
+    nativeText(key, key + ' · ' + (priorityZh[key]?.name || key));
+const priorityDetail = (key: string): string =>
+    nativeText(taskState.getPriorityDescription(key), priorityZh[key]?.detail || key);
+
 function toEditorSearchResult(match: ripgrep.Match, uri: vscode.Uri): import('./model').SearchResult {
     return {...match, uri, extraLines: match.extraLines?.map(line => toEditorSearchResult(line, uri))};
 }
@@ -863,7 +893,7 @@ function activate(context: vscode.ExtensionContext) {
     }
 
     function addTagDialog() {
-        vscode.window.showInputBox({ prompt: "New tag", placeHolder: "e.g. FIXME" }).then(function (tag) {
+        vscode.window.showInputBox({ prompt: nativeText('New tag', '新建标签'), placeHolder: nativeText('e.g. FIXME', '例如 FIXME') }).then(function (tag) {
             if (tag) {
                 addTag(tag);
             }
@@ -872,7 +902,7 @@ function activate(context: vscode.ExtensionContext) {
 
     function removeTagDialog() {
         let tags = vscode.workspace.getConfiguration('taskvision.general').get<string[]>('tags')!;
-        vscode.window.showQuickPick(tags, { matchOnDetail: true, matchOnDescription: true, canPickMany: true, placeHolder: "Select tags to remove" }).then(function (tagsToRemove) {
+        vscode.window.showQuickPick(tags, { matchOnDetail: true, matchOnDescription: true, canPickMany: true, placeHolder: nativeText('Select tags to remove', '选择要移除的标签') }).then(function (tagsToRemove) {
             if (tagsToRemove) {
                 tagsToRemove.map(tag => {
                     tags = tags.filter(t => tag != t);
@@ -1693,13 +1723,13 @@ function activate(context: vscode.ExtensionContext) {
 
         applyInlineStatusesToTasks(tasks).then(function (result) {
             if (result.changed === 0) {
-                vscode.window.showInformationMessage('TaskVision: No visible task comments were missing inline status tokens.');
+                vscode.window.showInformationMessage(nativeText('TaskVision: No visible task comments were missing inline status tokens.', 'TaskVision：当前可见任务都已有状态标记。'));
                 return;
             }
 
-            let message = 'TaskVision: Added inline status tokens to ' + result.changed + ' task comment' + (result.changed === 1 ? '' : 's') + '.';
+            let message = nativeText('TaskVision: Added inline status tokens to ' + result.changed + ' task comment' + (result.changed === 1 ? '' : 's') + '.', 'TaskVision：已为 ' + result.changed + ' 条任务注释补充状态标记。');
             if (result.skipped > 0) {
-                message += ' Skipped ' + result.skipped + '.';
+                message += nativeText(' Skipped ' + result.skipped + '.', ' 跳过 ' + result.skipped + ' 条。');
             }
             vscode.window.showInformationMessage(message);
         }).catch(function (error) {
@@ -1712,20 +1742,20 @@ function activate(context: vscode.ExtensionContext) {
         const items = taskState.STATUSES.map(function (status) {
             const detail = taskState.getStatusDetails(status);
             return {
-                label: '$(' + detail.icon + ') ' + status,
-                description: status === currentStatus ? '$(check) Current' : '',
-                detail: detail.description,
+                label: '$(' + detail.icon + ') ' + statusTitle(status),
+                description: status === currentStatus ? nativeText('$(check) Current', '$(check) 当前状态') : '',
+                detail: statusDetail(status, detail.description),
                 value: status
             };
         });
 
         if (!node || node.type !== 'todo' || node.isExtraLine === true || !node.actualTag || !isTaskAnnotationNode(node)) {
-            vscode.window.showWarningMessage('TaskVision: Only primary task comments can change inline status.');
+            vscode.window.showWarningMessage(nativeText('TaskVision: Only primary task comments can change inline status.', 'TaskVision：只有主任务注释才能修改源码内联状态。'));
             return;
         }
 
         vscode.window.showQuickPick(items, {
-            placeHolder: 'Choose a status for ' + (node.actualTag || node.tag)
+            placeHolder: nativeText('Choose a status for ', '选择任务状态：') + (node.actualTag || node.tag)
         }).then(function (selection) {
             if (!selection || selection.value === currentStatus) {
                 return;
@@ -1739,22 +1769,22 @@ function activate(context: vscode.ExtensionContext) {
 
     function setTaskPriority(node?: TreeNode) {
         if (!node || node.type !== 'todo' || !node.taskId || !node.rootPath || !isTaskAnnotationNode(node)) {
-            vscode.window.showWarningMessage('TaskVision: Task priority can only be stored for workspace files.');
+            vscode.window.showWarningMessage(nativeText('TaskVision: Task priority can only be stored for workspace files.', 'TaskVision：任务优先级只能保存到工作区文件。'));
             return;
         }
 
         const currentPriority = node.priority || config.defaultTaskPriority();
         const items = taskState.PRIORITIES.map(function (priority) {
             return {
-                label: priority,
-                description: priority === currentPriority ? '$(check) Current' : '',
-                detail: taskState.getPriorityDescription(priority),
+                label: priorityTitle(priority),
+                description: priority === currentPriority ? nativeText('$(check) Current', '$(check) 当前优先级') : '',
+                detail: priorityDetail(priority),
                 value: priority
             };
         });
 
         vscode.window.showQuickPick(items, {
-            placeHolder: 'Choose a priority for ' + (node.actualTag || node.tag)
+            placeHolder: nativeText('Choose a priority for ', '选择任务优先级：') + (node.actualTag || node.tag)
         }).then(function (selection) {
             if (!selection || selection.value === currentPriority) {
                 return;
@@ -1778,13 +1808,13 @@ function activate(context: vscode.ExtensionContext) {
 
     function editTaskNote(node?: TreeNode) {
         if (!node || node.type !== 'todo' || !node.taskId || !node.rootPath || !isTaskAnnotationNode(node)) {
-            vscode.window.showWarningMessage('TaskVision: Task notes can only be stored for workspace files.');
+            vscode.window.showWarningMessage(nativeText('TaskVision: Task notes can only be stored for workspace files.', 'TaskVision：任务备注只能保存到工作区文件。'));
             return;
         }
 
         vscode.window.showInputBox({
-            prompt: 'Task note',
-            placeHolder: 'Optional note or context for AI summaries',
+            prompt: nativeText('Task note', '任务备注'),
+            placeHolder: nativeText('Optional note or context for AI summaries', '可选备注或补充上下文，供 AI 摘要使用'),
             value: node.note || ''
         }).then(function (note) {
             if (note === undefined) {
@@ -1812,8 +1842,8 @@ function activate(context: vscode.ExtensionContext) {
         const items = taskState.STATUSES.map(function (status) {
             const detail = taskState.getStatusDetails(status);
             return {
-                label: '$(' + detail.icon + ') ' + status,
-                detail: detail.description,
+                label: '$(' + detail.icon + ') ' + statusTitle(status),
+                detail: statusDetail(status, detail.description),
                 picked: activeStatuses.indexOf(status) !== -1,
                 value: status
             };
@@ -1823,7 +1853,7 @@ function activate(context: vscode.ExtensionContext) {
             canPickMany: true,
             matchOnDescription: true,
             matchOnDetail: true,
-            placeHolder: 'Filter task tree by status. Leave empty to show all statuses.'
+            placeHolder: nativeText('Filter task tree by status. Leave empty to show all statuses.', '按状态筛选任务树；不选择任何状态表示显示全部。')
         }).then(function (selection) {
             if (selection === undefined) {
                 return;
@@ -2025,7 +2055,7 @@ function activate(context: vscode.ExtensionContext) {
         }));
 
         context.subscriptions.push(vscode.commands.registerCommand('taskvision.filter', function () {
-            vscode.window.showInputBox({ prompt: "Filter tree" }).then(
+            vscode.window.showInputBox({ prompt: nativeText('Filter tree', '筛选任务树') }).then(
                 function (term) {
                     currentFilter = term;
                     if (currentFilter) {

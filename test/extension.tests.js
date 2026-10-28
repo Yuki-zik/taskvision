@@ -204,7 +204,7 @@ QUnit.test('tree source differentiates task/context/review labels and context va
     assert.ok(source.indexOf('"[review:" + (node.reviewKind || \'note\') + "] "') !== -1);
     assert.ok(source.indexOf('return new vscode.ThemeIcon(\'note\');') !== -1);
     assert.ok(source.indexOf('return new vscode.ThemeIcon(\'warning\');') !== -1);
-    assert.ok(source.indexOf('label: "Agent session: " + shortSessionId(sessions[roots[0]])') !== -1);
+    assert.ok(source.includes('label: locale("Agent session: ", "Agent 会话：") + shortSessionId(sessions[roots[0]])'));
 });
 
 QUnit.test("extension applies on-demand stable ID tracking policy", async assert => {

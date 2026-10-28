@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.8.0_preview-3B82F6?style=flat-square" alt="Version 3.8.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.8.2_preview-3B82F6?style=flat-square" alt="Version 3.8.2 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -27,13 +27,23 @@
 TaskVision turns TODO-style comments into a task board inside the Explorer. It still does the classic work well — highlight tags, show them in a tree, jump back to code — but now it also supports inline task states, priority and note metadata, AI context export, status reports, and state-aware filtering.
 
 ```bash
-code --install-extension A-Znk.taskvision
+code --install-extension /path/to/taskvision-3.8.2-preview.vsix
 ```
 
 ![TaskVision Screenshot](resources/PixPin_2026-02-21_01-04-22.png)
 
 > [!IMPORTANT]
 > TaskVision 2.0 uses a **four-channel highlight model**. Styling scopes are now split into `colorType`, `glowType`, `glassType`, and `fontType`.
+
+## VS Code: three-minute quick start (3.8.2 Preview)
+
+Install the local preview with **Extensions → … → Install from VSIX**, or replace the path in the command above. **3.8.2 is a local preview and has not been published to Marketplace.** Open an existing code workspace first.
+
+1. **Read source and tasks.** Add `// INTENT: explain this design` or `// TODO [todo] validate inputs` in source comments. Click the **TaskVision** Activity Bar icon; the Tasks & Knowledge view scans tags and links each entry back to code. The native task tree does not require Node.js 22.
+2. **Open the knowledge workspace.** Use **Quick Actions → Getting Started (3 Steps)** to access the architecture graph, source evidence, human guidance and reviews. The optional local Web/MCP workspace requires **Node.js 22.18+**; keep the default runtime setting if it is already on PATH.
+3. **Connect a coding Agent.** Choose **Copy Agent MCP Configuration**, then paste the result into your Agent client's configuration. Copying alone does not connect or modify the client.
+
+For everyday appearance changes, use **Quick Actions → Change Tag Highlight Scheme**; advanced color/glow/glass/font controls live in the scoped native Settings entries. Menus and configuration descriptions follow VS Code's display language (English or Simplified Chinese), while source tag identifiers remain stable.
 
 ---
 

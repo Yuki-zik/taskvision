@@ -11,6 +11,21 @@ import * as config from './config.js';
 import * as taskState from './taskState.js';
 import * as taskMetaStore from './taskMetaStore.js';
 
+// Only presentation strings are localized; persisted statuses and scan modes
+// remain stable language-independent values.
+const locale = (english: string, chinese: string): string =>
+    /^zh(?:[-_]|$)/i.test(vscode.env.language || '') ? chinese : english;
+
+const localizedScanMode = (mode: string): string => {
+    switch (mode) {
+        case 'workspace': return locale('workspace and open files', '工作区与已打开文件');
+        case 'open files': return locale('open files only', '仅已打开文件');
+        case 'current file': return locale('current file only', '仅当前文件');
+        case 'workspace only': return locale('workspace only', '仅工作区');
+        default: return mode;
+    }
+};
+
 let workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined;
 let nodes: TreeNode[] = [];
 let currentFilter: string | undefined;
@@ -611,7 +626,7 @@ function buildSessionStatusNode(context: vscode.ExtensionContext) {
 
     if (roots.length === 1) {
         return statusNode({
-            label: "Agent session: " + shortSessionId(sessions[roots[0]]),
+            label: locale("Agent session: ", "Agent 会话：") + shortSessionId(sessions[roots[0]]),
             tooltip: tooltip,
             notExported: true,
             isStatusNode: true,
@@ -620,7 +635,7 @@ function buildSessionStatusNode(context: vscode.ExtensionContext) {
     }
 
     return statusNode({
-        label: "Agent sessions: " + roots.length + " active",
+        label: locale("Agent sessions: ", "Agent 会话：") + roots.length + locale(" active", " 个进行中"),
         tooltip: tooltip,
         notExported: true,
         isStatusNode: true,
@@ -707,35 +722,35 @@ class TreeNodeProvider implements vscode.TreeDataProvider<TreeNode>, vscode.Disp
             let tooltip = "";
 
             if (currentFilter) {
-                tooltip += "Tree Filter: \"" + currentFilter + "\"\n";
+                tooltip += locale("Tree Filter: ", "文本筛选：") + "\"" + currentFilter + "\"\n";
                 totalFilters++;
             }
 
             if (currentStatusFilter && currentStatusFilter.length > 0) {
-                tooltip += "Status Filter: " + currentStatusFilter.join(", ") + "\n";
+                tooltip += locale("Status Filter: ", "状态筛选：") + currentStatusFilter.join(", ") + "\n";
                 totalFilters++;
             }
 
             if (includeGlobs.length + excludeGlobs.length > 0) {
                 includeGlobs.map(function (this: TreeNodeProvider, glob) {
-                    tooltip += "Include: " + glob + "\n";
+                    tooltip += locale("Include: ", "包含：") + glob + "\n";
                 });
                 excludeGlobs.map(function (this: TreeNodeProvider, glob) {
-                    tooltip += "Exclude: " + glob + "\n";
+                    tooltip += locale("Exclude: ", "排除：") + glob + "\n";
                 });
             }
 
             if (totalFilters > 0) {
-                filterStatusNode.label = totalFilters + " filter" + (totalFilters === 1 ? '' : 's') + " active";
-                filterStatusNode.tooltip = tooltip + "\nRight click for filter options";
+                filterStatusNode.label = locale(totalFilters + " filter" + (totalFilters === 1 ? '' : 's') + " active", "已启用 " + totalFilters + " 项筛选");
+                filterStatusNode.tooltip = tooltip + locale("\nRight click for filter options", "\n右键查看筛选选项");
                 filterStatusNode.icon = "filter";
             }
 
             if (result.length === 0) {
                 if (filterStatusNode.label !== "") {
-                    filterStatusNode.label += ", ";
+                    filterStatusNode.label += locale(", ", "，");
                 }
-                filterStatusNode.label += "Nothing found";
+                filterStatusNode.label += locale("Nothing found", "未找到匹配项");
                 filterStatusNode.icon = "issues";
 
                 filterStatusNode.empty = availableNodes.length === 0;
@@ -751,12 +766,9 @@ class TreeNodeProvider implements vscode.TreeDataProvider<TreeNode>, vscode.Disp
             }
 
             if (config.shouldShowScanModeInTree()) {
-                let scanMode = config.scanMode();
-                if (scanMode === 'workspace') {
-                    scanMode += " and open files";
-                }
                 const scanModeNode = statusNode({
-                    label: "Scan mode: " + scanMode, notExported: true, isStatusNode: true, icon: "search"
+                    label: locale("Scan mode: ", "扫描范围：") + localizedScanMode(config.scanMode()),
+                    notExported: true, isStatusNode: true, icon: "search"
                 });
                 result.unshift(scanModeNode);
             }
@@ -874,7 +886,7 @@ class TreeNodeProvider implements vscode.TreeDataProvider<TreeNode>, vscode.Disp
                                 url
                             ]
                         };
-                        treeItem.tooltip = "Click to open " + url;
+                        treeItem.tooltip = locale("Click to open ", "点击打开：") + url;
                     }
                 }
             }

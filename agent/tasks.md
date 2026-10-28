@@ -1,5 +1,11 @@
 # Current Tasks
 
+## Native VS Code usability and Chinese/English clarity — 2026-10-28
+
+TaskVision 3.8.1 is functionally installed and smoke-tested but has an observed UX gap: original TODOs sidebar naming obscures new knowledge features; screenshot Quick Actions groups many commands and offers no quick start; manifest contains two unlocalized section headings and 33 raw English setting explanations (plus a validation error); English tree runtime status labels appear under Chinese locale. Provide a small bilingual first-run action menu, clarify sidebar naming and translate existing settings and tree status messages without changing defaults, storage, extension behavior, user custom highlighters or 3.8 neon appearance. Test manifest locale references, native QuickPick dispatch/cancel, Chinese/English runtime status, existing extension and installed Host. Keep preexisting .taskvision/ai-status-report.md untouched; no publishing or daily-profile replacement.
+
+**Completed locally in 3.8.2 on fix/vscode-native-usability-i18n-20261028.** Added guided onboarding, readable Activity/Tree names, bilingual Quick Actions/settings (183 NLS keys per locale), appearance pickers, task state/priority/tree statuses and common dialogs. English installed VS Code Host PASS; simulated Chinese hosts + NLS completeness PASS. Attempted actual zh-cn GUI still returned en and is an explicit acceptance gap. 188 QUnit / 64 Core / 107 Web / 10 Chrome / strict TS / formatting / production / package audit all PASS. Preexisting personal report intact; no daily-profile install or remote publication.
+
 ## 3.8.1 Human guidance draft isolation — 2026-10-28
 
 Scope: fix an identified new-guidance draft collision when selecting different source lines of the same file. The current browser draft key and React editor key include workspace/path but omit selected line; existing line-1 drafts are silently reused at line 2. Reproduce through real browser user flow before code change, preserve compatible old drafts, keep all project/server/source data formats and existing user changes untouched. Validate line isolation plus refresh/persistence, typecheck and the targeted Web/E2E suite. No public release, remote push, or default VS Code replacement.

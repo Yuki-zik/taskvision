@@ -45,9 +45,11 @@ QUnit.test('Quick Actions groups existing real commands and cancellation has no 
         await host.commands.get('taskvision.quickActions')();
         const picker = host.pickers[0];
         assert.strictEqual(picker.options.title, 'TaskVision: Quick Actions');
+        assert.strictEqual(picker.items.find(item => item.command).command, 'taskvision.openWorkspace', 'pressing Enter still opens the project workspace');
+
         assert.true(picker.options.matchOnDetail);
         assert.deepEqual(picker.items.filter(item => item.kind === -1).map(item => item.label), [
-            'Workspace', 'Appearance and tags', 'Tasks', 'AI context and settings'
+            'Start here', 'Workspace', 'Appearance and tags', 'Tasks', 'AI context and settings'
         ]);
         for (const name of ['openWorkspace', 'refresh', 'enableKnowledgeTags', 'setHighlightSchemeForAllTags', 'filter', 'filterByStatus', 'exportAiContext', 'copyMcpConfig', 'configureAppearanceAndWorkspace']) {
             assert.ok(picker.items.some(item => item.command === 'taskvision.' + name), name + ' available');
@@ -104,7 +106,7 @@ QUnit.test('Chinese Quick Actions and contributed labels are localized', async a
     const manifest = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     for (const locale of ['package.nls.json', 'package.nls.zh-cn.json']) {
         const labels = JSON.parse(fs.readFileSync(locale, 'utf8'));
-        for (const name of ['quickActions', 'configureAppearanceAndWorkspace']) {
+        for (const name of ['gettingStarted', 'quickActions', 'configureAppearanceAndWorkspace']) {
             const command = manifest.contributes.commands.find(item => item.command === 'taskvision.' + name);
             assert.ok(command && labels[command.title.slice(1, -1)], locale + ': ' + name);
         }

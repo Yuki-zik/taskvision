@@ -10,7 +10,7 @@
         "ai-agents",
         "code-reuse"
     ],
-    "version": "3.8.1",
+    "version": "3.8.2",
     "license": "MIT",
     "icon": "resources/taskvision.png",
     "publisher": "A-Znk",
@@ -766,6 +766,12 @@
                 "icon": "$(tag)"
             },
             {
+                "command": "taskvision.gettingStarted",
+                "title": "%taskvision.command.gettingStarted.title%",
+                "category": "%taskvision.command.category%",
+                "icon": "$(book)"
+            },
+            {
                 "command": "taskvision.quickActions",
                 "title": "%taskvision.command.quickActions.title%",
                 "category": "%taskvision.command.category%",
@@ -1146,23 +1152,23 @@
                                 },
                                 "opacity": {
                                     "type": "number",
-                                    "description": "Legacy alias for glassOpacity."
+                                    "description": "%taskvision.configuration.highlights.schema.opacity%"
                                 },
                                 "foregroundOpacity": {
                                     "type": "number",
-                                    "description": "Alpha for foreground color channel. Accepts 0-1 or 0-100."
+                                    "description": "%taskvision.configuration.highlights.schema.foregroundOpacity%"
                                 },
                                 "glowOpacity": {
                                     "type": "number",
-                                    "description": "Alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                                    "description": "%taskvision.configuration.highlights.schema.glowOpacity%"
                                 },
                                 "glassOpacity": {
                                     "type": "number",
-                                    "description": "Alpha for glass background channel. Accepts 0-1 or 0-100."
+                                    "description": "%taskvision.configuration.highlights.schema.glassOpacity%"
                                 },
                                 "glassBorderOpacity": {
                                     "type": "number",
-                                    "description": "Alpha for glass border channel. Accepts 0-1 or 0-100."
+                                    "description": "%taskvision.configuration.highlights.schema.glassBorderOpacity%"
                                 },
                                 "fontWeight": {
                                     "type": "string"
@@ -1215,11 +1221,11 @@
                                         "whole-line",
                                         "none"
                                     ],
-                                    "description": "Legacy key from 1.x. 2.0 highlight channels use colorType/glowType/glassType/fontType."
+                                    "description": "%taskvision.configuration.highlights.schema.type%"
                                 },
                                 "colorType": {
                                     "type": "string",
-                                    "description": "Scope for foreground color channel.",
+                                    "description": "%taskvision.configuration.highlights.schema.colorType%",
                                     "enum": [
                                         "tag",
                                         "text",
@@ -1233,7 +1239,7 @@
                                 },
                                 "glowType": {
                                     "type": "string",
-                                    "description": "Scope for glow text-shadow channel.",
+                                    "description": "%taskvision.configuration.highlights.schema.glowType%",
                                     "enum": [
                                         "tag",
                                         "text",
@@ -1247,7 +1253,7 @@
                                 },
                                 "glassType": {
                                     "type": "string",
-                                    "description": "Scope for glass background channel.",
+                                    "description": "%taskvision.configuration.highlights.schema.glassType%",
                                     "enum": [
                                         "tag",
                                         "text",
@@ -1261,7 +1267,7 @@
                                 },
                                 "fontType": {
                                     "type": "string",
-                                    "description": "Scope for font style channel.",
+                                    "description": "%taskvision.configuration.highlights.schema.fontType%",
                                     "enum": [
                                         "tag",
                                         "text",
@@ -1289,7 +1295,7 @@
                                         "glass",
                                         "neon+glass"
                                     ],
-                                    "description": "Pre-configured highlight scheme."
+                                    "description": "%taskvision.configuration.highlights.schema.scheme%"
                                 }
                             }
                         }
@@ -1321,23 +1327,23 @@
                             },
                             "opacity": {
                                 "type": "number",
-                                "description": "Legacy alias for glassOpacity."
+                                "description": "%taskvision.configuration.highlights.schema.opacity%"
                             },
                             "foregroundOpacity": {
                                 "type": "number",
-                                "description": "Alpha for foreground color channel. Accepts 0-1 or 0-100."
+                                "description": "%taskvision.configuration.highlights.schema.foregroundOpacity%"
                             },
                             "glowOpacity": {
                                 "type": "number",
-                                "description": "Alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                                "description": "%taskvision.configuration.highlights.schema.glowOpacity%"
                             },
                             "glassOpacity": {
                                 "type": "number",
-                                "description": "Alpha for glass background channel. Accepts 0-1 or 0-100."
+                                "description": "%taskvision.configuration.highlights.schema.glassOpacity%"
                             },
                             "glassBorderOpacity": {
                                 "type": "number",
-                                "description": "Alpha for glass border channel. Accepts 0-1 or 0-100."
+                                "description": "%taskvision.configuration.highlights.schema.glassBorderOpacity%"
                             },
                             "fontWeight": {
                                 "type": "string"
@@ -1390,11 +1396,11 @@
                                     "whole-line",
                                     "none"
                                 ],
-                                "description": "Legacy key from 1.x. 2.0 highlight channels use colorType/glowType/glassType/fontType."
+                                "description": "%taskvision.configuration.highlights.schema.type%"
                             },
                             "colorType": {
                                 "type": "string",
-                                "description": "Scope for foreground color channel.",
+                                "description": "%taskvision.configuration.highlights.schema.colorType%",
                                 "enum": [
                                     "tag",
                                     "text",
@@ -1408,7 +1414,7 @@
                             },
                             "glowType": {
                                 "type": "string",
-                                "description": "Scope for glow text-shadow channel.",
+                                "description": "%taskvision.configuration.highlights.schema.glowType%",
                                 "enum": [
                                     "tag",
                                     "text",
@@ -1422,7 +1428,7 @@
                             },
                             "glassType": {
                                 "type": "string",
-                                "description": "Scope for glass background channel.",
+                                "description": "%taskvision.configuration.highlights.schema.glassType%",
                                 "enum": [
                                     "tag",
                                     "text",
@@ -1436,7 +1442,7 @@
                             },
                             "fontType": {
                                 "type": "string",
-                                "description": "Scope for font style channel.",
+                                "description": "%taskvision.configuration.highlights.schema.fontType%",
                                 "enum": [
                                     "tag",
                                     "text",
@@ -1464,7 +1470,7 @@
                                     "glass",
                                     "neon+glass"
                                 ],
-                                "description": "Pre-configured highlight scheme."
+                                "description": "%taskvision.configuration.highlights.schema.scheme%"
                             }
                         }
                     },
@@ -1517,23 +1523,23 @@
                     },
                     "taskvision.highlights.opacity": {
                         "type": "number",
-                        "description": "Legacy global alias for glassOpacity."
+                        "markdownDescription": "%taskvision.highlights.opacity%"
                     },
                     "taskvision.highlights.foregroundOpacity": {
                         "type": "number",
-                        "description": "Default alpha for foreground color channel. Accepts 0-1 or 0-100."
+                        "markdownDescription": "%taskvision.highlights.foregroundOpacity%"
                     },
                     "taskvision.highlights.glowOpacity": {
                         "type": "number",
-                        "description": "Default alpha for glow text-shadow channel. Accepts 0-1 or 0-100."
+                        "markdownDescription": "%taskvision.highlights.glowOpacity%"
                     },
                     "taskvision.highlights.glassOpacity": {
                         "type": "number",
-                        "description": "Default alpha for glass background channel. Accepts 0-1 or 0-100."
+                        "markdownDescription": "%taskvision.highlights.glassOpacity%"
                     },
                     "taskvision.highlights.glassBorderOpacity": {
                         "type": "number",
-                        "description": "Default alpha for glass border channel. Accepts 0-1 or 0-100."
+                        "markdownDescription": "%taskvision.highlights.glassBorderOpacity%"
                     }
                 }
             },
@@ -1749,7 +1755,7 @@
                     },
                     "taskvision.tree.showStatusPrefix": {
                         "default": true,
-                        "markdownDescription": "Prefix default task labels with the inline task status when `${status}` is not already used.",
+                        "markdownDescription": "%taskvision.configuration.tree.showStatusPrefix%",
                         "type": "boolean"
                     },
                     "taskvision.tree.trackFile": {
@@ -1812,7 +1818,7 @@
                 }
             },
             {
-                "title": "Task States",
+                "title": "%taskvision.configuration.tasks%",
                 "order": 6,
                 "type": "object",
                 "properties": {
@@ -1825,26 +1831,26 @@
                             "low",
                             "trivial"
                         ],
-                        "markdownDescription": "Default priority stored in `.taskvision/tasks-meta.json` for task comments without explicit metadata.",
+                        "markdownDescription": "%taskvision.configuration.tasks.defaultPriority%",
                         "type": "string"
                     }
                 }
             },
             {
-                "title": "AI Context",
+                "title": "%taskvision.configuration.aiContext%",
                 "order": 7,
                 "type": "object",
                 "properties": {
                     "taskvision.aiContext.outputDir": {
                         "default": ".taskvision",
-                        "markdownDescription": "Workspace-relative directory used for AI context files and task sidecar metadata.",
+                        "markdownDescription": "%taskvision.configuration.aiContext.outputDir%",
                         "pattern": "^(?!([A-Za-z]:|/|\\\\|.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$))).+",
-                        "patternErrorMessage": "Use a workspace-relative folder that does not contain parent-directory segments.",
+                        "patternErrorMessage": "%taskvision.configuration.aiContext.outputDir.patternErrorMessage%",
                         "type": "string"
                     },
                     "taskvision.aiContext.respectCurrentFilters": {
                         "default": true,
-                        "markdownDescription": "When enabled, exporting AI context from the view title only includes currently visible tasks after tree filters are applied.",
+                        "markdownDescription": "%taskvision.configuration.aiContext.respectCurrentFilters%",
                         "type": "boolean"
                     }
                 }

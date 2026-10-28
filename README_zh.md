@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-7BC96F?style=flat-square" alt="MIT License" /></a>&nbsp;
-  <a href="#"><img src="https://img.shields.io/badge/version-3.8.0_preview-3B82F6?style=flat-square" alt="Version 3.8.0 Preview" /></a>&nbsp;
+  <a href="#"><img src="https://img.shields.io/badge/version-3.8.2_preview-3B82F6?style=flat-square" alt="Version 3.8.2 Preview" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/VS%20Code-%5E1.72-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white" alt="VS Code ^1.72" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square" alt="Strict TypeScript" /></a>&nbsp;
   <a href="#"><img src="https://img.shields.io/badge/AI%20context-md%20%2B%20json-0EA5E9?style=flat-square" alt="AI context" /></a>
@@ -25,13 +25,23 @@
 TaskVision 会把代码中的 TODO 类注释转成 VS Code 里的任务树。它保留了传统能力——高亮标签、树视图集中展示、快速跳转回源码——同时新增了内联状态、优先级与备注元数据、AI 上下文导出、状态变化报告，以及基于状态的筛选。
 
 ```bash
-code --install-extension A-Znk.taskvision
+code --install-extension /path/to/taskvision-3.8.2-preview.vsix
 ```
 
 ![TaskVision 截图](resources/PixPin_2026-02-21_01-04-22.png)
 
 > [!IMPORTANT]
 > TaskVision 2.0 使用**四通道高亮模型**。样式范围现在拆分为 `colorType`、`glowType`、`glassType`、`fontType`。
+
+## VS Code 原生使用：3 分钟上手（3.8.2 Preview）
+
+在 VS Code 扩展页的右上角 **… → 从 VSIX 安装**，选择本地预览包；也可以使用上面的命令并替换为真实 VSIX 路径。**3.8.2 是本地预览版，尚未发布到 Marketplace。** 安装后先打开自己的代码项目。
+
+1. **读源码与任务**：在代码里写 `// INTENT: 为什么这样设计` 或 `// TODO [todo] 实现校验`。点击活动栏的 **TaskVision** 图标，侧栏「任务与知识」展示标签、任务与源码定位。原生任务树不需要 Node.js 22。
+2. **使用工作台**：点击侧栏顶部 **快捷操作 → 新手入门（三步上手）**；选择「打开项目知识工作台」，浏览源码关系、人工指导与审阅。可选 Web/MCP 工作台要求 Node.js **22.18+**；PATH 已有可用 Node 时保留默认设置。
+3. **连接编程 Agent**：在快捷操作中选择「复制 Agent MCP 配置」，把复制内容加入所用 Agent 客户端的 MCP 配置。复制动作不会自动连接或修改其他客户端。
+
+**常用设置**：快捷操作中的「更改标签高亮方案」直接选择霓虹／玻璃预设；「高亮通道设置」和「任务树与徽标设置」打开对应 VS Code 原生设置。高级 JSON 参数只有需要微调时再改。菜单与设置说明按 VS Code 显示语言切换中英文；`CORE`、`REUSE`、`INTENT`、`REVIEW` 等源码标签保留英文，方便与 Agent 共享。
 
 ---
 

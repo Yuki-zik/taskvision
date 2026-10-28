@@ -27,9 +27,9 @@ async function withDeadline(promise, label) {
 // Exercise the installed command's real QuickPick with native workbench actions.
 // Retry the harmless accept/close command while the picker mounts; no production
 // API replacement, command arguments or settings are needed to steer the picker.
-async function driveQuickActions(accept) {
+async function driveQuickActions(accept, command = 'taskvision.quickActions') {
   let settled = false;
-  const result = vscode.commands.executeCommand('taskvision.quickActions');
+  const result = vscode.commands.executeCommand(command);
   const observed = result.then(value => { settled = true; return value; }, error => { settled = true; throw error; });
   const driver = (async () => {
     for (let attempt = 0; !settled && attempt < 30; attempt++) {
@@ -50,7 +50,7 @@ exports.run = async function () {
   const expectedVersion = process.env.TASKVISION_EXPECTED_VERSION || require('../../package.json').version;
   assert.equal(extension.packageJSON.version, expectedVersion);
   const commands = await vscode.commands.getCommands(true);
-  const required = ['openWorkspace', 'stopWorkspace', 'copyMcpConfig', 'enableKnowledgeTags', 'exportAiContext', 'syncDataModel', 'setTaskStatus', 'refresh', 'quickActions', 'configureAppearanceAndWorkspace'];
+  const required = ['openWorkspace', 'stopWorkspace', 'copyMcpConfig', 'enableKnowledgeTags', 'exportAiContext', 'syncDataModel', 'setTaskStatus', 'refresh', 'quickActions', 'gettingStarted', 'configureAppearanceAndWorkspace'];
   for (const name of required) assert.ok(commands.includes('taskvision.' + name), name);
   const titleMenu = extension.packageJSON.contributes.menus['view/title'];
   assert.deepEqual(titleMenu.filter(item => /^navigation(?:@|$)/.test(item.group))
@@ -61,6 +61,7 @@ exports.run = async function () {
   assert.equal(JSON.stringify(vscode.workspace.getConfiguration('taskvision')), beforeSettings, 'opening native Settings never writes preferences');
   assert.ok(vscode.window.tabGroups.all.some(group => group.tabs.some(tab => /settings|设置/i.test(tab.label))), 'native Settings tab opened');
   assert.equal(await driveQuickActions(false), undefined, 'cancel real Quick Actions without dispatching');
+  assert.equal(await driveQuickActions(false, 'taskvision.gettingStarted'), undefined, 'cancel real Getting Started without changing settings');
   assert.equal(JSON.stringify(vscode.workspace.getConfiguration('taskvision')), beforeSettings, 'cancelling Quick Actions preserves settings');
   const config = vscode.workspace.getConfiguration('taskvision.general');
   const beforeHighlights = JSON.stringify(vscode.workspace.getConfiguration('taskvision.highlights').get('customHighlight'));
@@ -101,7 +102,7 @@ exports.run = async function () {
     catch { stopped = true; break; }
   }
   assert.ok(stopped, 'stop command terminates the service owned by the extension');
-  const result = { passed: true, extensionVersion: extension.packageJSON.version, active: extension.isActive, registeredCommands: required, enabledTags: tags, workspaceTrusted: vscode.workspace.isTrusted, realEditorOpened: true, nativeSettingsOpenedWithoutMutation: true, realQuickActionsCancelledAndOpenedWorkspace: true, customHighlightChannelsPreserved: true, mcpConfigCopiedAndClipboardRestored: true, realWorkspaceHttp: response.status, packagedWebHttp: web.status, serviceStopped: stopped };
+  const result = { passed: true, locale: vscode.env.language, extensionVersion: extension.packageJSON.version, active: extension.isActive, registeredCommands: required, enabledTags: tags, workspaceTrusted: vscode.workspace.isTrusted, realEditorOpened: true, nativeSettingsOpenedWithoutMutation: true, realQuickActionsCancelledAndOpenedWorkspace: true, customHighlightChannelsPreserved: true, mcpConfigCopiedAndClipboardRestored: true, realWorkspaceHttp: response.status, packagedWebHttp: web.status, serviceStopped: stopped };
   fs.writeFileSync(process.env.TASKVISION_EHOST_RESULTS, JSON.stringify(result, null, 2));
   console.log('TASKVISION_EXTENSION_HOST_PASS ' + JSON.stringify(result));
 };
