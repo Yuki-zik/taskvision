@@ -1,5 +1,21 @@
 # Current Tasks
 
+## Cloud repository consolidation — 2026-11-02
+
+User requested the latest TaskVision progress and code to be unified in the existing GitHub repository. Verified source: 3.8.2 commit `520362443887d9a4562c0a753691d1595b8dd98e`; remote `Yuki-zik/taskvision`, default branch `master` at `e4c923c9754c139660118ad229a7c92ec9412113`, 13 linear local commits ahead. Work takes place in an isolated sync worktree; preserve the original checkout and its preexisting `.taskvision/ai-status-report.md` modification.
+
+- [x] Identify the authoritative checkout, current version and existing remote.
+- [x] Fetch and confirm the development history descends from remote master.
+- [x] Inspect the outgoing history and exclude private/generated working data.
+- [x] Update one current progress entry and preserve the 3.8.2 acceptance limits.
+- [x] Reproduce the project checks and production build.
+- [ ] Push with a normal fast-forward and verify the remote commit.
+- [ ] Restore from the remote into a fresh checkout and verify build/package.
+
+Local verification: 188/188 native, 64/64 Core/HTTP/MCP, 107/107 Web and 10/10 Chrome workflows passed; strict TypeScript, formatting and production build passed. Clean-checkout runtime fixtures and browser teardown ordering were repaired without changing runtime source or release workflows.
+
+This request authorizes source/progress synchronization. Marketplace publication and replacement of the daily VS Code installation remain outside this task. Actual graphical Chinese Extension Host acceptance remains incomplete.
+
 ## Native VS Code usability and Chinese/English clarity — 2026-10-28
 
 TaskVision 3.8.1 is functionally installed and smoke-tested but has an observed UX gap: original TODOs sidebar naming obscures new knowledge features; screenshot Quick Actions groups many commands and offers no quick start; manifest contains two unlocalized section headings and 33 raw English setting explanations (plus a validation error); English tree runtime status labels appear under Chinese locale. Provide a small bilingual first-run action menu, clarify sidebar naming and translate existing settings and tree status messages without changing defaults, storage, extension behavior, user custom highlighters or 3.8 neon appearance. Test manifest locale references, native QuickPick dispatch/cancel, Chinese/English runtime status, existing extension and installed Host. Keep preexisting .taskvision/ai-status-report.md untouched; no publishing or daily-profile replacement.

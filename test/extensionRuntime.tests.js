@@ -3,6 +3,22 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+// Process doubles below exercise the bridge lifecycle. Give each test its own
+// packaged-runtime entry so a clean checkout needs no prebuilt workspace files.
+async function withRuntimeFixture(host, run) {
+    const extensionPath = fs.mkdtempSync(path.join(os.tmpdir(), 'taskvision-bridge-fixture-'));
+    const originalPath = host.context.extensionPath;
+    try {
+        fs.mkdirSync(path.join(extensionPath, 'workspace'));
+        fs.writeFileSync(path.join(extensionPath, 'workspace', 'server.mjs'), '// Runtime execution is supplied by the test process doubles.\n');
+        host.context.extensionPath = extensionPath;
+        return await withHost(host, run);
+    } finally {
+        host.context.extensionPath = originalPath;
+        fs.rmSync(extensionPath, {recursive: true, force: true});
+    }
+}
+
 QUnit.test('extension activation retains legacy commands and the opt-in workspace bridge', async assert => {
     const host = createHost({settings: {'taskvision.tree.scanAtStartup': false}});
     await withHost(host, async load => {
@@ -83,7 +99,7 @@ QUnit.test('trusted bridge deduplicates startup and uses only the machine-select
             return child;
         }
     };
-    await withHost(host, async load => {
+    await withRuntimeFixture(host, async load => {
         load('knowledgeWorkspace').register(host.vscode, host.context, processes);
         assert.strictEqual(executions.length, 0, 'registration is process-free');
         await Promise.all([host.commands.get('taskvision.openWorkspace')(), host.commands.get('taskvision.openWorkspace')()]);
@@ -101,7 +117,7 @@ QUnit.test('trusted bridge deduplicates startup and uses only the machine-select
 QUnit.test('stopping a bridge during runtime detection cancels its pending spawn', async assert => {
     const host = createHost();
     let callback, spawned = 0;
-    await withHost(host, async load => {
+    await withRuntimeFixture(host, async load => {
         load('knowledgeWorkspace').register(host.vscode, host.context, {
             execFile(_command, _args, _options, ready) {callback = ready;},
             spawn() {spawned++; throw new Error('cancelled startup must not spawn');}

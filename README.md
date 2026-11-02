@@ -35,9 +35,13 @@ code --install-extension /path/to/taskvision-3.8.2-preview.vsix
 > [!IMPORTANT]
 > TaskVision 2.0 uses a **four-channel highlight model**. Styling scopes are now split into `colorType`, `glowType`, `glassType`, and `fontType`.
 
+## Current source checkpoint
+
+The current development version is **3.8.2 Preview**. See [current progress](agent/tasks.md), the [2026-11-02 source checkpoint and restore instructions](agent/cloud-sync-20261102.md), and [native usability acceptance](agent/native-usability-acceptance.md). The source repository and Marketplace have separate release status; actual graphical Chinese VS Code acceptance remains open.
+
 ## VS Code: three-minute quick start (3.8.2 Preview)
 
-Install the local preview with **Extensions → … → Install from VSIX**, or replace the path in the command above. **3.8.2 is a local preview and has not been published to Marketplace.** Open an existing code workspace first.
+Install the local preview with **Extensions → … → Install from VSIX**, or replace the path in the command above. **3.8.2 is a preview and has not been published to Marketplace.** Open an existing code workspace first.
 
 1. **Read source and tasks.** Add `// INTENT: explain this design` or `// TODO [todo] validate inputs` in source comments. Click the **TaskVision** Activity Bar icon; the Tasks & Knowledge view scans tags and links each entry back to code. The native task tree does not require Node.js 22.
 2. **Open the knowledge workspace.** Use **Quick Actions → Getting Started (3 Steps)** to access the architecture graph, source evidence, human guidance and reviews. The optional local Web/MCP workspace requires **Node.js 22.18+**; keep the default runtime setting if it is already on PATH.

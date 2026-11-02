@@ -48,7 +48,11 @@ Validated strict TypeScript, Prettier, 170 old tests, 56 core, 48 Web, 13 real-b
 
 ## Current verified state
 
-TaskVision **3.8.2 local preview** (2026-10-28) is developed on the Mac mini. The 3.8 original neon/graph-detail workbench remains the visual baseline. The new release fixes per-line new-guidance draft identity and migrates compatible legacy drafts without changing source annotations, SQLite, Agent tool contracts or user settings. Verified locally: 182 legacy QUnit, 64 Core/HTTP/MCP, 107 Web, 10 real-browser workflow tests, strict TypeScript, formatting, production build and package audit. Isolated installed VS Code Extension Host and extracted VSIX HTTP/bootstrap/snapshot smoke passed. Preview is local and unpushed; there is no Marketplace or cross-platform result and the user's daily VS Code profile was not replaced.
+TaskVision **3.8.2 Preview** is the current development version. The source baseline is `520362443887d9a4562c0a753691d1595b8dd98e` (2026-10-28). The 2026-11-02 task consolidates its 13 local commits and current progress into the existing GitHub `master` branch; exact verification and synchronization status are recorded in [cloud-sync-20261102.md](cloud-sync-20261102.md) and [tasks.md](tasks.md).
+
+The latest historical acceptance passed **188** native QUnit tests, **64** Core/HTTP/MCP tests and **107** Web tests, plus 10 Chrome workflow tests, strict TypeScript, formatting, production build and VSIX audit. The English installed Extension Host passed. Simulated Chinese hosts and 183 aligned NLS keys passed; actual graphical Chinese Extension Host verification is still incomplete because the tested host reported `en`. Some rare legacy dialogs remain English, and 80 advanced settings remain visible. See [native usability acceptance](native-usability-acceptance.md).
+
+The existing 3.8 neon graph/detail UI, multi-project workspace, per-line guidance drafts, source evidence, scoped Agent leases and human Review are preserved. The source checkpoint is not a Marketplace release. Daily VS Code installations and private project knowledge/lease state are outside this synchronization.
 
 ## Commands
 
@@ -64,7 +68,7 @@ npm run verify:index
 npm run package:preview
 ```
 
-`workspace/README.md` is the user guide; `workspace/skills/taskvision-workspace/SKILL.md` is the Agent workflow. `agent/refactor-acceptance.md` defines the user-flow acceptance criteria. Reports stay in the existing ignored `agent/reports/` folder; raw Agent logs/lease credentials must never be published.
+`workspace/README.md` is the user guide; `workspace/skills/taskvision-workspace/SKILL.md` is the Agent workflow. `agent/refactor-acceptance.md` defines the user-flow acceptance criteria. Raw reports stay in the existing ignored `agent/reports/` folder. Reviewed acceptance summaries may be checked in under `agent/`; raw Agent logs, personal state and lease credentials must never be published.
 
 ## Official node UI adoption (3.4)
 
@@ -94,10 +98,10 @@ A single graph click/keyboard Enter opens one Floating UI popover with true node
 
 ## 3.8.1 source-anchored unsaved guidance
 
-New Web AnnotationEditor drafts are keyed by canonical project workspace ID, source path and line; existing saved annotations keep their stable annotation IDs. A matching older path-only draft is migrated only after its line-accurate new key is successfully persisted; mismatched legacy user data remains untouched. Navigation between lines, browser reload, concurrent editing, legacy migration and other human/Agent Review flows are tested through the real server and browser. Release acceptance and package checks are documented in agent/reports/taskvision-3.8.1-draft-acceptance-20261028.md.
+New Web AnnotationEditor drafts are keyed by canonical project workspace ID, source path and line; existing saved annotations keep their stable annotation IDs. A matching older path-only draft is migrated only after its line-accurate new key is successfully persisted; mismatched legacy user data remains untouched. Navigation between lines, browser reload, concurrent editing, legacy migration and other human/Agent Review flows are tested through the real server and browser. Release acceptance and package checks are documented in [guidance-draft-acceptance.md](guidance-draft-acceptance.md).
 
 ## 3.8.2 native VS Code usability and bilingual menus
 
 The opt-in native Getting Started QuickPick provides three workflows (read annotated source, launch the Web knowledge workspace, copy Agent MCP config) and an explicit Node.js 22.18+ troubleshooting entry. The main Quick Actions picker still defaults Enter to Open Knowledge Workspace. Native Activity Bar is TaskVision, its tree is Tasks & Knowledge / 任务与知识. All 80 native configuration entries now have translatable group/description/validation metadata; both language packs have 183 keys. Native tree filter/session/scan labels, appearance presets and highlighter scopes, common task status/priority/note/tag dialogs use bilingual display labels. Persisted enum/source tokens, user settings, Web and Agent protocols remain unchanged.
 
-Verification: 188 QUnit, 64 Core/MCP, 107 Web, 10 Chrome, TypeScript, formatting, production bundle and VSIX audit. Isolated installed VS Code 3.8.2 passed English Extension Host command/settings/browser/MCP smoke. Chinese pack installed in isolation, but VS Code Extension Host remained vscode.env.language=en even with requested zh-cn; real Chinese GUI verification remains open. Simulated zh-cn native hosts and static NLS checks pass. Some rarely used legacy dialogs retain English. No remote publication or daily VS Code profile change; see agent/reports/taskvision-3.8.2-native-ux-acceptance-20261028.md.
+Verification: 188 QUnit, 64 Core/MCP, 107 Web, 10 Chrome, TypeScript, formatting, production bundle and VSIX audit. Isolated installed VS Code 3.8.2 passed English Extension Host command/settings/browser/MCP smoke. Chinese pack installed in isolation, but VS Code Extension Host remained vscode.env.language=en even with requested zh-cn; real Chinese GUI verification remains open. Simulated zh-cn native hosts and static NLS checks pass. Some rarely used legacy dialogs retain English. The 2026-10-28 acceptance did not publish or replace the daily VS Code profile; see [native-usability-acceptance.md](native-usability-acceptance.md). Source synchronization is recorded separately in the current checkpoint.

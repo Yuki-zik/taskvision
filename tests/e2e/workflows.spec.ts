@@ -63,7 +63,9 @@ test.beforeEach(async () => {
   workspace = createWorkspace(root);
   app = await startServer({ root, port: 0, publicRoot: path.resolve('workspace/public') });
 });
-test.afterEach(async () => {
+test.afterEach(async ({ context }) => {
+  // Stop browser polling and keep-alive requests before awaiting server shutdown.
+  await context.close();
   await app?.close();
   workspace?.close();
   fs.rmSync(root, { recursive: true, force: true });

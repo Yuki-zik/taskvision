@@ -33,9 +33,13 @@ code --install-extension /path/to/taskvision-3.8.2-preview.vsix
 > [!IMPORTANT]
 > TaskVision 2.0 使用**四通道高亮模型**。样式范围现在拆分为 `colorType`、`glowType`、`glassType`、`fontType`。
 
+## 当前源码与进度
+
+当前开发版本为 **3.8.2 Preview**。最新状态统一记录在[当前任务](agent/tasks.md)，本次同步与复现方法见 [2026-11-02 云端检查点](agent/cloud-sync-20261102.md)，已有验收见[原生易用性验收](agent/native-usability-acceptance.md)。源码同步与 Marketplace 发布分别记录；真实中文 VS Code 图形界面验收仍待完成。
+
 ## VS Code 原生使用：3 分钟上手（3.8.2 Preview）
 
-在 VS Code 扩展页的右上角 **… → 从 VSIX 安装**，选择本地预览包；也可以使用上面的命令并替换为真实 VSIX 路径。**3.8.2 是本地预览版，尚未发布到 Marketplace。** 安装后先打开自己的代码项目。
+在 VS Code 扩展页的右上角 **… → 从 VSIX 安装**，选择本地预览包；也可以使用上面的命令并替换为真实 VSIX 路径。**3.8.2 是预览版，尚未发布到 Marketplace。** 安装后先打开自己的代码项目。
 
 1. **读源码与任务**：在代码里写 `// INTENT: 为什么这样设计` 或 `// TODO [todo] 实现校验`。点击活动栏的 **TaskVision** 图标，侧栏「任务与知识」展示标签、任务与源码定位。原生任务树不需要 Node.js 22。
 2. **使用工作台**：点击侧栏顶部 **快捷操作 → 新手入门（三步上手）**；选择「打开项目知识工作台」，浏览源码关系、人工指导与审阅。可选 Web/MCP 工作台要求 Node.js **22.18+**；PATH 已有可用 Node 时保留默认设置。
