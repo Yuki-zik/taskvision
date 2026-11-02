@@ -1,0 +1,121 @@
+{
+  "checkpoint": "taskvision-3.8.2__20261102__verified-source",
+  "status": "remote verified and restorable",
+  "source_commit": "b402f6173961991eb8d2be3fa9bcc2c9c01b12fa",
+  "source_url": "https://github.com/Yuki-zik/taskvision/commit/b402f6173961991eb8d2be3fa9bcc2c9c01b12fa",
+  "environment": {
+    "os": "macOS 26.3.1",
+    "architecture": "arm64",
+    "node": "22.22.0",
+    "npm": "10.9.4"
+  },
+  "local_validation": {
+    "native_qunit": {
+      "passed": 188,
+      "failed": 0
+    },
+    "core_http_mcp": {
+      "passed": 64,
+      "failed": 0
+    },
+    "web": {
+      "passed": 107,
+      "failed": 0
+    },
+    "chrome_workflows": {
+      "passed": 10,
+      "failed": 0
+    },
+    "typecheck": "pass",
+    "format": "pass",
+    "production_build": "pass"
+  },
+  "independent_remote_restore": {
+    "source_commit": "255a8c03edf8bbd0e5714b1c2c7ab383e586ac3d",
+    "started_at": "2026-11-02T10:24:14Z",
+    "state": "passed",
+    "steps": [
+      {
+        "name": "clone",
+        "exit_code": 0,
+        "duration_seconds": 3.42
+      },
+      {
+        "name": "checkout",
+        "exit_code": 0,
+        "duration_seconds": 0.1
+      },
+      {
+        "name": "install",
+        "exit_code": 0,
+        "duration_seconds": 10.23
+      },
+      {
+        "name": "clean-legacy",
+        "exit_code": 0,
+        "duration_seconds": 2.37
+      },
+      {
+        "name": "package",
+        "exit_code": 0,
+        "duration_seconds": 9.29
+      },
+      {
+        "name": "transport",
+        "exit_code": 0,
+        "duration_seconds": 2.98
+      }
+    ],
+    "source_hashes": {
+      "files": 282,
+      "result": "pass"
+    },
+    "package": {
+      "name": "taskvision-3.8.2-preview.vsix",
+      "bytes": 3185049,
+      "sha256": "3942efb44f7036122cd3184dd369671f59a1595812f7665d28e78625a550bd3b",
+      "entries": 108,
+      "runtime_files_matched": 41
+    },
+    "finished_at": "2026-11-02T10:24:43Z",
+    "followup": {
+      "source_commit": "b402f6173961991eb8d2be3fa9bcc2c9c01b12fa",
+      "fetched_from": "https://github.com/Yuki-zik/taskvision.git",
+      "files": 282,
+      "worktree_clean": true,
+      "package_inputs_identical_to_original_restore": true,
+      "targeted_tests": "6/6 passed",
+      "checked_at": "2026-11-02T10:27:25Z"
+    }
+  },
+  "cross_platform_ci": {
+    "source_commit": "b402f6173961991eb8d2be3fa9bcc2c9c01b12fa",
+    "run_id": 41428857128,
+    "url": "https://github.com/Yuki-zik/taskvision/actions/runs/41428857128",
+    "state": "success",
+    "jobs": [
+      {
+        "name": "build-and-test (windows-latest)",
+        "conclusion": "success"
+      },
+      {
+        "name": "build-and-test (macos-latest)",
+        "conclusion": "success"
+      },
+      {
+        "name": "build-and-test (ubuntu-latest)",
+        "conclusion": "success"
+      }
+    ],
+    "scope": "Install, TypeScript, legacy tests, Web tests and production build passed on all three platforms. Filesystem/MCP integration passed on macOS and Ubuntu; the existing workflow skips it on Windows."
+  },
+  "known_limits": [
+    "Real graphical Chinese VS Code Extension Host acceptance remains incomplete.",
+    "80 advanced settings remain exposed; some low-frequency legacy dialogs remain English.",
+    "No Marketplace publication or daily VS Code profile replacement."
+  ],
+  "exclusions": [
+    "Private project databases, user preferences and lease credentials.",
+    "Raw local execution logs and precompiled installer binaries; the VSIX is reproducible using the documented command."
+  ]
+}

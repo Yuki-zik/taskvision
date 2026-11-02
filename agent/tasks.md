@@ -1,8 +1,8 @@
 # Current Tasks
 
-## Cloud repository consolidation — 2026-11-02
+## Cloud repository consolidation — 2026-11-02 — completed
 
-User requested the latest TaskVision progress and code to be unified in the existing GitHub repository. Verified source: 3.8.2 commit `520362443887d9a4562c0a753691d1595b8dd98e`; remote `Yuki-zik/taskvision`, default branch `master` at `e4c923c9754c139660118ad229a7c92ec9412113`, 13 linear local commits ahead. Work takes place in an isolated sync worktree; preserve the original checkout and its preexisting `.taskvision/ai-status-report.md` modification.
+User requested the latest TaskVision progress and code to be unified in the existing GitHub repository. Verified source: 3.8.2 commit `520362443887d9a4562c0a753691d1595b8dd98e`; remote `Yuki-zik/taskvision`, default branch `master` initially at `e4c923c9754c139660118ad229a7c92ec9412113`, with 13 linear local commits ahead. Work takes place in an isolated sync worktree; preserve the original checkout and its preexisting `.taskvision/ai-status-report.md` modification.
 
 - [x] Identify the authoritative checkout, current version and existing remote.
 - [x] Fetch and confirm the development history descends from remote master.
@@ -12,9 +12,11 @@ User requested the latest TaskVision progress and code to be unified in the exis
 - [x] Push with a normal fast-forward and verify the remote commit.
 - [x] Restore from the remote into a fresh checkout and verify build/package.
 
-Remote source checkpoint `255a8c0` was read back and independently cloned: 282 file hashes matched, clean legacy tests and package build passed, and packaged HTTP/MCP transport passed 3/3. macOS and Ubuntu CI passed. Windows CI exposed one POSIX-only test assertion; its portable `path.join`/`path.sep` correction is under final CI verification.
+Remote source checkpoint `255a8c0` was read back and independently cloned: 282 file hashes matched, clean legacy tests and package build passed, and packaged HTTP/MCP transport passed 3/3. macOS and Ubuntu CI passed. Windows CI exposed one POSIX-only test assertion; the portable `path.join`/`path.sep` correction is published as `b402f61`. [CI run 41428857128](https://github.com/Yuki-zik/taskvision/actions/runs/41428857128) passed on Windows, macOS and Ubuntu. The existing workflow skips filesystem/MCP integration on Windows; macOS/Ubuntu passed that step. The restored checkout also fetched `b402f61`, verified its 282 source files and passed 6/6 targeted tests; all package inputs are identical to the independently built checkpoint.
 
 Local verification: 188/188 native, 64/64 Core/HTTP/MCP, 107/107 Web and 10/10 Chrome workflows passed; strict TypeScript, formatting and production build passed. Clean-checkout runtime fixtures and browser teardown ordering were repaired without changing runtime source or release workflows.
+
+Checkpoint details: [cloud-sync-20261102.md](cloud-sync-20261102.md), [source inventory](checkpoints/taskvision-3.8.2-20261102.source.json), and [restore receipt](checkpoints/taskvision-3.8.2-20261102.restore.json).
 
 This request authorizes source/progress synchronization. Marketplace publication and replacement of the daily VS Code installation remain outside this task. Actual graphical Chinese Extension Host acceptance remains incomplete.
 
