@@ -47,7 +47,7 @@ QUnit.test('workspace helpers keep MCP process arguments separate and validate r
     var config = bridge.buildMcpConfig('/Applications/Node JS/node', '/tmp/project space', '/tmp/extension space');
     assert.strictEqual(config.mcpServers.taskvision.command, '/Applications/Node JS/node');
     assert.deepEqual(config.mcpServers.taskvision.args.slice(-2), ['--root', '/tmp/project space']);
-    assert.ok(config.mcpServers.taskvision.args[0].indexOf('/tmp/extension space/workspace/') === 0);
+    assert.ok(config.mcpServers.taskvision.args[0].indexOf(path.join('/tmp/extension space', 'workspace') + path.sep) === 0);
     assert.deepEqual(bridge.mergeKnowledgeTags(['TODO', 'core', 'CUSTOM']), ['TODO', 'core', 'CUSTOM', 'REUSE', 'INTENT', 'REVIEW']);
 });
 

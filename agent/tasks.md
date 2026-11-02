@@ -9,8 +9,10 @@ User requested the latest TaskVision progress and code to be unified in the exis
 - [x] Inspect the outgoing history and exclude private/generated working data.
 - [x] Update one current progress entry and preserve the 3.8.2 acceptance limits.
 - [x] Reproduce the project checks and production build.
-- [ ] Push with a normal fast-forward and verify the remote commit.
-- [ ] Restore from the remote into a fresh checkout and verify build/package.
+- [x] Push with a normal fast-forward and verify the remote commit.
+- [x] Restore from the remote into a fresh checkout and verify build/package.
+
+Remote source checkpoint `255a8c0` was read back and independently cloned: 282 file hashes matched, clean legacy tests and package build passed, and packaged HTTP/MCP transport passed 3/3. macOS and Ubuntu CI passed. Windows CI exposed one POSIX-only test assertion; its portable `path.join`/`path.sep` correction is under final CI verification.
 
 Local verification: 188/188 native, 64/64 Core/HTTP/MCP, 107/107 Web and 10/10 Chrome workflows passed; strict TypeScript, formatting and production build passed. Clean-checkout runtime fixtures and browser teardown ordering were repaired without changing runtime source or release workflows.
 
